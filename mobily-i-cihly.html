@@ -1,0 +1,326 @@
+<!doctype html>
+<html lang="cs">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Mobily i cihly</title>
+<style>
+  :root{--bg:#0f1220;--card:#1a1f36;--card2:#232a4a;--txt:#e8ebff;--mut:#8f98c8;--acc:#4de0a6;--acc2:#5b8cff;--warn:#ffb84d;--bad:#ff6b7a}
+  *{box-sizing:border-box}
+  body{margin:0;font-family:system-ui,-apple-system,Segoe UI,Roboto,sans-serif;background:var(--bg);color:var(--txt);min-height:100vh}
+  header{display:flex;flex-wrap:wrap;gap:12px 24px;align-items:center;justify-content:space-between;padding:14px 20px;background:var(--card);position:sticky;top:0;z-index:5;border-bottom:1px solid #2c3459}
+  h1{margin:0;font-size:20px}
+  .stats{display:flex;gap:18px;flex-wrap:wrap;font-size:14px;color:var(--mut)}
+  .stats b{color:var(--txt);font-size:16px;display:block}
+  main{display:grid;grid-template-columns:repeat(auto-fit,minmax(300px,1fr));gap:16px;padding:16px 20px;max-width:1200px;margin:auto}
+  section{background:var(--card);border-radius:14px;padding:16px}
+  h2{margin:0 0 12px;font-size:16px;color:var(--acc2)}
+  button{font:inherit;cursor:pointer;border:0;border-radius:10px;padding:10px 14px;background:var(--acc2);color:#fff;font-weight:600;transition:.1s}
+  button:hover:not(:disabled){filter:brightness(1.15)}
+  button:active:not(:disabled){transform:scale(.97)}
+  button:disabled{background:#2e3558;color:#6b74a3;cursor:not-allowed}
+  .big{width:100%;padding:18px;font-size:18px;background:var(--acc);color:#073}
+  .phone{width:90px;height:160px;margin:6px auto 14px;border-radius:16px;border:4px solid #cfd6ff;background:linear-gradient(160deg,var(--c1,#4de0a6),var(--c2,#5b8cff));position:relative;box-shadow:0 8px 24px #0006;display:flex;align-items:center;justify-content:center;font-size:34px;user-select:none;cursor:pointer}
+  .phone::before{content:"";position:absolute;top:6px;width:30px;height:5px;border-radius:3px;background:#0006}
+  .phone.pop{animation:pop .15s}
+  @keyframes pop{50%{transform:scale(1.08)}}
+  .row{display:flex;justify-content:space-between;align-items:center;gap:10px;background:var(--card2);border-radius:10px;padding:10px 12px;margin-bottom:8px}
+  .row small{color:var(--mut);display:block}
+  .bar{height:10px;border-radius:5px;background:#2e3558;overflow:hidden;margin:8px 0}
+  .bar i{display:block;height:100%;background:var(--acc);width:0}
+  .price{display:flex;align-items:center;gap:10px;margin:10px 0}
+  .price input{flex:1}
+  #log{max-height:150px;overflow:auto;font-size:13px;color:var(--mut)}
+  #log div{padding:2px 0}
+  .toolbar{display:flex;gap:8px;margin-top:10px}
+  .toolbar button{background:#2e3558;flex:1;font-size:13px}
+  .btns{display:flex;gap:6px;align-items:center}
+  .btns button{padding:6px 10px;font-size:13px}
+  .lvl{min-width:84px;text-align:center;font-weight:600}
+  .wide{grid-column:1/-1}
+  .specs{display:grid;grid-template-columns:repeat(auto-fit,minmax(340px,1fr));gap:0 12px}
+  .good{color:var(--acc)}.badt{color:var(--bad)}
+</style>
+</head>
+<body>
+<header>
+  <h1>📱 Mobily i cihly</h1>
+  <div class="stats">
+    <div>Peníze<b id="money">0</b></div>
+    <div>Sklad<b id="stock">0</b></div>
+    <div>Výroba/s<b id="prod">0</b></div>
+    <div>Prodej/s<b id="sales">0</b></div>
+    <div>Pověst<b id="rep">0</b></div>
+    <div>Nápady 💡<b id="ideas">0</b></div>
+  </div>
+</header>
+
+<main>
+  <section>
+    <h2>Výroba</h2>
+    <div id="phone" class="phone" title="Klikni a vyrob telefon">📱</div>
+    <button class="big" id="make">Vyrobit telefon (<span id="cost"></span>)</button>
+    <p style="color:var(--mut);font-size:13px">Aktuální model: <b id="modelName" style="color:var(--txt)"></b><br><span id="specLine"></span></p>
+    <div class="toolbar">
+      <button id="save">Uložit</button>
+      <button id="reset">Nová hra</button>
+    </div>
+  </section>
+
+  <section>
+    <h2>Prodej</h2>
+    <div class="price">
+      <span>Cena</span>
+      <input type="range" id="priceRange" min="1" max="200" value="50">
+      <b id="priceVal"></b>
+    </div>
+    <p style="color:var(--mut);font-size:13px;margin:0 0 10px">Doporučená cena modelu: <b id="fair" style="color:var(--txt)"></b>. Příliš vysoká cena sníží poptávku, nízká sníží zisk.</p>
+    <div>Poptávka: <b id="demand">0</b>/s</div>
+    <div class="bar"><i id="demandBar"></i></div>
+    <div class="row"><div>Marketing<small id="mkDesc"></small></div><button id="buyMk"></button></div>
+    <h2 style="margin-top:16px">Události</h2>
+    <div id="log"></div>
+  </section>
+
+  <section>
+    <h2>Provoz</h2>
+    <div id="upgrades"></div>
+  </section>
+
+  <section>
+    <h2>Výzkum modelů</h2>
+    <div id="models"></div>
+  </section>
+
+  <section class="wide">
+    <h2>Návrhář a specifikace</h2>
+    <div class="row">
+      <div><span id="designerT"></span><small>Každý návrhář přináší nápady, za které odemykáš vyšší parametry. Dál se mezi odemčenými úrovněmi přepínáš tlačítky − / +.</small></div>
+      <button id="hire"></button>
+    </div>
+    <div class="bar"><i id="ideaBar"></i></div>
+    <div class="specs" id="specs"></div>
+    <p style="color:var(--mut);font-size:13px;margin:6px 0 0">Vyšší parametry zvyšují výrobní náklad i doporučenou prodejní cenu (celkem: náklad ×<b id="cMul"></b>, cena ×<b id="vMul"></b>).</p>
+  </section>
+</main>
+
+<script>
+const MODELS = [
+  {name:"Cihla 3310",     cost:400,  fair:800,  rd:0,      c:["#7a8bb5","#4a5578"],icon:"📟"},
+  {name:"Smart Lite",     cost:2500,  fair:5000, rd:5000,   c:["#4de0a6","#2a8fbd"],icon:"📱"},
+  {name:"Pro Max",        cost:8000,  fair:16000, rd:40000,  c:["#5b8cff","#8a5bff"],icon:"📱"},
+  {name:"Fold Z",         cost:15000,  fair:30000, rd:150000, c:["#ff8a5b","#ff5b9a"],icon:"📲"},
+  {name:"Quantum X",      cost:100000, fair:200000, rd:600000, c:["#ffd84d","#ff7a4d"],icon:"🔮"},
+];
+const UPG = [
+  {id:"worker",  name:"Dělník",         desc:"+0,5 tel./s",     base:600,   mul:1.18, prod:0.5},
+  {id:"line",    name:"Montážní linka", desc:"+4 tel./s",       base:8000,  mul:1.2,  prod:4},
+  {id:"factory", name:"Továrna",        desc:"+30 tel./s",      base:100000, mul:1.22, prod:30},
+  {id:"robot",   name:"Robotizace",     desc:"+250 tel./s",     base:1200000, mul:1.25, prod:250},
+  {id:"shop",    name:"Prodejna",       desc:"+1 poptávka/s",   base:3000,   mul:1.2,  dem:1},
+  {id:"eshop",   name:"E-shop",         desc:"+8 poptávka/s",   base:40000,  mul:1.22, dem:8},
+  {id:"retail",  name:"Obchodní řetězec",desc:"+70 poptávka/s", base:500000, mul:1.24, dem:70},
+];
+// Větve specifikací: w = váha větve, levely 0–4 (0 je odemčený od začátku)
+const BR = [
+  {id:"ram",  name:"RAM",             icon:"🧠", w:1,   lv:["1 GB","2 GB","4 GB","8 GB","16 GB"]},
+  {id:"ssd",  name:"Úložiště SSD",    icon:"💾", w:0.8, lv:["8 GB","32 GB","128 GB","512 GB","1 TB"]},
+  {id:"cam",  name:"Kamera",          icon:"📷", w:1.2, lv:["2 Mpx","8 Mpx","12 Mpx","48 Mpx","108 Mpx"]},
+  {id:"disp", name:"Displej",         icon:"🖥️", w:1.5, lv:["LCD","IPS","OLED","AMOLED 120 Hz","Skládací"]},
+  {id:"bat",  name:"Baterie",         icon:"🔋", w:0.7, lv:["1 000 mAh","2 000 mAh","3 500 mAh","5 000 mAh","7 000 mAh"]},
+  {id:"cpu",  name:"Procesor",        icon:"⚙️", w:1.3, lv:["1 jádro","2 jádra","4 jádra","8 jader","12 jader"]},
+];
+const LV_COST = [0, .1, .25, .5, .9];   // příplatek k výrobnímu nákladu (× váha)
+const LV_VAL  = [0, .2, .45, .9, 1.7];  // příplatek k doporučené ceně (× váha)
+const IDEAS_NEED = [0, 3, 8, 20, 50];   // nápady potřebné k odemčení úrovně
+const IDEA_RATE = 0.1;                  // nápadů za sekundu na jednoho návrháře
+const designerCost = () => Math.ceil(3000*Math.pow(1.7,S.designers));
+
+const zero = () => Object.fromEntries(BR.map(b=>[b.id,0]));
+const fresh = () => ({money:2000,stock:0,model:0,price:800,mk:0,rep:0,own:{},unlocked:[0],total:0,t:Date.now(),
+  spec:zero(),max:zero(),ideas:0,designers:0});
+let S = (()=>{const l=load()||{},s=Object.assign(fresh(),l);
+  s.spec=Object.assign(zero(),l.spec);s.max=Object.assign(zero(),l.max);return s})();
+
+const costMul = () => 1+BR.reduce((a,b)=>a+b.w*LV_COST[S.spec[b.id]],0);
+const valMul  = () => 1+BR.reduce((a,b)=>a+b.w*LV_VAL[S.spec[b.id]],0);
+const unitCost = () => Math.ceil(MODELS[S.model].cost*costMul());
+const fair = () => Math.round(MODELS[S.model].fair*valMul()/10)*10;
+
+const $ = id => document.getElementById(id);
+const fmt = n => n>=1e9?(n/1e9).toFixed(2)+" mld":n>=1e6?(n/1e6).toFixed(2)+" mil":n>=1e4?Math.round(n).toLocaleString("cs-CZ"):(Math.round(n*10)/10).toLocaleString("cs-CZ");
+const kc = n => fmt(n)+" Kč";
+const upCost = u => Math.ceil(u.base*Math.pow(u.mul,S.own[u.id]||0));
+const mkCost = () => Math.ceil(100*Math.pow(1.6,S.mk));
+
+function prodRate(){return UPG.reduce((a,u)=>a+(u.prod||0)*(S.own[u.id]||0),0)}
+function baseDemand(){return 1+UPG.reduce((a,u)=>a+(u.dem||0)*(S.own[u.id]||0),0)}
+function demand(){
+  const ratio = S.price / fair();
+  const elastic = Math.max(0, 1.6 - ratio*0.9);        // cena = fair → ~0,7
+  const hype = 1 + S.mk*0.25 + S.rep*0.002;
+  return baseDemand()*elastic*hype*(1+S.model*0.15);
+}
+
+function log(msg,cls){
+  const d=document.createElement("div"); d.textContent=msg; if(cls)d.className=cls;
+  $("log").prepend(d); while($("log").children.length>40)$("log").lastChild.remove();
+}
+
+function makeOne(){
+  const c=unitCost();
+  if(S.money<c)return;
+  S.money-=c; S.stock++;
+  const p=$("phone"); p.classList.remove("pop"); void p.offsetWidth; p.classList.add("pop");
+  render();
+}
+
+let acc={make:0,sell:0};
+function tick(dt){
+  const c=unitCost(), f=fair();
+  // návrháři
+  const before=Math.floor(S.ideas);
+  S.ideas+=S.designers*IDEA_RATE*dt;
+  if(Math.floor(S.ideas)>before)log("💡 Návrhář přišel s novým nápadem!","good");
+  // výroba
+  acc.make+=prodRate()*dt;
+  let n=Math.floor(acc.make); acc.make-=n;
+  n=Math.min(n,Math.floor(S.money/c)); // automatická výroba stojí peníze
+  if(n>0){S.money-=n*c;S.stock+=n}
+  // prodej
+  acc.sell+=demand()*dt;
+  let s=Math.floor(acc.sell); acc.sell-=s;
+  s=Math.min(s,S.stock);
+  if(s>0){
+    S.stock-=s; S.money+=s*S.price; S.total+=s;
+    const margin=S.price/f;
+    S.rep+=s*(margin<=1?0.02:-0.01*(margin-1));
+    if(S.rep<0)S.rep=0;
+  }
+}
+
+function buyUpg(id){
+  const u=UPG.find(x=>x.id===id),c=upCost(u);
+  if(S.money<c)return; S.money-=c; S.own[id]=(S.own[id]||0)+1; render();
+}
+function research(i){
+  const m=MODELS[i];
+  if(S.unlocked.includes(i)){S.model=i;S.price=fair();log("Přepnuto na model "+m.name);render();return}
+  if(S.money<m.rd)return;
+  S.money-=m.rd;S.unlocked.push(i);S.model=i;S.price=fair();
+  log("Vyvinut nový model: "+m.name+"!","good");render();
+}
+function hire(){
+  const c=designerCost();if(S.money<c)return;
+  S.money-=c;S.designers++;log("Najat nový návrhář.");render();
+}
+function setSpec(id,d){
+  const v=Math.max(0,Math.min(S.max[id],S.spec[id]+d));
+  if(v===S.spec[id])return;
+  S.spec[id]=v;S.price=fair();render();
+}
+function unlockSpec(id){
+  const b=BR.find(x=>x.id===id),next=S.max[id]+1;
+  if(next>4||S.ideas<IDEAS_NEED[next])return;
+  S.ideas-=IDEAS_NEED[next];S.max[id]=next;S.spec[id]=next;S.price=fair();
+  log(`Odemčeno: ${b.name} ${b.lv[next]}`,"good");render();
+}
+
+let built=false;
+function render(){
+  const m=MODELS[S.model];
+  $("money").textContent=kc(S.money);
+  $("stock").textContent=fmt(S.stock);
+  $("prod").textContent=fmt(prodRate());
+  const d=demand();
+  $("sales").textContent=fmt(Math.min(d,S.stock>0||prodRate()>0?d:0));
+  $("rep").textContent=fmt(S.rep);
+  const uc=unitCost(), fp=fair();
+  $("ideas").textContent=Math.floor(S.ideas);
+  $("cost").textContent=kc(uc);
+  $("modelName").textContent=m.name;
+  $("specLine").textContent=BR.map(b=>b.lv[S.spec[b.id]]).join(" · ");
+  $("make").disabled=S.money<uc;
+  $("phone").style.setProperty("--c1",m.c[0]);$("phone").style.setProperty("--c2",m.c[1]);
+  $("phone").textContent=m.icon;
+  $("priceRange").max=Math.round(fp*2.5);
+  $("priceRange").value=S.price;
+  $("priceVal").textContent=kc(S.price);
+  $("fair").textContent=kc(fp);
+  $("demand").textContent=fmt(d);
+  $("demandBar").style.width=Math.min(100,d/(baseDemand()*1.6*(1+S.mk*.25)+1)*100)+"%";
+  $("mkDesc").textContent="Úroveň "+S.mk+" (+25 % poptávky)";
+  $("buyMk").textContent=kc(mkCost());$("buyMk").disabled=S.money<mkCost();
+
+  if(!built){
+    UPG.forEach(u=>{
+      const r=document.createElement("div");r.className="row";
+      r.innerHTML=`<div><span class="t"></span><small>${u.desc}</small></div>`;
+      const b=document.createElement("button");b.onclick=()=>buyUpg(u.id);
+      r.appendChild(b);$("upgrades").appendChild(r);u.el={t:r.querySelector(".t"),b};
+    });
+    MODELS.forEach((mm,i)=>{
+      const r=document.createElement("div");r.className="row";
+      r.innerHTML=`<div><span class="t"></span><small>výroba ${kc(mm.cost)} · doporučená cena ${kc(mm.fair)}</small></div>`;
+      const b=document.createElement("button");b.onclick=()=>research(i);
+      r.appendChild(b);$("models").appendChild(r);mm.el={t:r.querySelector(".t"),b};
+    });
+    BR.forEach(b=>{
+      const r=document.createElement("div");r.className="row";
+      r.innerHTML=`<div>${b.icon} ${b.name}<small class="nx"></small></div>
+        <div class="btns"><button class="mi">−</button><span class="lvl"></span><button class="pl">+</button><button class="un"></button></div>`;
+      r.querySelector(".mi").onclick=()=>setSpec(b.id,-1);
+      r.querySelector(".pl").onclick=()=>setSpec(b.id,1);
+      r.querySelector(".un").onclick=()=>unlockSpec(b.id);
+      $("specs").appendChild(r);
+      b.el={nx:r.querySelector(".nx"),lvl:r.querySelector(".lvl"),mi:r.querySelector(".mi"),pl:r.querySelector(".pl"),un:r.querySelector(".un")};
+    });
+    $("hire").onclick=hire;
+    built=true;
+  }
+  $("designerT").textContent=`Návrhář ×${S.designers} (+${fmt(S.designers*IDEA_RATE)} nápadu/s)`;
+  $("hire").textContent="Najmout "+kc(designerCost());$("hire").disabled=S.money<designerCost();
+  $("ideaBar").style.width=(S.designers?(S.ideas%1)*100:0)+"%";
+  $("cMul").textContent=costMul().toFixed(2).replace(".",",");
+  $("vMul").textContent=valMul().toFixed(2).replace(".",",");
+  BR.forEach(b=>{
+    const cur=S.spec[b.id],mx=S.max[b.id],next=mx+1;
+    b.el.lvl.textContent=b.lv[cur];
+    b.el.mi.disabled=cur<=0;b.el.pl.disabled=cur>=mx;
+    if(mx>=4){b.el.nx.textContent="Maximum odemčeno";b.el.un.textContent="Max";b.el.un.disabled=true}
+    else{b.el.nx.textContent="Další: "+b.lv[next];b.el.un.textContent="💡 "+IDEAS_NEED[next];b.el.un.disabled=S.ideas<IDEAS_NEED[next]}
+  });
+  UPG.forEach(u=>{
+    u.el.t.textContent=`${u.name} ×${S.own[u.id]||0}`;
+    u.el.b.textContent=kc(upCost(u));u.el.b.disabled=S.money<upCost(u);
+  });
+  MODELS.forEach((mm,i)=>{
+    const own=S.unlocked.includes(i);
+    mm.el.t.textContent=`${mm.icon} ${mm.name}${S.model===i?" ✓":""}`;
+    mm.el.b.textContent=own?(S.model===i?"Aktivní":"Použít"):"Vyvinout "+kc(mm.rd);
+    mm.el.b.disabled=own?S.model===i:S.money<mm.rd;
+  });
+}
+
+function save(){localStorage.setItem("mobilyICihly",JSON.stringify(S))}
+function load(){try{return JSON.parse(localStorage.getItem("mobilyICihly"))}catch(e){return null}}
+
+$("make").onclick=makeOne;$("phone").onclick=makeOne;
+$("priceRange").oninput=e=>{S.price=+e.target.value;render()};
+$("buyMk").onclick=()=>{const c=mkCost();if(S.money<c)return;S.money-=c;S.mk++;log("Nová reklamní kampaň!");render()};
+$("save").onclick=()=>{save();log("Hra uložena.")};
+$("reset").onclick=()=>{if(confirm("Opravdu začít znovu?")){S=fresh();localStorage.removeItem("mobilyICihly");$("log").innerHTML="";render()}};
+
+// Offline výdělek (max 1 h, 50 %)
+(()=>{const away=Math.min((Date.now()-S.t)/1000,3600);
+  if(away>30&&prodRate()>0){const sold=Math.floor(Math.min(prodRate(),demand())*away*0.5);
+    if(sold>0){const m=MODELS[S.model];const gain=sold*(S.price-unitCost());S.money+=Math.max(0,gain);log(`Během nepřítomnosti: prodáno ${fmt(sold)} ks, +${kc(Math.max(0,gain))}`,"good")}}})();
+
+let last=performance.now();
+setInterval(()=>{const now=performance.now();tick((now-last)/1000);last=now;S.t=Date.now();render()},250);
+setInterval(save,10000);
+log("Vítej! Vyrob první telefony klikáním a nastav cenu.");
+render();
+</script>
+</body>
+</html>
