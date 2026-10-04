@@ -97,6 +97,19 @@
   #log div{padding:4px 0;border-bottom:1px solid rgba(255,255,255,.05)}
   .foot{display:flex;gap:8px;margin-top:14px}
   .foot .btn{flex:1}
+  /* editor zařízení */
+  .modal{position:fixed;inset:0;z-index:50;background:rgba(3,5,12,.72);backdrop-filter:blur(6px);display:grid;place-items:center;padding:16px;overflow:auto}
+  .modal[hidden]{display:none}
+  .mcard{width:min(900px,100%);max-height:calc(100vh - 32px);overflow:auto;background:rgba(18,22,44,.96);border:1px solid var(--line);border-radius:24px;padding:20px;box-shadow:0 30px 80px #000a}
+  .mhead{display:flex;justify-content:space-between;align-items:center;margin-bottom:14px}
+  .medit{display:grid;grid-template-columns:minmax(220px,300px) 1fr;gap:22px}
+  .mleft{text-align:center}
+  .txt{width:100%;margin-top:8px;padding:10px 12px;border-radius:12px;border:1px solid var(--line);background:rgba(255,255,255,.06);color:var(--txt);font:inherit;text-align:center}
+  .txt:focus{outline:2px solid var(--acc);outline-offset:1px}
+  .swatches{display:flex;flex-wrap:wrap;gap:8px;justify-content:center;margin-top:12px}
+  .sw{width:28px;height:28px;border-radius:50%;border:2px solid transparent;cursor:pointer;box-shadow:0 2px 8px #0006}
+  .sw.on{border-color:#fff;transform:scale(1.12)}
+  @media(max-width:700px){.medit{grid-template-columns:1fr}}
   @media(max-width:560px){.hwrap{padding:10px 14px}main{padding:14px}.chip{min-width:70px}}
 </style>
 </head>
@@ -127,7 +140,8 @@
       <div class="device" id="device" title="Klikni a vyrob kus">📱</div>
       <div class="modelname" id="modelName"></div>
       <div class="speclinex" id="specLine"></div>
-      <button class="btn go big" id="make">Vyrobit (<span id="cost"></span>)</button>
+      <button class="btn go big" id="design">✏️ Navrhnout zařízení</button>
+      <div class="muted" style="text-align:center;margin-top:8px">Výrobní náklad <b id="cost" style="color:var(--txt)"></b> / ks · klik na zařízení = ruční výroba</div>
       <div class="sl" style="margin-top:16px"><span>Limit skladu</span><input type="range" id="capRange" min="5" max="2000" step="5"><b id="capVal"></b></div>
       <div class="meter"><i id="stockBar"></i></div>
       <div class="muted">Sklad: <b id="stock" style="color:var(--txt)">0</b> ks. Omezovač výroby: když je sklad plný, výroba se pro tuto řadu zastaví.</div>
@@ -161,12 +175,12 @@
     <div class="card">
       <h2>Návrhář a specifikace</h2>
       <div class="row">
-        <div><span id="designerT"></span><small>Každý návrhář (plat 60 Kč/s) přináší nápady, za které odemykáš vyšší parametry. Technologie platí pro všechny produktové řady. Mezi odemčenými úrovněmi přepínáš tlačítky − / +.</small></div>
+        <div><span id="designerT"></span><small>Každý návrhář (plat 60 Kč/s) přináší nápady, za které odemykáš vyšší parametry. Odemčené technologie jsou společné, konkrétní konfiguraci každé řady nastavíš v editoru zařízení.</small></div>
         <button class="btn" id="hire"></button>
       </div>
       <div class="meter"><i id="ideaBar"></i></div>
       <div class="cols" id="specs"></div>
-      <div class="muted" style="margin-top:6px">Vyšší parametry zvyšují výrobní náklad i doporučenou cenu (náklad ×<b id="cMul"></b>, cena ×<b id="vMul"></b>).</div>
+      <div class="muted" style="margin-top:6px">Odemčené úrovně si pro každou produktovou řadu nastavuješ v editoru zařízení (tlačítko „Navrhnout zařízení“).</div>
     </div>
   </div>
 
@@ -177,6 +191,28 @@
     <button class="btn ghost" id="reset">Nová hra</button>
   </div>
 </main>
+
+<div class="modal" id="modal" hidden>
+  <div class="mcard">
+    <div class="mhead"><h2 style="margin:0">Návrh zařízení · <span id="edTitle"></span></h2><button class="btn sm ghost" id="edClose">✕</button></div>
+    <div class="medit">
+      <div class="mleft">
+        <div class="device" id="edDevice" style="cursor:default">📱</div>
+        <div class="modelname" id="edName"></div>
+        <input type="text" id="edNameIn" maxlength="24" placeholder="Název zařízení" class="txt">
+        <div class="swatches" id="edColors"></div>
+      </div>
+      <div class="mright">
+        <div id="edSpecs"></div>
+        <div class="kv"><span>Výrobní náklad</span><b id="edCost"></b></div>
+        <div class="kv"><span>Doporučená cena</span><b id="edFair"></b></div>
+        <div class="kv"><span>Zisk na kus</span><b id="edProfit"></b></div>
+        <div class="muted" style="margin:6px 0 12px">Vyšší parametry zvyšují náklad i cenu (náklad ×<b id="edCm"></b>, cena ×<b id="edVm"></b>). Další úrovně odemykáš v záložce Technologie.</div>
+        <div class="btns" style="justify-content:flex-end"><button class="btn ghost" id="edCancel">Zrušit</button><button class="btn go" id="edApply">Použít návrh</button></div>
+      </div>
+    </div>
+  </div>
+</div>
 
 <script>
 /* ============ DATA ============ */
@@ -231,7 +267,8 @@ const KEY="mobilyICihly2";
 
 /* ============ STAV ============ */
 const zero = () => Object.fromEntries(BR.map(b=>[b.id,0]));
-const newLine = on => ({on, model:0, owned:[0], price:0, stock:0, cap:50});
+const newLine = on => ({on, model:0, owned:[0], price:0, stock:0, cap:50, spec:zero(), name:"", color:-1});
+const COLORS=[["#5ef2c0","#2a8fbd"],["#7b8cff","#a45bff"],["#ff6fb1","#ff8a5b"],["#ffd84d","#ff7a4d"],["#9ad1ff","#4a6fa5"],["#c08bff","#6a4bd8"],["#8fe3a0","#2f9a6a"],["#e8ecff","#8a93b8"]];
 const fresh = () => {
   const s={money:2000,rep:0,mk:0,own:{},designers:0,ideas:0,spec:zero(),max:zero(),total:0,day:0,ev:null,nextEv:120,
     sel:"phone",t:Date.now(),lines:{}};
@@ -242,7 +279,9 @@ function load(){try{return JSON.parse(localStorage.getItem(KEY))}catch(e){return
 function save(){try{localStorage.setItem(KEY,JSON.stringify(S))}catch(e){}}
 let S=(()=>{const f=fresh(),l=load()||{},s=Object.assign(f,l);
   s.spec=Object.assign(zero(),l.spec);s.max=Object.assign(zero(),l.max);
-  PRODUCTS.forEach(p=>s.lines[p.id]=Object.assign(newLine(p.id==="phone"),(l.lines||{})[p.id]));
+  PRODUCTS.forEach(p=>{const sv=(l.lines||{})[p.id]||{};
+    s.lines[p.id]=Object.assign(newLine(p.id==="phone"),sv);
+    s.lines[p.id].spec=Object.assign(zero(),sv.spec||(p.id==="phone"?l.spec:null))});
   if(!PRODUCTS.find(p=>p.id===s.sel)||!s.lines[s.sel].on)s.sel="phone";
   return s})();
 let acc={make:0,sell:{}};
@@ -257,10 +296,12 @@ const activeIds=()=>PRODUCTS.filter(p=>S.lines[p.id].on).map(p=>p.id);
 const upCost=u=>Math.ceil(u.base*Math.pow(u.mul,S.own[u.id]||0));
 const mkCost=()=>Math.ceil(100*Math.pow(1.8,S.mk));
 const designerCost=()=>Math.ceil(3000*Math.pow(1.9,S.designers));
-const costMul=()=>1+BR.reduce((a,b)=>a+b.w*LV_COST[S.spec[b.id]],0);
-const valMul=()=>1+BR.reduce((a,b)=>a+b.w*LV_VAL[S.spec[b.id]],0);
-const unitCost=id=>Math.ceil(M(id).cost*costMul());
-const fair=id=>Math.round(M(id).fair*valMul()/10)*10;
+const costMul=sp=>1+BR.reduce((a,b)=>a+b.w*LV_COST[sp[b.id]],0);
+const valMul=sp=>1+BR.reduce((a,b)=>a+b.w*LV_VAL[sp[b.id]],0);
+const unitCost=id=>Math.ceil(M(id).cost*costMul(S.lines[id].spec));
+const fair=id=>Math.round(M(id).fair*valMul(S.lines[id].spec)/10)*10;
+const devName=id=>S.lines[id].name||M(id).name;
+const devColors=id=>{const l=S.lines[id];return l.color>=0?COLORS[l.color]:M(id).c};
 const prodRate=()=>UPG.reduce((a,u)=>a+(u.prod||0)*(S.own[u.id]||0),0);
 const baseDemand=()=>1+UPG.reduce((a,u)=>a+(u.dem||0)*(S.own[u.id]||0),0);
 const wages=()=>UPG.reduce((a,u)=>a+(u.wage||0)*(S.own[u.id]||0),0)+S.designers*60;
@@ -354,13 +395,43 @@ function research(pid,i){
   log(`Vyvinut nový model: ${m.name}!`,"good");render();
 }
 function hire(){const c=designerCost();if(S.money<c)return;S.money-=c;S.designers++;log("Najat nový návrhář.");render()}
-function repriceAll(){activeIds().forEach(id=>S.lines[id].price=fair(id))}
-function setSpec(id,d){const v=Math.max(0,Math.min(S.max[id],S.spec[id]+d));if(v===S.spec[id])return;S.spec[id]=v;repriceAll();render()}
+/* editor zařízení: pracuje s konceptem (draft), dokud se nepoužije */
+let D=null;
+function openEditor(){
+  const l=S.lines[S.sel];
+  D={id:S.sel,spec:Object.assign({},l.spec),name:l.name,color:l.color};
+  $("modal").hidden=false;$("edNameIn").value=D.name;renderEditor();
+}
+function closeEditor(){$("modal").hidden=true;D=null}
+function edSpec(bid,d){const v=Math.max(0,Math.min(S.max[bid],D.spec[bid]+d));if(v!==D.spec[bid]){D.spec[bid]=v;renderEditor()}}
+function applyEditor(){
+  const l=S.lines[D.id],id=D.id;
+  l.spec=D.spec;l.name=D.name.trim();l.color=D.color;l.price=fair(id);
+  log(`Nový návrh: ${devName(id)} (${P(id).name})`,"good");
+  closeEditor();render();
+}
+function renderEditor(){
+  if(!D)return;
+  const id=D.id,m=M(id),cm=costMul(D.spec),vm=valMul(D.spec);
+  const cost=Math.ceil(m.cost*cm),fp=Math.round(m.fair*vm/10)*10,col=D.color>=0?COLORS[D.color]:m.c;
+  $("edTitle").textContent=P(id).name;
+  $("edDevice").textContent=m.icon;$("edDevice").style.setProperty("--c1",col[0]);$("edDevice").style.setProperty("--c2",col[1]);
+  $("edName").textContent=D.name.trim()||m.name;
+  $("edCost").textContent=kc(cost);$("edFair").textContent=kc(fp);
+  $("edProfit").textContent=kc(fp-cost);
+  $("edCm").textContent=cm.toFixed(2).replace(".",",");$("edVm").textContent=vm.toFixed(2).replace(".",",");
+  document.querySelectorAll("#edColors .sw").forEach((e,i)=>e.classList.toggle("on",i-1===D.color));
+  BR.forEach(b=>{
+    const cur=D.spec[b.id],mx=S.max[b.id];
+    b.ed.lvl.textContent=b.lv[cur];b.ed.mi.disabled=cur<=0;b.ed.pl.disabled=cur>=mx;
+    b.ed.nx.textContent=mx>=4?"Maximum odemčeno":"Odemčeno do: "+b.lv[mx];
+  });
+}
 function unlockSpec(id){
   const b=BR.find(x=>x.id===id),next=S.max[id]+1;
   if(next>4||S.ideas<IDEAS_NEED[next])return;
-  S.ideas-=IDEAS_NEED[next];S.max[id]=next;S.spec[id]=next;repriceAll();
-  log(`Odemčeno: ${b.name} ${b.lv[next]}`,"good");render();
+  S.ideas-=IDEAS_NEED[next];S.max[id]=next;
+  log(`Odemčeno: ${b.name} ${b.lv[next]} – použij ho v editoru zařízení`,"good");render();
 }
 
 /* ============ UI (sestaví se jednou, pak se jen aktualizují texty) ============ */
@@ -396,13 +467,26 @@ function build(){
   BR.forEach(b=>{
     const r=document.createElement("div");r.className="row";
     r.innerHTML=`<div>${b.icon} ${b.name}<small class="nx"></small></div>
-      <div class="btns"><button class="btn sm ghost mi">−</button><span class="lvl"></span><button class="btn sm ghost pl">+</button><button class="btn sm un"></button></div>`;
-    r.querySelector(".mi").onclick=()=>setSpec(b.id,-1);
-    r.querySelector(".pl").onclick=()=>setSpec(b.id,1);
+      <div class="btns"><span class="lvl"></span><button class="btn sm un"></button></div>`;
     r.querySelector(".un").onclick=()=>unlockSpec(b.id);
     $("specs").appendChild(r);
-    b.el={nx:r.querySelector(".nx"),lvl:r.querySelector(".lvl"),mi:r.querySelector(".mi"),pl:r.querySelector(".pl"),un:r.querySelector(".un")};
+    b.el={nx:r.querySelector(".nx"),lvl:r.querySelector(".lvl"),un:r.querySelector(".un")};
+    // řádek v editoru zařízení
+    const e=document.createElement("div");e.className="row";
+    e.innerHTML=`<div>${b.icon} ${b.name}<small class="nx"></small></div><div class="btns"><button class="btn sm ghost mi">−</button><span class="lvl"></span><button class="btn sm ghost pl">+</button></div>`;
+    e.querySelector(".mi").onclick=()=>edSpec(b.id,-1);e.querySelector(".pl").onclick=()=>edSpec(b.id,1);
+    $("edSpecs").appendChild(e);
+    b.ed={nx:e.querySelector(".nx"),lvl:e.querySelector(".lvl"),mi:e.querySelector(".mi"),pl:e.querySelector(".pl")};
   });
+  // barvy v editoru: první = výchozí barva modelu
+  [null,...COLORS].forEach((c,i)=>{const w=document.createElement("button");w.className="sw";w.title=i?"Barva":"Výchozí barva modelu";
+    w.style.background=c?`linear-gradient(135deg,${c[0]},${c[1]})`:"conic-gradient(#5ef2c0,#7b8cff,#ff6fb1,#ffd84d,#5ef2c0)";
+    w.onclick=()=>{D.color=i-1;renderEditor()};$("edColors").appendChild(w)});
+  $("edNameIn").oninput=e=>{D.name=e.target.value;renderEditor()};
+  $("edClose").onclick=$("edCancel").onclick=closeEditor;$("edApply").onclick=applyEditor;
+  $("modal").onclick=e=>{if(e.target.id==="modal")closeEditor()};
+  document.addEventListener("keydown",e=>{if(e.key==="Escape"&&D)closeEditor()});
+  $("design").onclick=openEditor;
   $("hire").onclick=hire;
   // záložky
   document.querySelectorAll(".tab").forEach(t=>t.onclick=()=>{
@@ -432,10 +516,11 @@ function render(){
 
   // výroba
   $("pTitle").textContent=p.name;
-  $("device").textContent=m.icon;$("device").style.setProperty("--c1",m.c[0]);$("device").style.setProperty("--c2",m.c[1]);
-  $("modelName").textContent=m.name;
-  $("specLine").textContent=BR.map(b=>b.lv[S.spec[b.id]]).join(" · ");
-  $("cost").textContent=kc(uc);$("make").disabled=S.money<uc||l.stock>=l.cap;
+  const dc=devColors(id);
+  $("device").textContent=m.icon;$("device").style.setProperty("--c1",dc[0]);$("device").style.setProperty("--c2",dc[1]);
+  $("modelName").textContent=devName(id);
+  $("specLine").textContent=BR.map(b=>b.lv[l.spec[b.id]]).join(" · ");
+  $("cost").textContent=kc(uc);
   $("capRange").value=l.cap;$("capVal").textContent=l.cap+" ks";
   $("stock").textContent=fmt(l.stock);$("stockBar").style.width=Math.min(100,l.stock/l.cap*100)+"%";
 
@@ -465,17 +550,16 @@ function render(){
   $("designerT").textContent=`Návrhář ×${S.designers} (+${fmt(S.designers*IDEA_RATE)} nápadu/s)`;
   $("hire").textContent="Najmout "+kc(designerCost());$("hire").disabled=S.money<designerCost();
   $("ideaBar").style.width=(S.designers?(S.ideas%1)*100:0)+"%";
-  $("cMul").textContent=costMul().toFixed(2).replace(".",",");$("vMul").textContent=valMul().toFixed(2).replace(".",",");
   BR.forEach(b=>{
-    const cur=S.spec[b.id],mx=S.max[b.id],nx=mx+1;
-    b.el.lvl.textContent=b.lv[cur];b.el.mi.disabled=cur<=0;b.el.pl.disabled=cur>=mx;
+    const mx=S.max[b.id],nx=mx+1;
+    b.el.lvl.textContent="Odemčeno: "+b.lv[mx];
     if(mx>=4){b.el.nx.textContent="Maximum odemčeno";b.el.un.textContent="Max";b.el.un.disabled=true}
     else{b.el.nx.textContent="Další: "+b.lv[nx];b.el.un.textContent="💡 "+IDEAS_NEED[nx];b.el.un.disabled=S.ideas<IDEAS_NEED[nx]}
   });
 }
 
 /* ============ OVLÁDÁNÍ ============ */
-$("make").onclick=()=>makeOne();$("device").onclick=()=>makeOne();
+$("device").onclick=()=>makeOne();
 $("capRange").oninput=e=>{S.lines[S.sel].cap=+e.target.value;render()};
 $("priceRange").oninput=e=>{S.lines[S.sel].price=+e.target.value;render()};
 $("buyMk").onclick=()=>{const c=mkCost();if(S.money<c)return;S.money-=c;S.mk++;log("Nová reklamní kampaň!");render()};
