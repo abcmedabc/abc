@@ -360,7 +360,20 @@ $("capRange").oninput=e=>{S.cap=+e.target.value;render()};
 $("priceRange").oninput=e=>{S.price=+e.target.value;render()};
 $("buyMk").onclick=()=>{const c=mkCost();if(S.money<c)return;S.money-=c;S.mk++;log("Nová reklamní kampaň!");render()};
 $("save").onclick=()=>{save();log("Hra uložena.")};
-$("reset").onclick=()=>{if(confirm("Opravdu začít znovu?")){S=fresh();try{localStorage.removeItem("mobilyICihly")}catch(e){}$("log").innerHTML="";render()}};
+// Nová hra: potvrzení přímo na tlačítku (confirm() prohlížeče někdy bývá potlačený)
+let resetTimer=null;
+$("reset").onclick=()=>{
+  const b=$("reset");
+  if(!resetTimer){
+    b.textContent="Opravdu? Klikni znovu";b.style.background="var(--bad)";
+    resetTimer=setTimeout(()=>{resetTimer=null;b.textContent="Nová hra";b.style.background=""},4000);
+    return;
+  }
+  clearTimeout(resetTimer);resetTimer=null;b.textContent="Nová hra";b.style.background="";
+  S=fresh();acc={make:0,sell:0};
+  try{localStorage.removeItem("mobilyICihly")}catch(e){}
+  $("log").innerHTML="";log("Nová hra začala.");render();
+};
 
 // Offline výdělek (max 1 h, 50 %)
 (()=>{const away=Math.min((Date.now()-S.t)/1000,3600);S.day+=away*DAYS_PER_SEC;
