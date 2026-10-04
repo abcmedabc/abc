@@ -203,11 +203,16 @@
         <div class="swatches" id="edColors"></div>
       </div>
       <div class="mright">
+        <div class="row" style="border-color:var(--warn);background:rgba(255,200,87,.08)">
+          <div>💡 Nápady: <b id="edIdeaN">0</b><small id="edIdeaS"></small></div>
+          <button class="btn sm" id="edHire"></button>
+        </div>
+        <div class="meter"><i id="edIdeaBar"></i></div>
         <div id="edSpecs"></div>
         <div class="kv"><span>Výrobní náklad</span><b id="edCost"></b></div>
         <div class="kv"><span>Doporučená cena</span><b id="edFair"></b></div>
         <div class="kv"><span>Zisk na kus</span><b id="edProfit"></b></div>
-        <div class="muted" style="margin:6px 0 12px">Vyšší parametry zvyšují náklad i cenu (náklad ×<b id="edCm"></b>, cena ×<b id="edVm"></b>). Další úrovně odemykáš v záložce Technologie.</div>
+        <div class="muted" style="margin:6px 0 12px">Vyšší parametry zvyšují náklad i cenu (náklad ×<b id="edCm"></b>, cena ×<b id="edVm"></b>). Vyšší úrovně odemykáš nápady 💡 od návrháře tlačítkem u dané součástky.</div>
         <div class="btns" style="justify-content:flex-end"><button class="btn ghost" id="edCancel">Zrušit</button><button class="btn go" id="edApply">Použít návrh</button></div>
       </div>
     </div>
@@ -424,8 +429,14 @@ function renderEditor(){
   BR.forEach(b=>{
     const cur=D.spec[b.id],mx=S.max[b.id];
     b.ed.lvl.textContent=b.lv[cur];b.ed.mi.disabled=cur<=0;b.ed.pl.disabled=cur>=mx;
-    b.ed.nx.textContent=mx>=4?"Maximum odemčeno":"Odemčeno do: "+b.lv[mx];
+    const nx=mx+1;
+    if(mx>=4){b.ed.nx.textContent="Maximum odemčeno";b.ed.un.textContent="Max";b.ed.un.disabled=true}
+    else{b.ed.nx.textContent=`Odemčeno do: ${b.lv[mx]} · další: ${b.lv[nx]}`;b.ed.un.textContent="💡 "+IDEAS_NEED[nx];b.ed.un.disabled=S.ideas<IDEAS_NEED[nx]}
   });
+  $("edIdeaN").textContent=Math.floor(S.ideas);
+  $("edIdeaS").textContent=S.designers?`Návrhář ×${S.designers} (+${(S.designers*IDEA_RATE).toFixed(2).replace(".",",")} nápadu/s)`:"Bez návrháře nepřicházejí žádné nápady";
+  $("edHire").textContent=(S.designers?"Další návrhář ":"Najmout návrháře ")+kc(designerCost());$("edHire").disabled=S.money<designerCost();
+  $("edIdeaBar").style.width=(S.designers?(S.ideas%1)*100:0)+"%";
 }
 function unlockSpec(id){
   const b=BR.find(x=>x.id===id),next=S.max[id]+1;
@@ -473,10 +484,11 @@ function build(){
     b.el={nx:r.querySelector(".nx"),lvl:r.querySelector(".lvl"),un:r.querySelector(".un")};
     // řádek v editoru zařízení
     const e=document.createElement("div");e.className="row";
-    e.innerHTML=`<div>${b.icon} ${b.name}<small class="nx"></small></div><div class="btns"><button class="btn sm ghost mi">−</button><span class="lvl"></span><button class="btn sm ghost pl">+</button></div>`;
+    e.innerHTML=`<div>${b.icon} ${b.name}<small class="nx"></small></div><div class="btns"><button class="btn sm ghost mi">−</button><span class="lvl"></span><button class="btn sm ghost pl">+</button><button class="btn sm un"></button></div>`;
     e.querySelector(".mi").onclick=()=>edSpec(b.id,-1);e.querySelector(".pl").onclick=()=>edSpec(b.id,1);
+    e.querySelector(".un").onclick=()=>{unlockSpec(b.id);if(D){D.spec[b.id]=S.max[b.id];renderEditor()}};
     $("edSpecs").appendChild(e);
-    b.ed={nx:e.querySelector(".nx"),lvl:e.querySelector(".lvl"),mi:e.querySelector(".mi"),pl:e.querySelector(".pl")};
+    b.ed={nx:e.querySelector(".nx"),lvl:e.querySelector(".lvl"),mi:e.querySelector(".mi"),pl:e.querySelector(".pl"),un:e.querySelector(".un")};
   });
   // barvy v editoru: první = výchozí barva modelu
   [null,...COLORS].forEach((c,i)=>{const w=document.createElement("button");w.className="sw";w.title=i?"Barva":"Výchozí barva modelu";
@@ -486,7 +498,7 @@ function build(){
   $("edClose").onclick=$("edCancel").onclick=closeEditor;$("edApply").onclick=applyEditor;
   $("modal").onclick=e=>{if(e.target.id==="modal")closeEditor()};
   document.addEventListener("keydown",e=>{if(e.key==="Escape"&&D)closeEditor()});
-  $("design").onclick=openEditor;
+  $("design").onclick=openEditor;$("edHire").onclick=hire;
   $("hire").onclick=hire;
   // záložky
   document.querySelectorAll(".tab").forEach(t=>t.onclick=()=>{
@@ -498,6 +510,7 @@ function build(){
 
 function render(){
   if(!built)build();
+  if(D)renderEditor(); // editor zařízení se průběžně aktualizuje (nápady, peníze)
   const id=S.sel,p=P(id),l=S.lines[id],m=M(id),uc=unitCost(id),fp=fair(id),d=demand(id);
 
   // hlavička
@@ -547,7 +560,7 @@ function render(){
   UPG.forEach(u=>{u.el.t.textContent=`${u.name} ×${S.own[u.id]||0}`;u.el.b.textContent=kc(upCost(u));u.el.b.disabled=S.money<upCost(u)});
 
   // technologie
-  $("designerT").textContent=`Návrhář ×${S.designers} (+${fmt(S.designers*IDEA_RATE)} nápadu/s)`;
+  $("designerT").textContent=`Návrhář ×${S.designers} (+${(S.designers*IDEA_RATE).toFixed(2).replace(".",",")} nápadu/s)`;
   $("hire").textContent="Najmout "+kc(designerCost());$("hire").disabled=S.money<designerCost();
   $("ideaBar").style.width=(S.designers?(S.ideas%1)*100:0)+"%";
   BR.forEach(b=>{
