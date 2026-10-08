@@ -264,7 +264,7 @@ const PRODUCTS = [
     {name:"Ultrabook Q",   cost:160000, fair:240000, dm:0.1,  rd:400000000, c:["#ffe066","#ff8a3d"], icon:"🚀"}]},
 ];
 const UPG = [
-  {id:"worker",  name:"Dělník",           desc:"+0,5 ks/s · plat 6 Kč/s",       base:1200,    mul:1.23, prod:0.5, wage:6},
+  {id:"worker",  name:"Dělník",           desc:"+0,5 ks/s · plat 6 Kč/s",       base:3000,    mul:1.27, prod:0.5, wage:6},
   {id:"line",    name:"Montážní linka",   desc:"+4 ks/s · plat 80 Kč/s",        base:16000,   mul:1.25, prod:4,   wage:80},
   {id:"factory", name:"Továrna",          desc:"+30 ks/s · plat 1 000 Kč/s",    base:200000,  mul:1.27, prod:30,  wage:1000},
   {id:"robot",   name:"Robotizace",       desc:"+250 ks/s · plat 12 000 Kč/s",  base:2400000, mul:1.3,  prod:250, wage:12000},
@@ -313,7 +313,7 @@ const P=id=>PRODUCTS.find(p=>p.id===id);
 const M=id=>P(id).models[S.lines[id].model];
 const activeIds=()=>PRODUCTS.filter(p=>S.lines[p.id].on).map(p=>p.id);
 const upCost=u=>Math.ceil(u.base*Math.pow(u.mul,S.own[u.id]||0));
-const mkCost=()=>Math.ceil(100*Math.pow(1.8,S.mk));
+const mkCost=()=>Math.ceil(1500*Math.pow(2,S.mk));
 const designerCost=()=>Math.ceil(3000*Math.pow(1.9,S.designers));
 const costMul=sp=>1+BR.reduce((a,b)=>a+b.w*LV_COST[sp[b.id]],0);
 const valMul=sp=>1+BR.reduce((a,b)=>a+b.w*LV_VAL[sp[b.id]],0);
