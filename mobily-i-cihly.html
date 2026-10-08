@@ -122,6 +122,10 @@
   .tctl>div{display:flex;gap:10px;pointer-events:auto}
   .tctl button{min-width:64px;height:64px;border-radius:50%;background:rgba(255,255,255,.14);border:1px solid rgba(255,255,255,.25);font-size:22px;font-weight:800;touch-action:none;user-select:none}
   @media (pointer:coarse){.tctl{display:flex}}
+  .segrow{display:flex;align-items:center;justify-content:space-between;gap:10px;margin:7px 0;text-align:left;flex-wrap:wrap}
+  .segrow>span{color:var(--mut);font-size:14px;min-width:90px}
+  .seg{display:flex;gap:5px;flex-wrap:wrap}
+  .btn.on{background:linear-gradient(135deg,var(--acc),#2fd6a0);color:#04271c}
   /* editor zařízení */
   .modal{position:fixed;inset:0;z-index:50;background:rgba(3,5,12,.72);backdrop-filter:blur(6px);display:grid;place-items:center;padding:16px;overflow:auto}
   .modal[hidden]{display:none}
@@ -151,6 +155,7 @@
       <div class="chip"><small>Platy/s</small><b id="wages">0</b></div>
       <div class="chip"><small>Pověst</small><b id="rep">0</b></div>
       <div class="chip"><small>Nápady 💡</small><b id="ideas">0</b></div>
+      <button class="btn go" id="raceMode" title="Čistý závodní mód bez ekonomiky">🏎️ Závodní mód</button>
       <div class="chip spd">
         <small>Rychlost času</small>
         <div class="spdbtns">
@@ -638,7 +643,7 @@ $("device").onclick=()=>makeOne();
 $("capRange").oninput=e=>{S.lines[S.sel].cap=+e.target.value;render()};
 $("priceRange").oninput=e=>{S.lines[S.sel].price=+e.target.value;render()};
 $("buyMk").onclick=()=>{const c=mkCost();if(S.money<c)return;S.money-=c;S.mk++;log("Nová reklamní kampaň!");render()};
-$("raceBtn").onclick=()=>RACE.open();
+$("raceBtn").onclick=()=>RACE.open();$("raceMode").onclick=()=>RACE.open("free");
 $("save").onclick=()=>{save();log("Hra uložena.")};
 let resetTimer=null;
 $("reset").onclick=()=>{
@@ -677,7 +682,7 @@ const RACE=(()=>{
   const segLen=200,rumbleLen=3,roadW=2000,lanes=3,camH=1000,drawDist=240,fov=100;
   const camDepth=1/Math.tan((fov/2)*Math.PI/180),playerZ=camH*camDepth;
   const maxSpeed=segLen*60,accelR=maxSpeed/5,brakeR=-maxSpeed,decelR=-maxSpeed/5,offDecel=-maxSpeed/2,offLimit=maxSpeed/4;
-  const centrifugal=0.3,PW=0.3,CW=0.3,LAPS=3,CARW=600;
+  const centrifugal=0.3,PW=0.3,CW=0.3,CARW=600;
   const clamp=(v,a,b)=>Math.max(a,Math.min(b,v)),interp=(a,b,p)=>a+(b-a)*p;
   const incr=(s,i,m)=>{let r=s+i;while(r>=m)r-=m;while(r<0)r+=m;return r};
   const pctRem=(n,t)=>(n%t)/t;
@@ -719,16 +724,18 @@ const RACE=(()=>{
   const findSeg=z=>segs[Math.floor(z/segLen)%segs.length];
 
   /* ---- stav ---- */
+  let mode="sponsor",laps=3;const cfg={laps:3,diff:1,theme:-1};
   let theme=THEMES[0],state="idle",pos=0,speed=0,playerX=0,nitro=0.4,time=0,count=3,traveled=0,skyOff=0,hillOff=0,cars=[],finishRank=0,finishTime=0,shake=0,raf=0,lastT=0,flash=0,bump=0;
   const keys={},touch={};
   let actx=null,eng=null,engG=null,muted=false;
 
   function reset(){
-    theme=THEMES[Math.floor(Math.random()*THEMES.length)];
+    const dmul=mode==="free"?[0.92,1,1.05][cfg.diff]:1;laps=mode==="free"?cfg.laps:3;
+    theme=mode==="free"&&cfg.theme>=0?THEMES[cfg.theme]:THEMES[Math.floor(Math.random()*THEMES.length)];
     if(!segs.length)buildTrack();
     segs.forEach(s=>s.cars=[]);
     pos=0;speed=0;playerX=0;nitro=0.4;time=0;count=3.2;traveled=0;skyOff=0;hillOff=0;finishRank=0;finishTime=0;shake=0;flash=0;bump=0;
-    cars=RIVALS.map((r,i)=>{const z=playerZ+(i+1)*520,c={name:r.name,color:r.color,pace:r.pace*(0.97+Math.random()*0.06),offset:(i%2?0.45:-0.45)*(i<2?1:(i%3?.9:-.9)),z,speed:0,traveled:(i+1)*520,finished:false,finTime:0,braking:false,pct:0};
+    cars=RIVALS.map((r,i)=>{const z=playerZ+(i+1)*520,c={name:r.name,color:r.color,pace:r.pace*dmul*(0.97+Math.random()*0.06),offset:(i%2?0.45:-0.45)*(i<2?1:(i%3?.9:-.9)),z,speed:0,traveled:(i+1)*520,finished:false,finTime:0,braking:false,pct:0};
       findSeg(z).cars.push(c);return c});
     state="count";
   }
@@ -802,8 +809,8 @@ const RACE=(()=>{
       pos=clamp(pos,0,trackLen+1)%trackLen;
       skyOff+=ps.curve*spct*dt*60*0.35;hillOff+=ps.curve*spct*dt*60*0.6;
       // cíl
-      if(state==="run"&&traveled>=LAPS*trackLen){finishRace(true)}
-      if(state==="run"&&time>260){finishRace(false)}
+      if(state==="run"&&traveled>=laps*trackLen){finishRace(true)}
+      if(state==="run"&&time>laps*60+60){finishRace(false)}
     }
     // soupeři
     const pseg=findSeg(pos+playerZ);
@@ -821,7 +828,7 @@ const RACE=(()=>{
         c.pct=pctRem(nz,segLen);
         const ns=findSeg(nz);
         if(ns!==oldS){const i=oldS.cars.indexOf(c);if(i>=0)oldS.cars.splice(i,1);ns.cars.push(c)}
-        if(!c.finished&&c.traveled>=LAPS*trackLen){c.finished=true;c.finTime=time}
+        if(!c.finished&&c.traveled>=laps*trackLen){c.finished=true;c.finTime=time}
       }
     }
     if(actx&&engG){engG.gain.value=muted||state==="idle"?0:0.035+0.03*(speed/maxSpeed);eng.frequency.value=55+(speed/maxSpeed)*210+(I.N&&nitro>0?40:0)}
@@ -836,10 +843,19 @@ const RACE=(()=>{
     finishRank=1+cars.filter(c=>completed?c.finished:c.traveled>traveled).length;
     state="done";audioStart();
     beep(660,.25,.12);setTimeout(()=>beep(990,.4,.12),200);
-    const rw=REWARDS[finishRank]||REWARDS[6];
-    if(S.sponsor)S.sponsor={mul:Math.max(S.sponsor.mul,rw.mul),left:Math.max(S.sponsor.left,rw.dur)};else S.sponsor={mul:rw.mul,left:rw.dur};
-    S.rep+=(7-finishRank)*3;
-    log(`🏁 Sponzorský závod: ${finishRank}. místo! Poptávka ×${rw.mul.toString().replace(".",",")} na ${Math.round(rw.dur/60*10)/10} min.`,finishRank<=3?"good":"");
+    if(mode==="free"){
+      // čistý závodní mód: žádné odměny, jen rekordy
+      const rs=loadRS(),key=`${laps}-${cfg.diff}`;
+      rs.races++;if(finishRank===1)rs.wins++;
+      newRecord=completed&&(!rs.best[key]||finishTime<rs.best[key]);
+      if(newRecord)rs.best[key]=finishTime;
+      saveRS(rs);
+    }else{
+      const rw=REWARDS[finishRank]||REWARDS[6];
+      if(S.sponsor)S.sponsor={mul:Math.max(S.sponsor.mul,rw.mul),left:Math.max(S.sponsor.left,rw.dur)};else S.sponsor={mul:rw.mul,left:rw.dur};
+      S.rep+=(7-finishRank)*3;
+      log(`🏁 Sponzorský závod: ${finishRank}. místo! Poptávka ×${rw.mul.toString().replace(".",",")} na ${Math.round(rw.dur/60*10)/10} min.`,finishRank<=3?"good":"");
+    }
     setTimeout(showResult,1400);
   }
 
@@ -1017,9 +1033,9 @@ const RACE=(()=>{
     g.font="700 18px system-ui,sans-serif";g.fillStyle="#9aa3d0";g.fillText("/ 6",30+((state==="done"?finishRank:myIdx)>9?50:28),66);
     g.font="700 13px system-ui,sans-serif";g.fillText("POZICE",98,40);
     // kolo + čas
-    const lap=clamp(Math.floor(traveled/trackLen)+1,1,LAPS);
+    const lap=clamp(Math.floor(traveled/trackLen)+1,1,laps);
     g.fillStyle="rgba(8,10,24,.6)";rr(W/2-120,16,240,46,14);g.fill();
-    g.fillStyle="#fff";g.textAlign="center";g.font="800 20px system-ui,sans-serif";g.fillText(`KOLO ${lap}/${LAPS}   ·   ${fmtT(time)}`,W/2,46);
+    g.fillStyle="#fff";g.textAlign="center";g.font="800 20px system-ui,sans-serif";g.fillText(`KOLO ${lap}/${laps}   ·   ${fmtT(time)}`,W/2,46);
     // žebříček
     g.fillStyle="rgba(8,10,24,.6)";rr(W-190,60,174,24+rk.length*22,14);g.fill();
     g.font="700 14px system-ui,sans-serif";g.textAlign="left";
@@ -1049,7 +1065,34 @@ const RACE=(()=>{
     render();raf=requestAnimationFrame(loop);
   }
   const ov=()=>$("raceOv");
+  /* statistiky čistého závodního módu (ukládají se zvlášť od hry) */
+  const RKEY="mobilyICihlyRace";let newRecord=false;
+  function loadRS(){let r=null;try{r=JSON.parse(localStorage.getItem(RKEY))}catch(e){}
+    r=r||{};r.best=r.best||{};r.wins=r.wins||0;r.races=r.races||0;if(mode==="free"&&!loadRS.done){loadRS.done=true;if(r.cfg)Object.assign(cfg,r.cfg)}return r}
+  function saveRS(r){r.cfg=Object.assign({},cfg);try{localStorage.setItem(RKEY,JSON.stringify(r))}catch(e){}}
+  function startFree(){ov().hidden=true;audioStart();reset();lastT=performance.now()}
+  function seg(label,opts,cur,fn){
+    return `<div class="segrow"><span>${label}</span><div class="seg">${opts.map((o,i)=>`<button class="btn sm ghost${i===cur?" on":""}" data-i="${i}">${o}</button>`).join("")}</div></div>`;
+  }
+  function showFreeIntro(){
+    state="idle";const rs=loadRS(),key=`${cfg.laps}-${cfg.diff}`,best=rs.best[key];
+    ov().hidden=false;
+    ov().innerHTML=`<div class="rov-in">
+      <div class="rov-t">🏎️ Závodní mód</div>
+      <p class="muted" style="margin-bottom:12px">Čistý závod bez ekonomiky: žádné peníze, žádné bonusy. Jen ty, formule a pět soupeřů.</p>
+      ${seg("Počet kol",["1","3","5","10"],[1,3,5,10].indexOf(cfg.laps))}
+      ${seg("Obtížnost",["Lehká","Střední","Těžká"],cfg.diff)}
+      ${seg("Prostředí",["Náhodné","Západ slunce","Den","Noc"],cfg.theme+1)}
+      <p style="margin-top:12px">🏆 Nejlepší čas: <b>${best?fmtT(best):"zatím žádný"}</b> <span class="muted">(${cfg.laps} ${cfg.laps===1?"kolo":cfg.laps<5?"kola":"kol"}, ${["lehká","střední","těžká"][cfg.diff]})</span><br><span class="muted">Závodů: ${rs.races} · výher: ${rs.wins}</span></p>
+      <p class="muted">Ovládání: <b>← →</b> / A D = zatáčení · <b>↑</b> / W = plyn · <b>↓</b> / S = brzda · <b>mezerník</b> = nitro (sbírej 🔥) · M = zvuk · Esc = vzdát se</p>
+      <div class="btns" style="justify-content:center;margin-top:14px"><button class="btn ghost" id="rvCancel">Zavřít</button><button class="btn go" id="rvGo">🏁 Závodit</button></div></div>`;
+    const rows=ov().querySelectorAll(".segrow");
+    const apply=[v=>cfg.laps=[1,3,5,10][v],v=>cfg.diff=v,v=>cfg.theme=v-1];
+    rows.forEach((row,ri)=>row.querySelectorAll("button").forEach(b=>b.onclick=()=>{apply[ri](+b.dataset.i);saveRS(loadRS());showFreeIntro()}));
+    $("rvCancel").onclick=close;$("rvGo").onclick=startFree;
+  }
   function showIntro(){
+    if(mode==="free")return showFreeIntro();
     state="idle";
     const cost=raceCost(),can=S.money>=cost;
     ov().hidden=false;
@@ -1070,7 +1113,18 @@ const RACE=(()=>{
   function render_ui_refresh(){try{render_main()}catch(e){}}
   function showResult(){
     if(!raceOn||state!=="done")return;
-    const rw=REWARDS[finishRank]||REWARDS[6],med=["","🥇","🥈","🥉"][finishRank]||"🏁";
+    const med=["","🥇","🥈","🥉"][finishRank]||"🏁";
+    if(mode==="free"){
+      const rs=loadRS(),best=rs.best[`${laps}-${cfg.diff}`];
+      ov().hidden=false;
+      ov().innerHTML=`<div class="rov-in"><div class="rov-t">${med} ${finishRank}. místo</div>
+        <p>Čas: <b>${fmtT(finishTime)}</b>${newRecord?` <span class="good" style="font-weight:800">🆕 NOVÝ REKORD!</span>`:""}</p>
+        <p class="muted">Nejlepší čas (${laps} ${laps===1?"kolo":laps<5?"kola":"kol"}, ${["lehká","střední","těžká"][cfg.diff]}): <b>${best?fmtT(best):"–"}</b> · závodů ${rs.races} · výher ${rs.wins}</p>
+        <div class="btns" style="justify-content:center;margin-top:14px;flex-wrap:wrap"><button class="btn ghost" id="rvClose">Zavřít</button><button class="btn ghost" id="rvSet">Nastavení</button><button class="btn go" id="rvAgain">Znovu</button></div></div>`;
+      $("rvClose").onclick=close;$("rvSet").onclick=showFreeIntro;$("rvAgain").onclick=startFree;
+      return;
+    }
+    const rw=REWARDS[finishRank]||REWARDS[6];
     ov().hidden=false;
     ov().innerHTML=`<div class="rov-in"><div class="rov-t">${med} ${finishRank}. místo</div>
       <p>Čas: <b>${fmtT(finishTime)}</b></p>
@@ -1080,8 +1134,8 @@ const RACE=(()=>{
     $("rvClose").onclick=close;$("rvAgain").onclick=()=>{if(S.money>=raceCost())showIntro()};
     $("rvAgain").disabled=S.money<raceCost();
   }
-  function open(){
-    if(raceOn)return;raceOn=true;$("raceModal").hidden=false;buildIfNeeded();
+  function open(m){
+    if(raceOn)return;mode=m==="free"?"free":"sponsor";raceOn=true;$("raceModal").hidden=false;buildIfNeeded();if(mode==="free")loadRS();
     reset();state="idle";showIntro();lastT=performance.now();raf=requestAnimationFrame(loop);
   }
   function buildIfNeeded(){if(!segs.length)buildTrack()}
