@@ -72,6 +72,9 @@
   .device{width:128px;height:128px;margin:2px auto 14px;border-radius:32px;display:grid;place-items:center;font-size:56px;cursor:pointer;user-select:none;
     background:linear-gradient(145deg,var(--c1,#5ef2c0),var(--c2,#7b8cff));box-shadow:0 14px 40px #0008,inset 0 0 0 3px rgba(255,255,255,.35);transition:.12s}
   .device.pop{animation:pop .16s}
+  .devwrap{position:relative;width:128px;margin:2px auto 14px}
+  .devwrap .device{margin:0}
+  .badge{position:absolute;left:50%;bottom:-10px;transform:translateX(-50%);white-space:nowrap;background:rgba(10,14,32,.92);border:1px solid var(--line);border-radius:999px;padding:3px 12px;font-size:13px;font-weight:700;font-variant-numeric:tabular-nums;pointer-events:none}
   @keyframes pop{50%{transform:scale(1.09) rotate(-2deg)}}
   .muted{color:var(--mut);font-size:13px}
   .modelname{text-align:center;font-weight:700;font-size:17px}
@@ -151,7 +154,7 @@
   <div class="grid">
     <section class="card">
       <h2>Výroba · <span id="pTitle"></span></h2>
-      <div class="device" id="device" title="Klikni a vyrob kus">📱</div>
+      <div class="devwrap"><div class="device" id="device" title="Klikni a vyrob kus">📱</div><span class="badge" id="devBadge">📦 0</span></div>
       <div class="modelname" id="modelName"></div>
       <div class="speclinex" id="specLine"></div>
       <button class="btn go big" id="design">✏️ Navrhnout zařízení</button>
@@ -226,6 +229,7 @@
         <div class="kv"><span>Výrobní náklad</span><b id="edCost"></b></div>
         <div class="kv"><span>Doporučená cena</span><b id="edFair"></b></div>
         <div class="kv"><span>Zisk na kus</span><b id="edProfit"></b></div>
+        <div class="kv"><span>📦 Na skladu</span><b id="edStock"></b></div>
         <div class="muted" style="margin:6px 0 12px">Vyšší parametry zvyšují náklad i cenu (náklad ×<b id="edCm"></b>, cena ×<b id="edVm"></b>). Vyšší úrovně odemykáš nápady 💡 od návrháře tlačítkem u dané součástky.</div>
         <div class="btns" style="justify-content:flex-end"><button class="btn ghost" id="edCancel">Zrušit</button><button class="btn go" id="edApply">Použít návrh</button></div>
       </div>
@@ -263,6 +267,10 @@ const PRODUCTS = [
     {name:"Gaming",        cost:45000,  fair:67500,  dm:0.25, rd:120000000,  c:["#ff6b8b","#c02a5a"], icon:"🎮"},
     {name:"Ultrabook Q",   cost:160000, fair:240000, dm:0.1,  rd:400000000, c:["#ffe066","#ff8a3d"], icon:"🚀"}]},
 ];
+// Technický strop modelu: nejvyšší úroveň součástek, kterou model podporuje (i-tý model → úroveň i+1)
+PRODUCTS.forEach(p=>p.models.forEach((m,i)=>m.maxLv=Math.min(4,i+1)));
+// Cihla 3310 má vlastní retro označení úrovní: úložiště nejvýš 16 KB
+PRODUCTS[0].models[0].lvOver={ram:["2 KB","8 KB"],ssd:["4 KB","16 KB"],cam:["bez kamery","VGA 0,3 Mpx"],disp:["monochromatický","barevný LCD"],bat:["500 mAh","900 mAh"],cpu:["8bit","16bit"]};
 const UPG = [
   {id:"worker",  name:"Dělník",           desc:"+0,5 ks/s · plat 6 Kč/s",       base:3000,    mul:1.27, prod:0.5, wage:6},
   {id:"line",    name:"Montážní linka",   desc:"+4 ks/s · plat 80 Kč/s",        base:16000,   mul:1.25, prod:4,   wage:80},
@@ -311,6 +319,9 @@ const fmt=n=>n>=1e9?(n/1e9).toFixed(2).replace(".",",")+" mld":n>=1e6?(n/1e6).to
 const kc=n=>fmt(n)+" Kč";
 const P=id=>PRODUCTS.find(p=>p.id===id);
 const M=id=>P(id).models[S.lines[id].model];
+const lvLabel=(b,lv,m)=>(m.lvOver&&m.lvOver[b.id]&&m.lvOver[b.id][lv])||b.lv[lv];
+const lvCap=(bid,id)=>Math.min(S.max[bid],M(id).maxLv);   // odemčeno ∩ strop modelu
+const clampSpec=id=>{const l=S.lines[id],m=M(id);BR.forEach(b=>{l.spec[b.id]=Math.min(l.spec[b.id],m.maxLv)})};
 const activeIds=()=>PRODUCTS.filter(p=>S.lines[p.id].on).map(p=>p.id);
 const upCost=u=>Math.ceil(u.base*Math.pow(u.mul,S.own[u.id]||0));
 const mkCost=()=>Math.ceil(1500*Math.pow(2,S.mk));
@@ -408,9 +419,9 @@ function unlockProduct(id){
 function buyUpg(id){const u=UPG.find(x=>x.id===id),c=upCost(u);if(S.money<c)return;S.money-=c;S.own[id]=(S.own[id]||0)+1;render()}
 function research(pid,i){
   const l=S.lines[pid],m=P(pid).models[i];
-  if(l.owned.includes(i)){l.model=i;l.price=fair(pid);log(`${P(pid).name}: přepnuto na ${m.name}`);render();return}
+  if(l.owned.includes(i)){l.model=i;clampSpec(pid);l.price=fair(pid);log(`${P(pid).name}: přepnuto na ${m.name}`);render();return}
   if(S.money<m.rd)return;
-  S.money-=m.rd;l.owned.push(i);l.model=i;l.price=fair(pid);
+  S.money-=m.rd;l.owned.push(i);l.model=i;clampSpec(pid);l.price=fair(pid);
   log(`Vyvinut nový model: ${m.name}!`,"good");render();
 }
 function hire(){const c=designerCost();if(S.money<c)return;S.money-=c;S.designers++;log("Najat nový návrhář.");render()}
@@ -422,7 +433,7 @@ function openEditor(){
   $("modal").hidden=false;$("edNameIn").value=D.name;renderEditor();
 }
 function closeEditor(){$("modal").hidden=true;D=null}
-function edSpec(bid,d){const v=Math.max(0,Math.min(S.max[bid],D.spec[bid]+d));if(v!==D.spec[bid]){D.spec[bid]=v;renderEditor()}}
+function edSpec(bid,d){const v=Math.max(0,Math.min(lvCap(bid,D.id),D.spec[bid]+d));if(v!==D.spec[bid]){D.spec[bid]=v;renderEditor()}}
 function applyEditor(){
   const l=S.lines[D.id],id=D.id;
   l.spec=D.spec;l.name=D.name.trim();l.color=D.color;l.price=fair(id);
@@ -441,12 +452,15 @@ function renderEditor(){
   $("edCm").textContent=cm.toFixed(2).replace(".",",");$("edVm").textContent=vm.toFixed(2).replace(".",",");
   document.querySelectorAll("#edColors .sw").forEach((e,i)=>e.classList.toggle("on",i-1===D.color));
   BR.forEach(b=>{
-    const cur=D.spec[b.id],mx=S.max[b.id];
-    b.ed.lvl.textContent=b.lv[cur];b.ed.mi.disabled=cur<=0;b.ed.pl.disabled=cur>=mx;
-    const nx=mx+1;
-    if(mx>=4){b.ed.nx.textContent="Maximum odemčeno";b.ed.un.textContent="Max";b.ed.un.disabled=true}
-    else{b.ed.nx.textContent=`Odemčeno do: ${b.lv[mx]} · další: ${b.lv[nx]}`;b.ed.un.textContent="💡 "+IDEAS_NEED[nx];b.ed.un.disabled=S.ideas<IDEAS_NEED[nx]}
+    const cur=D.spec[b.id],mx=S.max[b.id],cap=lvCap(b.id,id);
+    b.ed.lvl.textContent=lvLabel(b,cur,m);b.ed.mi.disabled=cur<=0;b.ed.pl.disabled=cur>=cap;
+    const nx=mx+1,limited=m.maxLv<mx;
+    if(mx>=4){b.ed.un.textContent="Max";b.ed.un.disabled=true}
+    else{b.ed.un.textContent="💡 "+IDEAS_NEED[nx];b.ed.un.disabled=S.ideas<IDEAS_NEED[nx]}
+    b.ed.nx.textContent=limited?`⚠ ${m.name} podporuje nejvýš ${lvLabel(b,m.maxLv,m)}`:(mx>=4?"Maximum odemčeno":`Odemčeno do: ${b.lv[mx]} · další: ${b.lv[nx]}`);
+    b.ed.nx.style.color=limited&&cur>=cap?"var(--warn)":"";
   });
+  $("edStock").textContent=`${fmt(S.lines[id].stock)} / ${S.lines[id].cap} ks`;
   $("edIdeaN").textContent=Math.floor(S.ideas);
   $("edIdeaS").textContent=S.designers?`Návrhář ×${S.designers} (+${(S.designers*IDEA_RATE).toFixed(2).replace(".",",")} nápadu/s)`:"Bez návrháře nepřicházejí žádné nápady";
   $("edHire").textContent=(S.designers?"Další návrhář ":"Najmout návrháře ")+kc(designerCost());$("edHire").disabled=S.money<designerCost();
@@ -500,7 +514,7 @@ function build(){
     const e=document.createElement("div");e.className="row";
     e.innerHTML=`<div>${b.icon} ${b.name}<small class="nx"></small></div><div class="btns"><button class="btn sm ghost mi">−</button><span class="lvl"></span><button class="btn sm ghost pl">+</button><button class="btn sm un"></button></div>`;
     e.querySelector(".mi").onclick=()=>edSpec(b.id,-1);e.querySelector(".pl").onclick=()=>edSpec(b.id,1);
-    e.querySelector(".un").onclick=()=>{unlockSpec(b.id);if(D){D.spec[b.id]=S.max[b.id];renderEditor()}};
+    e.querySelector(".un").onclick=()=>{unlockSpec(b.id);if(D){D.spec[b.id]=lvCap(b.id,D.id);renderEditor()}};
     $("edSpecs").appendChild(e);
     b.ed={nx:e.querySelector(".nx"),lvl:e.querySelector(".lvl"),mi:e.querySelector(".mi"),pl:e.querySelector(".pl"),un:e.querySelector(".un")};
   });
@@ -546,7 +560,8 @@ function render(){
   const dc=devColors(id);
   $("device").textContent=m.icon;$("device").style.setProperty("--c1",dc[0]);$("device").style.setProperty("--c2",dc[1]);
   $("modelName").textContent=devName(id);
-  $("specLine").textContent=BR.map(b=>b.lv[l.spec[b.id]]).join(" · ");
+  $("specLine").textContent=BR.map(b=>lvLabel(b,l.spec[b.id],m)).join(" · ");
+  $("devBadge").textContent="📦 "+fmt(l.stock);
   $("cost").textContent=kc(uc);
   $("capRange").value=l.cap;$("capVal").textContent=l.cap+" ks";
   $("stock").textContent=fmt(l.stock);$("stockBar").style.width=Math.min(100,l.stock/l.cap*100)+"%";
@@ -606,7 +621,7 @@ $("reset").onclick=()=>{
 
 /* ============ START ============ */
 // ceny nových řad a první spuštění
-PRODUCTS.forEach(p=>{const l=S.lines[p.id];if(!l.price)l.price=fair(p.id)});
+PRODUCTS.forEach(p=>{clampSpec(p.id);const l=S.lines[p.id];if(!l.price)l.price=fair(p.id)});
 // pozadí: pomalu stoupající zařízení
 (()=>{const icons=["📱","📟","⌚","🎧","📋","💻","🔋","📷"],bg=$("bg");
   for(let i=0;i<14;i++){const s=document.createElement("span");s.className="ph";s.textContent=icons[i%icons.length];
