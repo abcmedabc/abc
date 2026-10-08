@@ -720,6 +720,39 @@ const RACE=(()=>{
     for(let n=30;n<segs.length-20;n+=47){const lane=[-.55,0,.55][((n/47)|0)%3];segs[n].sprites.push({type:"pad",offset:lane,w:500,h:0,v:0})}
     segs[3].sprites.push({type:"gantry",offset:0,w:2600,h:1700,v:0});
     segs.forEach((s,i)=>{if(i<rumbleLen+1)s.start=true});
+    buildMap();
+  }
+  /* minimapa: půdorys trati z hodnot zatáček, chyba se rozloží tak, aby se smyčka uzavřela */
+  let mapPts=[];
+  function buildMap(){
+    const n=segs.length,p=new Array(n);let h=0,x=0,y=0;
+    for(let i=0;i<n;i++){h+=segs[i].curve*0.015;x+=Math.cos(h);y+=Math.sin(h);p[i]=[x,y]}
+    const ex=p[n-1][0],ey=p[n-1][1];
+    for(let i=0;i<n;i++){p[i][0]-=ex*i/(n-1);p[i][1]-=ey*i/(n-1)}
+    let x0=1e9,x1=-1e9,y0=1e9,y1=-1e9;
+    for(const q of p){x0=Math.min(x0,q[0]);x1=Math.max(x1,q[0]);y0=Math.min(y0,q[1]);y1=Math.max(y1,q[1])}
+    const bw=Math.max(1,x1-x0),bh=Math.max(1,y1-y0);
+    mapPts=p.map(q=>[(q[0]-x0)/bw,(q[1]-y0)/bh]);mapPts.bw=bw;mapPts.bh=bh;
+  }
+  function drawMap(rk){
+    if(!mapPts.length)return;
+    const px=16,py=104,pw=176,ph=128,pad=16,iw=pw-pad*2,ih=ph-pad*2;
+    const k=Math.min(iw/mapPts.bw,ih/mapPts.bh),ox=px+pad+(iw-mapPts.bw*k)/2,oy=py+pad+(ih-mapPts.bh*k)/2;
+    const X=q=>ox+q[0]*mapPts.bw*k,Y=q=>oy+q[1]*mapPts.bh*k,n=mapPts.length;
+    g.save();
+    g.fillStyle="rgba(8,10,24,.5)";rr(px,py,pw,ph,14);g.fill();
+    g.lineJoin="round";g.lineCap="round";
+    const path=()=>{g.beginPath();for(let i=0;i<n;i+=3){const q=mapPts[i];i?g.lineTo(X(q),Y(q)):g.moveTo(X(q),Y(q))}g.closePath()};
+    path();g.strokeStyle="rgba(255,255,255,.28)";g.lineWidth=7;g.stroke();
+    path();g.strokeStyle="rgba(20,24,48,.9)";g.lineWidth=4.5;g.stroke();
+    // start / cíl
+    const s0=mapPts[2];g.fillStyle="#fff";g.fillRect(X(s0)-3,Y(s0)-3,6,6);g.fillStyle="#111";g.fillRect(X(s0)-1.5,Y(s0)-3,3,3);g.fillRect(X(s0),Y(s0),3,3);
+    // soupeři a hráč
+    for(const c of cars){const q=mapPts[Math.floor(c.z/segLen)%n];g.fillStyle=c.color;g.beginPath();g.arc(X(q),Y(q),3.2,0,7);g.fill()}
+    const me=mapPts[Math.floor((pos+playerZ)/segLen)%n],t=performance.now()/260;
+    g.fillStyle="rgba(94,242,192,.35)";g.beginPath();g.arc(X(me),Y(me),7+Math.sin(t)*1.5,0,7);g.fill();
+    g.fillStyle="#5ef2c0";g.beginPath();g.arc(X(me),Y(me),4.2,0,7);g.fill();g.strokeStyle="#04271c";g.lineWidth=1.2;g.stroke();
+    g.restore();
   }
   const findSeg=z=>segs[Math.floor(z/segLen)%segs.length];
 
@@ -1032,6 +1065,7 @@ const RACE=(()=>{
     g.fillStyle="#fff";g.textAlign="left";g.font="900 44px system-ui,sans-serif";g.fillText(state==="done"?finishRank:myIdx,30,66);
     g.font="700 18px system-ui,sans-serif";g.fillStyle="#9aa3d0";g.fillText("/ 6",30+((state==="done"?finishRank:myIdx)>9?50:28),66);
     g.font="700 13px system-ui,sans-serif";g.fillText("POZICE",98,40);
+    drawMap(rk);
     // kolo + čas
     const lap=clamp(Math.floor(traveled/trackLen)+1,1,laps);
     g.fillStyle="rgba(8,10,24,.6)";rr(W/2-120,16,240,46,14);g.fill();
