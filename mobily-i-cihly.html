@@ -178,7 +178,9 @@
       <div class="chip"><small>Platy/s</small><b id="wages">0</b></div>
       <div class="chip"><small>Pověst</small><b id="rep">0</b></div>
       <div class="chip"><small>Nápady 💡</small><b id="ideas">0</b></div>
+      <div class="chip" id="stockChip" title=""><small>Sklad 📦</small><b id="stockTop">0</b></div>
       <button class="btn go" id="raceMode" title="Čistý závodní mód bez ekonomiky (F)">🏎️ Závodní mód</button>
+      <button class="btn ghost" id="musicBtn" title="Hudba zap/vyp (M)">🎵</button>
       <button class="btn ghost" id="helpBtn" title="Nápověda a klávesové zkratky (H)">❓</button>
       <div class="chip spd">
         <small>Rychlost času</small>
@@ -323,6 +325,7 @@
           <tr><td><kbd>F</kbd></td><td>čistý závodní mód</td></tr>
           <tr><td><kbd>P</kbd></td><td>pauza hry</td></tr>
           <tr><td><kbd>+</kbd> / <kbd>−</kbd></td><td>rychlost času</td></tr>
+          <tr><td><kbd>M</kbd></td><td>hudba zap/vyp</td></tr>
           <tr><td><kbd>H</kbd></td><td>tato nápověda</td></tr>
           <tr><td><kbd>Esc</kbd></td><td>zavřít okno</td></tr>
         </table>
@@ -670,6 +673,10 @@ function render(){
   {const mc=$("money").parentElement;if(lastMoney!==null&&Math.abs(S.money-lastMoney)>Math.max(2000,lastMoney*0.05)){mc.classList.remove("up","down");void mc.offsetWidth;mc.classList.add(S.money>lastMoney?"up":"down")}lastMoney=S.money}
   $("prod").textContent=fmt(prodRate());$("wages").textContent=fmt(wages());
   $("rep").textContent=fmt(S.rep);$("ideas").textContent=Math.floor(S.ideas);
+  {const ids=activeIds(),tot=ids.reduce((a,x)=>a+S.lines[x].stock,0);
+   $("stockTop").textContent=`${fmt(S.lines[S.sel].stock)} / ${S.lines[S.sel].cap}`;
+   $("stockChip").title="Na skladu: "+ids.map(x=>`${P(x).icon} ${P(x).name} ${fmt(S.lines[x].stock)}/${S.lines[x].cap} ks`).join(" · ")+`  —  celkem ${fmt(tot)} ks`;
+   $("stockChip").querySelector("small").textContent=ids.length>1?`Sklad 📦 · celkem ${fmt(tot)}`:"Sklad 📦";}
   $("evLine").innerHTML=(S.ev?`<span class="${S.ev.bad?"badt":"good"}">${S.ev.n} (zbývá ${Math.ceil(S.ev.left)} s)</span>`:"")+(S.sponsor?` <span class="good">🏁 Sponzoring: poptávka ×${S.sponsor.mul.toString().replace(".",",")} (zbývá ${Math.ceil(S.sponsor.left)} s)</span>`:"");
 
   // produktová lišta
@@ -765,6 +772,115 @@ const THEMES=[
   {name:"Den u moře",   sky:["#2f80ed","#7ec8ff","#d6f0ff"], sun:"#fff7c2", fog:"#bfe3ff", mount:["#5b8fb9","#7aa8c9"], grass:["#58b368","#4aa75c"], road:["#6b6e76","#62656d"], rumble:["#ffffff","#2563eb"], lane:"#ffffff", stars:false},
   {name:"Noční město",  sky:["#05061a","#14123a","#3a1f66"], sun:"#e9e7ff", fog:"#241a4a", mount:["#150f33","#1f1647"], grass:["#143a2c","#10332a"], road:["#34343f","#2e2e39"], rumble:["#ffffff","#a855f7"], lane:"#c7d2fe", stars:true},
 ];
+
+/* ============ HUDBA ============
+   Vlastní chiptune smyčky skládané tóny ve WebAudio (žádné nahrávky ani cizí melodie).
+   "race" = rychlá arkádová smyčka v Am (i–VI–III–VII), "calm" = klidná smyčka do tycoonu. */
+const MUSIC=(()=>{
+  const MKEY="mobilyICihlyMusic";
+  let ctx=null,out=null,nb=null,timer=null,step=0,nextT=0,cur=null,curName=null,stopping=false;
+  let on=(()=>{try{return localStorage.getItem(MKEY)!=="0"}catch(e){return true}})();
+  const mid=n=>440*Math.pow(2,(n-69)/12), R=0;
+
+  /* --- nástroje --- */
+  function tone(t,f,dur,v,type,fil){
+    if(!ctx)return;
+    const o=ctx.createOscillator(),g=ctx.createGain();o.type=type||"square";o.frequency.setValueAtTime(f,t);
+    g.gain.setValueAtTime(0,t);g.gain.linearRampToValueAtTime(v,t+0.012);g.gain.exponentialRampToValueAtTime(0.0001,t+dur);
+    if(fil){const b=ctx.createBiquadFilter();b.type="lowpass";b.frequency.setValueAtTime(fil,t);o.connect(b);b.connect(g)}else o.connect(g);
+    g.connect(out);o.start(t);o.stop(t+dur+0.03);
+  }
+  const bass=(t,f,dur,v)=>tone(t,f,dur,v,"sawtooth",420);
+  function noiseBuf(){if(nb)return nb;nb=ctx.createBuffer(1,ctx.sampleRate*0.4,ctx.sampleRate);
+    const d=nb.getChannelData(0);for(let i=0;i<d.length;i++)d[i]=Math.random()*2-1;return nb}
+  function nz(t,v,dur,type,freq,q){
+    const s=ctx.createBufferSource(),g=ctx.createGain(),f=ctx.createBiquadFilter();
+    s.buffer=noiseBuf();f.type=type;f.frequency.value=freq;if(q)f.Q.value=q;
+    g.gain.setValueAtTime(v,t);g.gain.exponentialRampToValueAtTime(0.0001,t+dur);
+    s.connect(f);f.connect(g);g.connect(out);s.start(t);s.stop(t+dur+0.05);
+  }
+  const hat=(t,v,d)=>nz(t,v,d||0.045,"highpass",7200);
+  const snare=(t,v)=>nz(t,v,0.16,"bandpass",1800,0.8);
+  function kick(t,v){
+    const o=ctx.createOscillator(),g=ctx.createGain();o.type="sine";
+    o.frequency.setValueAtTime(145,t);o.frequency.exponentialRampToValueAtTime(45,t+0.11);
+    g.gain.setValueAtTime(v,t);g.gain.exponentialRampToValueAtTime(0.0001,t+0.22);
+    o.connect(g);g.connect(out);o.start(t);o.stop(t+0.26);
+  }
+
+  /* --- závodní smyčka: Am – F – C – G, 152 BPM --- */
+  const ROOTS=[45,41,48,43], CH=[[69,72,76],[65,69,72],[67,72,76],[67,71,74]];
+  const LEAD=[
+    81,R,79,R,76,R,79,R,81,R, R,76, R,74, R, R,
+    77,R,76,R,72,R,76,R,77,R, R,72, R,69, R, R,
+    79,R,76,R,72,R,76,R,79,R,81,R,79,R,76, R,
+    78,R,74,R,71,R,74,R,78,R, R, R,76,R,74, R];
+  /* --- klidná smyčka: Am7 – Fmaj7 – Cmaj7 – G, 84 BPM --- */
+  const CCH=[[57,64,69,72],[53,60,65,69],[48,55,64,67],[55,59,62,67]];
+  const CLEAD=[
+    76,R,R,R,R,R,74,R, R,R,72,R, R,R, R,R,
+    72,R,R,R,R,R,69,R, R,R,71,R, R,R, R,R,
+    76,R,R,R,R,R,79,R, R,R,76,R, R,R,74,R,
+    71,R,R,R,R,R,74,R, R,R, R,R,72,R, R,R];
+
+  const TRACKS={
+    race:{bpm:152,len:64,vol:0.26,play(s,t){
+      const bar=s>>4,i=s&15;
+      if(i===0||i===8)kick(t,0.9);else if(i===6)kick(t,0.5);
+      if(i===4||i===12)snare(t,0.5);
+      if(i%2===0)hat(t,i%4===0?0.17:0.09);
+      if(i%2===0){const r=ROOTS[bar];bass(t,mid(i%4===0?r:r+12),0.15,0.5)}
+      tone(t,mid(CH[bar][i%3]+12),0.09,0.05,"triangle");
+      if(LEAD[s])tone(t,mid(LEAD[s]),0.21,0.13,"square");
+    }},
+    calm:{bpm:84,len:64,vol:0.2,play(s,t){
+      const bar=s>>4,i=s&15,ch=CCH[bar];
+      if(i===0)kick(t,0.3);
+      if(i%4===2)hat(t,0.04,0.03);
+      if(i%4===0)bass(t,mid(ch[0]-12),0.6,0.3);
+      if(i%2===0)tone(t,mid(ch[(i>>1)%4]+12),0.45,0.045,"triangle");
+      if(CLEAD[s])tone(t,mid(CLEAD[s]),0.9,0.055,"sine");
+    }}
+  };
+
+  function init(){
+    if(ctx)return true;
+    try{ctx=new (window.AudioContext||window.webkitAudioContext)();out=ctx.createGain();out.gain.value=0;out.connect(ctx.destination)}
+    catch(e){ctx=null;return false}
+    return true;
+  }
+  function tick(){
+    if(!ctx||!cur)return;
+    const t16=60/cur.bpm/4;
+    while(nextT<ctx.currentTime+0.18){cur.play(step,Math.max(nextT,ctx.currentTime));step=(step+1)%cur.len;nextT+=t16}
+  }
+  function play(name){
+    if(!on||!TRACKS[name])return;
+    if(!init())return;
+    if(ctx.state==="suspended")ctx.resume();
+    stopping=false;
+    if(curName!==name){cur=TRACKS[name];curName=name;step=0;nextT=ctx.currentTime+0.08}
+    out.gain.cancelScheduledValues(ctx.currentTime);
+    out.gain.setValueAtTime(out.gain.value,ctx.currentTime);
+    out.gain.linearRampToValueAtTime(cur.vol,ctx.currentTime+0.6);
+    if(!timer)timer=setInterval(tick,25);
+  }
+  function stop(){
+    if(!ctx)return;
+    stopping=true;
+    out.gain.cancelScheduledValues(ctx.currentTime);
+    out.gain.setValueAtTime(out.gain.value,ctx.currentTime);
+    out.gain.linearRampToValueAtTime(0,ctx.currentTime+0.25);
+    setTimeout(()=>{if(stopping&&timer){clearInterval(timer);timer=null;curName=null;cur=null}},400);
+  }
+  function setOn(v){
+    on=!!v;try{localStorage.setItem(MKEY,on?"1":"0")}catch(e){}
+    const b=$("musicBtn");if(b){b.textContent=on?"🎵":"🔇";b.classList.toggle("ghost",!on)}
+    if(on)play(raceOn?"race":"calm");else stop();
+  }
+  return {play,stop,setOn,toggle:()=>setOn(!on),isOn:()=>on,
+    resume(){if(on)play(raceOn?"race":"calm")}};
+})();
 
 const RACE=(()=>{
   const W=960,H=540,cv=$("raceCv"),g=cv.getContext("2d");cv.width=W;cv.height=H;
@@ -1363,12 +1479,12 @@ const RACE=(()=>{
     $("rvAgain").disabled=S.money<raceCost();
   }
   function open(m){
-    if(raceOn)return;mode=m==="free"?"free":"sponsor";raceOn=true;$("raceModal").hidden=false;buildIfNeeded();if(mode==="free")loadRS();
+    if(raceOn)return;mode=m==="free"?"free":"sponsor";raceOn=true;$("raceModal").hidden=false;buildIfNeeded();if(mode==="free")loadRS();MUSIC.play("race");
     reset();state="idle";showIntro();lastT=performance.now();raf=requestAnimationFrame(loop);
   }
   function buildIfNeeded(){if(!segs.length)buildTrack()}
   function close(){
-    raceOn=false;state="idle";cancelAnimationFrame(raf);audioStop();$("raceModal").hidden=true;ov().hidden=true;
+    raceOn=false;state="idle";cancelAnimationFrame(raf);audioStop();MUSIC.play("calm");$("raceModal").hidden=true;ov().hidden=true;
     render_main();
   }
   let render_main=()=>{};
@@ -1377,7 +1493,7 @@ const RACE=(()=>{
   addEventListener("keydown",e=>{
     if(!raceOn)return;
     if(GAMEKEYS.includes(e.code)){keys[e.code]=true;e.preventDefault()}
-    if(e.code==="KeyM"){muted=!muted;if(engG)engG.gain.value=0}
+    if(e.code==="KeyM"){muted=!muted;if(engG)engG.gain.value=0;MUSIC.setOn(!muted)}
     if(e.code==="KeyP"){togglePause()}
     if(e.code==="Escape"){if(state==="run"||state==="count"){state="over";close()}else close()}
     e.stopPropagation();
@@ -1426,6 +1542,10 @@ $("pause").onclick=()=>{paused=!paused;renderSpeed()};
 const helpOpen=()=>!$("helpModal").hidden;
 function openHelp(){$("helpModal").hidden=false}
 function closeHelp(){$("helpModal").hidden=true;try{localStorage.setItem("mobilyICihlyHelp","1")}catch(e){}}
+$("musicBtn").onclick=()=>MUSIC.toggle();
+$("musicBtn").textContent=MUSIC.isOn()?"🎵":"🔇";
+// prohlížeč pustí zvuk až po prvním kliknutí nebo stisku klávesy
+["pointerdown","click","keydown"].forEach(ev=>addEventListener(ev,()=>MUSIC.resume(),{once:true}));
 $("helpBtn").onclick=openHelp;$("helpClose").onclick=closeHelp;$("helpOk").onclick=closeHelp;
 $("helpModal").onclick=e=>{if(e.target.id==="helpModal")closeHelp()};
 try{if(!localStorage.getItem("mobilyICihlyHelp"))openHelp()}catch(e){}
@@ -1440,6 +1560,7 @@ document.addEventListener("keydown",e=>{
   if(k==="p"||k==="P"){paused=!paused;renderSpeed()}
   else if(k==="+"||k==="="){setSpeed(1)}
   else if(k==="-"){setSpeed(-1)}
+  else if(k==="m"||k==="M"){MUSIC.toggle()}
   else if(k==="h"||k==="H"||k==="?"){openHelp()}
   else if(k==="e"||k==="E"){openEditor()}
   else if(k==="r"||k==="R"){RACE.open()}
