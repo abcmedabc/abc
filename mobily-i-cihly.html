@@ -148,6 +148,7 @@
   .segrow{display:flex;align-items:center;justify-content:space-between;gap:10px;margin:7px 0;text-align:left;flex-wrap:wrap}
   .segrow>span{color:var(--mut);font-size:14px;min-width:90px}
   .seg{display:flex;gap:5px;flex-wrap:wrap}
+  .seg i{display:inline-block;width:8px;height:8px;border-radius:50%;margin-right:6px;vertical-align:middle;box-shadow:0 0 0 1px rgba(0,0,0,.35)}
   .btn.on{background:linear-gradient(135deg,var(--acc),#2fd6a0);color:#04271c}
   /* editor zařízení */
   .modal{position:fixed;inset:0;z-index:50;background:rgba(3,5,12,.72);backdrop-filter:blur(6px);display:grid;place-items:center;padding:16px;overflow:auto}
@@ -314,7 +315,7 @@
           <li>Zkus <b>🏁 sponzorský závod</b>: dobré umístění dá bonus k poptávce.</li>
         </ol>
         <h3>🏎️ Závod</h3>
-        <p>Zatáčej <b>← →</b>, plyn <b>↑</b>, brzda <b>↓</b>, <b>mezerník</b> = nitro. Jeď těsně za soupeřem a chytíš <b>závětří</b>. Podporuje i ovladač. V závodním módu si vybereš <b>úroveň botů</b> (Nováček až Legenda); ve sponzorském závodě roste sama s počtem odjetých závodů.</p>
+        <p>Zatáčej <b>← →</b>, plyn <b>↑</b>, brzda <b>↓</b>, <b>mezerník</b> = nitro. Jeď těsně za soupeřem a chytíš <b>závětří</b>. Podporuje i ovladač. V závodním módu si vybereš <b>úroveň botů</b> (Nováček až Legenda) i <b>které značky</b> pojedou proti tobě; ve sponzorském závodě roste sama s počtem odjetých závodů.</p>
       </div>
       <div>
         <h3>⌨️ Klávesové zkratky</h3>
@@ -1032,7 +1033,7 @@ const RACE=(()=>{
   const findSeg=z=>segs[Math.floor(z/segLen)%segs.length];
 
   /* ---- stav ---- */
-  let mode="sponsor",laps=3,curDiff=2;const cfg={laps:3,diff:2,theme:-1};
+  let mode="sponsor",laps=3,curDiff=2;const cfg={laps:3,diff:2,theme:-1,bots:RIVALS.map(()=>true)};
   let theme=THEMES[0],state="idle",pos=0,speed=0,playerX=0,nitro=0.4,time=0,count=3,traveled=0,skyOff=0,hillOff=0,cars=[],finishRank=0,finishTime=0,shake=0,raf=0,lastT=0,flash=0,bump=0;
   const keys={},touch={};
   let actx=null,eng=null,engG=null,muted=false;
@@ -1058,7 +1059,8 @@ const RACE=(()=>{
     pos=0;speed=0;playerX=0;nitro=0.4;time=0;count=goAt=3.4+Math.random()*0.6;traveled=0;skyOff=0;hillOff=0;finishRank=0;finishTime=0;shake=0;flash=0;bump=0;
     MUSIC.setIntensity(0.3);
     steerV=0;roll=0;zoomV=0;lapStart=0;lastLap=0;bestLap=0;lapNo=1;topSpeed=0;overtakes=0;prevRank=6;rankCd=1;banner=null;slip=false;parts=[];lightsOn=0;racePaused=false;squeal=0;
-    cars=RIVALS.map((r,i)=>{
+    const picked=mode==="free"?RIVALS.filter((r,i)=>cfg.bots[i]):RIVALS;
+    cars=(picked.length?picked:RIVALS).map((r,i)=>{
       const z=playerZ+(i+1)*520;
       const c={name:r.name,color:r.color,agg:r.agg,cons:r.cons,band:D.band,
         pace:r.pace*D.pace*(0.985+Math.random()*0.03),
@@ -1069,6 +1071,7 @@ const RACE=(()=>{
         offset:(i%2?0.45:-0.45)*(i<2?1:(i%3?.9:-.9)),
         z,speed:0,traveled:(i+1)*520,finished:false,finTime:0,braking:false,pct:0};
       findSeg(z).cars.push(c);return c});
+    prevRank=cars.length+1;
     state="count";
   }
 
@@ -1281,7 +1284,7 @@ const RACE=(()=>{
     beep(660,.25,.12);setTimeout(()=>beep(990,.4,.12),200);
     if(mode==="free"){
       // čistý závodní mód: žádné odměny, jen rekordy
-      const rs=loadRS(),key=`${laps}-${cfg.diff}`;
+      const rs=loadRS(),key=rsKey(laps,curDiff,cars.length);
       rs.races++;if(finishRank===1)rs.wins++;
       newRecord=completed&&(!rs.best[key]||finishTime<rs.best[key]);
       if(newRecord)rs.best[key]=finishTime;
@@ -1479,7 +1482,7 @@ const RACE=(()=>{
     // pozice
     g.fillStyle="rgba(8,10,24,.6)";rr(16,16,150,76,14);g.fill();
     g.fillStyle="#fff";g.textAlign="left";g.font="900 44px system-ui,sans-serif";g.fillText(state==="done"?finishRank:myIdx,30,66);
-    g.font="700 18px system-ui,sans-serif";g.fillStyle="#9aa3d0";g.fillText("/ 6",30+((state==="done"?finishRank:myIdx)>9?50:28),66);
+    g.font="700 18px system-ui,sans-serif";g.fillStyle="#9aa3d0";g.fillText("/ "+(cars.length+1),30+((state==="done"?finishRank:myIdx)>9?50:28),66);
     g.font="700 13px system-ui,sans-serif";g.fillText("POZICE",98,40);
     drawMap(rk);
     // kolo + čas
@@ -1541,26 +1544,37 @@ const RACE=(()=>{
   /* statistiky čistého závodního módu (ukládají se zvlášť od hry) */
   const RKEY="mobilyICihlyRace";let newRecord=false;
   function loadRS(){let r=null;try{r=JSON.parse(localStorage.getItem(RKEY))}catch(e){}
-    r=r||{};r.best=r.best||{};r.wins=r.wins||0;r.races=r.races||0;if(mode==="free"&&!loadRS.done){loadRS.done=true;if(r.cfg)Object.assign(cfg,r.cfg)}return r}
+    r=r||{};r.best=r.best||{};r.wins=r.wins||0;r.races=r.races||0;if(mode==="free"&&!loadRS.done){loadRS.done=true;if(r.cfg)Object.assign(cfg,r.cfg)}
+    if(!Array.isArray(cfg.bots)||cfg.bots.length!==RIVALS.length||!cfg.bots.some(Boolean))cfg.bots=RIVALS.map(()=>true);
+    return r}
   function saveRS(r){r.cfg=Object.assign({},cfg);try{localStorage.setItem(RKEY,JSON.stringify(r))}catch(e){}}
   function startFree(){ov().hidden=true;audioStart();reset();lastT=performance.now()}
-  function seg(label,opts,cur,fn){
+  function seg(label,opts,cur){
     return `<div class="segrow"><span>${label}</span><div class="seg">${opts.map((o,i)=>`<button class="btn sm ghost${i===cur?" on":""}" data-i="${i}">${o}</button>`).join("")}</div></div>`;
   }
+  // výběr soupeřů: přepínací tlačítka s barvou značky
+  function segBots(){
+    return `<div class="segrow"><span>Soupeři (${cfg.bots.filter(Boolean).length})</span><div class="seg">${
+      RIVALS.map((r,i)=>`<button class="btn sm ghost${cfg.bots[i]?" on":""}" data-i="${i}"><i style="background:${r.color}"></i>${r.name}</button>`).join("")}</div></div>`;
+  }
+  const rsKey=(l,d,n)=>`${l}-${d}-${n}`;
   function showFreeIntro(){
-    state="idle";const rs=loadRS(),key=`${cfg.laps}-${cfg.diff}`,best=rs.best[key];
+    state="idle";const rs=loadRS(),nb=cfg.bots.filter(Boolean).length,key=rsKey(cfg.laps,cfg.diff,nb),best=rs.best[key];
     ov().hidden=false;
     ov().innerHTML=`<div class="rov-in">
       <div class="rov-t">🏎️ Závodní mód</div>
-      <p class="muted" style="margin-bottom:12px">Čistý závod bez ekonomiky: žádné peníze, žádné bonusy. Jen ty, formule a pět soupeřů.</p>
+      <p class="muted" style="margin-bottom:12px">Čistý závod bez ekonomiky: žádné peníze, žádné bonusy. Vyber si trať, úroveň i soupeře — a jeď.</p>
       ${seg("Počet kol",["1","3","5","10"],[1,3,5,10].indexOf(cfg.laps))}
       ${seg("Úroveň botů",DIFFS.map(d=>d.n),cfg.diff)}
+      ${segBots()}
       ${seg("Prostředí",["Náhodné","Západ slunce","Den","Noc"],cfg.theme+1)}
-      <p style="margin-top:12px">🏆 Nejlepší čas: <b>${best?fmtT(best):"zatím žádný"}</b> <span class="muted">(${cfg.laps} ${cfg.laps===1?"kolo":cfg.laps<5?"kola":"kol"}, ${DIFFS[cfg.diff].n})</span><br><span class="muted">Závodů: ${rs.races} · výher: ${rs.wins}</span></p>
+      <p style="margin-top:12px">🏆 Nejlepší čas: <b>${best?fmtT(best):"zatím žádný"}</b> <span class="muted">(${cfg.laps} ${cfg.laps===1?"kolo":cfg.laps<5?"kola":"kol"}, ${DIFFS[cfg.diff].n}, ${nb} ${nb===1?"soupeř":nb<5?"soupeři":"soupeřů"})</span><br><span class="muted">Závodů: ${rs.races} · výher: ${rs.wins}</span></p>
       <p class="muted">Ovládání: <b>← →</b> / A D = zatáčení · <b>↑</b> / W = plyn · <b>↓</b> / S = brzda · <b>mezerník</b> = nitro (sbírej 🔥) · M = zvuk · Esc = vzdát se</p>
       <div class="btns" style="justify-content:center;margin-top:14px"><button class="btn ghost" id="rvCancel">Zavřít</button><button class="btn go" id="rvGo">🏁 Závodit</button></div></div>`;
     const rows=ov().querySelectorAll(".segrow");
-    const apply=[v=>cfg.laps=[1,3,5,10][v],v=>cfg.diff=v,v=>cfg.theme=v-1];
+    const apply=[v=>cfg.laps=[1,3,5,10][v],v=>cfg.diff=v,
+      v=>{cfg.bots[v]=!cfg.bots[v];if(!cfg.bots.some(Boolean))cfg.bots[v]=true},   // aspoň jeden soupeř
+      v=>cfg.theme=v-1];
     rows.forEach((row,ri)=>row.querySelectorAll("button").forEach(b=>b.onclick=()=>{apply[ri](+b.dataset.i);saveRS(loadRS());showFreeIntro()}));
     $("rvCancel").onclick=close;$("rvGo").onclick=startFree;
   }
@@ -1589,12 +1603,12 @@ const RACE=(()=>{
     if(!raceOn||state!=="done")return;
     const med=["","🥇","🥈","🥉"][finishRank]||"🏁";
     if(mode==="free"){
-      const rs=loadRS(),best=rs.best[`${laps}-${cfg.diff}`];
+      const rs=loadRS(),best=rs.best[rsKey(laps,curDiff,cars.length)];
       ov().hidden=false;
       ov().innerHTML=`<div class="rov-in"><div class="rov-t">${med} ${finishRank}. místo</div>
         <p>Čas: <b>${fmtT(finishTime)}</b>${newRecord?` <span class="good" style="font-weight:800">🆕 NOVÝ REKORD!</span>`:""}</p>
         <p class="muted">${statsLine()}</p>
-        <p class="muted">Nejlepší čas (${laps} ${laps===1?"kolo":laps<5?"kola":"kol"}, ${DIFFS[cfg.diff].n}): <b>${best?fmtT(best):"–"}</b> · závodů ${rs.races} · výher ${rs.wins}</p>
+        <p class="muted">Nejlepší čas (${laps} ${laps===1?"kolo":laps<5?"kola":"kol"}, ${DIFFS[curDiff].n}, ${cars.length} ${cars.length===1?"soupeř":cars.length<5?"soupeři":"soupeřů"}): <b>${best?fmtT(best):"–"}</b> · závodů ${rs.races} · výher ${rs.wins}</p>
         <div class="btns" style="justify-content:center;margin-top:14px;flex-wrap:wrap"><button class="btn ghost" id="rvClose">Zavřít</button><button class="btn ghost" id="rvSet">Nastavení</button><button class="btn go" id="rvAgain">Znovu</button></div></div>`;
       $("rvClose").onclick=close;$("rvSet").onclick=showFreeIntro;$("rvAgain").onclick=startFree;
       return;
