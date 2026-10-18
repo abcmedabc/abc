@@ -314,7 +314,7 @@
           <li>Zkus <b>🏁 sponzorský závod</b>: dobré umístění dá bonus k poptávce.</li>
         </ol>
         <h3>🏎️ Závod</h3>
-        <p>Zatáčej <b>← →</b>, plyn <b>↑</b>, brzda <b>↓</b>, <b>mezerník</b> = nitro. Jeď těsně za soupeřem a chytíš <b>závětří</b>. Podporuje i ovladač.</p>
+        <p>Zatáčej <b>← →</b>, plyn <b>↑</b>, brzda <b>↓</b>, <b>mezerník</b> = nitro. Jeď těsně za soupeřem a chytíš <b>závětří</b>. Podporuje i ovladač. V závodním módu si vybereš <b>úroveň botů</b> (Nováček až Legenda); ve sponzorském závodě roste sama s počtem odjetých závodů.</p>
       </div>
       <div>
         <h3>⌨️ Klávesové zkratky</h3>
@@ -760,12 +760,24 @@ const raceCost=()=>Math.ceil(3000*Math.pow(1.4,S.races||0));
 const sponsorMul=()=>S.sponsor?S.sponsor.mul:1;
 // odměna za umístění: násobek poptávky po dobu (herních sekund)
 const REWARDS=[null,{mul:2.2,dur:300},{mul:1.8,dur:240},{mul:1.5,dur:180},{mul:1.25,dur:120},{mul:1.1,dur:60},{mul:1.05,dur:30}];
+// soupeři: pace = základní tempo, agg = agresivita (blokuje), cons = spolehlivost (méně chyb)
 const RIVALS=[
-  {name:"Pomelo",   color:"#e9e9f2", pace:0.985},
-  {name:"Galaxio",  color:"#3b82f6", pace:0.96},
-  {name:"Noka",     color:"#22c55e", pace:0.935},
-  {name:"Sonyx",    color:"#f59e0b", pace:0.91},
-  {name:"Motorollo",color:"#ef4444", pace:0.88},
+  {name:"Pomelo",   color:"#e9e9f2", pace:1.000, agg:0.80, cons:0.95},
+  {name:"Galaxio",  color:"#3b82f6", pace:0.975, agg:0.55, cons:0.90},
+  {name:"Noka",     color:"#22c55e", pace:0.950, agg:0.95, cons:0.72},
+  {name:"Sonyx",    color:"#f59e0b", pace:0.925, agg:0.40, cons:0.88},
+  {name:"Motorollo",color:"#ef4444", pace:0.900, agg:0.70, cons:0.68},
+];
+// úrovně botů: pace = tempo, skill = jízdní dovednost (stopa, brzdění, chybovost, reakce),
+// band = jak moc se závod uměle drží pohromadě (na vyšších úrovních skoro vůbec)
+// v sponzorském závodě roste úroveň soupeřů s počtem odjetých závodů
+const sponsorDiff=()=>Math.max(0,Math.min(4,Math.floor((S.races||0)/2)));
+const DIFFS=[
+  {n:"Nováček", pace:0.78, skill:0.25, band:1.00},
+  {n:"Amatér",  pace:0.88, skill:0.50, band:0.80},
+  {n:"Profík",  pace:0.96, skill:0.72, band:0.55},
+  {n:"Mistr",   pace:1.02, skill:0.88, band:0.35},
+  {n:"Legenda", pace:1.10, skill:1.00, band:0.15},
 ];
 const THEMES=[
   {name:"Západ slunce", sky:["#1d1550","#c2386b","#ff9a5b"], sun:"#ffd9a0", fog:"#8a4b78", mount:["#3a2457","#552a68"], grass:["#2f7a4f","#2a6e47"], road:["#5d5d6a","#565664"], rumble:["#ffffff","#e11d48"], lane:"#f5f5f5", stars:false},
@@ -1020,7 +1032,7 @@ const RACE=(()=>{
   const findSeg=z=>segs[Math.floor(z/segLen)%segs.length];
 
   /* ---- stav ---- */
-  let mode="sponsor",laps=3;const cfg={laps:3,diff:1,theme:-1};
+  let mode="sponsor",laps=3,curDiff=2;const cfg={laps:3,diff:2,theme:-1};
   let theme=THEMES[0],state="idle",pos=0,speed=0,playerX=0,nitro=0.4,time=0,count=3,traveled=0,skyOff=0,hillOff=0,cars=[],finishRank=0,finishTime=0,shake=0,raf=0,lastT=0,flash=0,bump=0;
   const keys={},touch={};
   let actx=null,eng=null,engG=null,muted=false;
@@ -1038,14 +1050,24 @@ const RACE=(()=>{
   function togglePause(){if(state==="run"||state==="count"){racePaused=!racePaused;if(racePaused)audioStop()}}
 
   function reset(){
-    const dmul=mode==="free"?[0.92,1,1.05][cfg.diff]:1;laps=mode==="free"?cfg.laps:3;
+    curDiff=mode==="free"?clamp(cfg.diff|0,0,DIFFS.length-1):sponsorDiff();
+    const D=DIFFS[curDiff];laps=mode==="free"?cfg.laps:3;
     theme=mode==="free"&&cfg.theme>=0?THEMES[cfg.theme]:THEMES[Math.floor(Math.random()*THEMES.length)];
     if(!segs.length)buildTrack();
     segs.forEach(s=>s.cars=[]);
     pos=0;speed=0;playerX=0;nitro=0.4;time=0;count=goAt=3.4+Math.random()*0.6;traveled=0;skyOff=0;hillOff=0;finishRank=0;finishTime=0;shake=0;flash=0;bump=0;
     MUSIC.setIntensity(0.3);
     steerV=0;roll=0;zoomV=0;lapStart=0;lastLap=0;bestLap=0;lapNo=1;topSpeed=0;overtakes=0;prevRank=6;rankCd=1;banner=null;slip=false;parts=[];lightsOn=0;racePaused=false;squeal=0;
-    cars=RIVALS.map((r,i)=>{const z=playerZ+(i+1)*520,c={name:r.name,color:r.color,pace:r.pace*dmul*(0.97+Math.random()*0.06),offset:(i%2?0.45:-0.45)*(i<2?1:(i%3?.9:-.9)),z,speed:0,traveled:(i+1)*520,finished:false,finTime:0,braking:false,pct:0};
+    cars=RIVALS.map((r,i)=>{
+      const z=playerZ+(i+1)*520;
+      const c={name:r.name,color:r.color,agg:r.agg,cons:r.cons,band:D.band,
+        pace:r.pace*D.pace*(0.985+Math.random()*0.03),
+        skill:clamp(D.skill*(0.9+Math.random()*0.2),0.05,1),
+        lane:(i%2?1:-1)*(0.45+0.1*(i%3)),
+        react:0.08+(1-D.skill)*0.6*Math.random(),
+        err:0,errT:3+Math.random()*6,errK:1,errSide:1,
+        offset:(i%2?0.45:-0.45)*(i<2?1:(i%3?.9:-.9)),
+        z,speed:0,traveled:(i+1)*520,finished:false,finTime:0,braking:false,pct:0};
       findSeg(z).cars.push(c);return c});
     state="count";
   }
@@ -1088,15 +1110,52 @@ const RACE=(()=>{
       G:keys.ArrowUp||keys.KeyW||touch.G||gG>0.1, B:keys.ArrowDown||keys.KeyS||touch.B||gB>0.1,
       N:keys.Space||keys.ShiftLeft||keys.ShiftRight||touch.N||gN};
   };
-  function carOffsetAI(car,cs,ps){
-    for(let i=1;i<=20;i++){
-      const sg=segs[(cs.index+i)%segs.length];
-      if(sg===ps&&car.speed>speed&&overlap(playerX,PW,car.offset,CW,1.2)){
-        const dir=playerX>0.5?-1:playerX<-0.5?1:(car.offset>playerX?1:-1);return dir/i*(car.speed-speed)/maxSpeed}
-      for(const o of sg.cars){if(car.speed>o.speed&&overlap(car.offset,CW,o.offset,CW,1.2)){
-        const dir=o.offset>0.5?-1:o.offset<-0.5?1:(car.offset>o.offset?1:-1);return dir/i*(car.speed-o.speed)/maxSpeed}}
+  /* ---- umělá inteligence soupeřů ---- */
+  // průměr zakřivení trati před autem (kladné = zatáčka doprava)
+  function aiCurve(c,from,to){
+    const b=findSeg(c.z).index;let sum=0,w=0;
+    for(let i=from;i<=to;i++){const k=1-(i-from)/(to-from+1);sum+=segs[(b+i)%segs.length].curve*k;w+=k}
+    return w?sum/w:0;
+  }
+  // ideální stopa: zkušený jezdec si najíždí k vnitřku zatáčky, slabší drží svůj pruh
+  function aiLine(c){
+    const apex=clamp(aiCurve(c,2,16)*0.085,-0.8,0.8);
+    return apex*(0.35+0.65*c.skill)+c.lane*(1-c.skill)*0.5;
+  }
+  // kolik rychlosti auto unese do zatáčky (zkušený brzdí později a jede plynuleji)
+  function aiCornerLimit(c){
+    const look=Math.round(8+20*(c.speed/maxSpeed));
+    const b=findSeg(c.z).index;let worst=0;
+    for(let i=1;i<=look;i++){const sg=segs[(b+i)%segs.length];worst=Math.max(worst,Math.abs(sg.curve)*(1-i/(look+1)))}
+    return 1-Math.min(0.34,worst*0.05*(1.3-0.5*c.skill));
+  }
+  // vyhýbání pomalejšímu autu nebo hráči před sebou
+  function aiAvoid(c){
+    const cs=findSeg(c.z),ps=findSeg(pos+playerZ);
+    for(let i=1;i<=18;i++){
+      const sg=segs[(cs.index+i)%segs.length],w=Math.min(1,3/i);
+      if(sg===ps&&c.speed>speed&&overlap(playerX,PW,c.offset,CW,1.3))
+        return (c.offset>=playerX?1:-1)*w*0.9;
+      for(const o of sg.cars)if(o!==c&&c.speed>o.speed&&overlap(c.offset,CW,o.offset,CW,1.3))
+        return (c.offset>=o.offset?1:-1)*w*0.7;
     }
-    return car.offset<-0.9?0.1:car.offset>0.9?-0.1:0;
+    return 0;
+  }
+  // závětří: za autem nebo hráčem ve stejné stopě klade vzduch menší odpor
+  function aiSlip(c){
+    const b=findSeg(c.z).index,ps=findSeg(pos+playerZ);
+    for(let i=2;i<=10;i++){
+      const sg=segs[(b+i)%segs.length];
+      if(sg===ps&&Math.abs(playerX-c.offset)<0.32)return true;
+      for(const o of sg.cars)if(o!==c&&Math.abs(o.offset-c.offset)<0.32)return true;
+    }
+    return false;
+  }
+  // blokování: agresivní jezdec se staví do cesty rychlejšímu hráči těsně za sebou
+  function aiBlock(c){
+    const d=c.traveled-traveled;
+    if(c.agg<0.45||d<0||d>650||speed<c.speed*1.01)return 0;
+    return clamp(playerX-c.offset,-0.5,0.5)*c.agg*c.skill*0.8;
   }
   function step(dt){
     const I=inp();
@@ -1169,17 +1228,28 @@ const RACE=(()=>{
       if(state==="run"&&time>laps*60+60){finishRace(false)}
     }
     // soupeři
-    const pseg=findSeg(pos+playerZ);
     for(const c of cars){
-      const oldS=findSeg(c.z),cs=oldS;
+      const oldS=findSeg(c.z);
       if(state!=="count"){
-        const gap=c.traveled-traveled;let pace=c.pace;
-        if(gap>trackLen*0.16)pace*=0.93;else if(gap<-trackLen*0.14)pace*=1.07;
-        const sg=findSeg(c.z);
-        const target=maxSpeed*pace*(1-Math.min(0.14,Math.abs(sg.curve)*0.012));
-        c.braking=c.speed>target+80;
-        c.speed=c.speed<target?Math.min(target,c.speed+accelR*0.8*dt):Math.max(target,c.speed+brakeR*0.3*dt);
-        c.offset=clamp(c.offset+carOffsetAI(c,cs,pseg)*dt*60*0.5,-0.95,0.95);
+        if(time<c.react){                       // reakce na start (slabší jezdec vyjede později)
+          c.speed=Math.max(0,c.speed-accelR*0.4*dt);c.braking=false;
+        }else{
+          const gap=c.traveled-traveled;let pace=c.pace;
+          // dojíždění: na nízkých úrovních se závod drží pohromadě, na vysokých skoro vůbec
+          if(gap>trackLen*0.18)pace*=1-0.06*c.band;else if(gap<-trackLen*0.12)pace*=1+0.055*c.band;
+          if(aiSlip(c))pace*=1.045;             // závětří
+          c.errT-=dt;                           // chyby jezdce
+          if(c.errT<=0){c.errT=4+Math.random()*8;
+            if(Math.random()<(1-c.skill*c.cons)*0.5){c.err=0.5+Math.random()*1.3;c.errK=0.76+Math.random()*0.16;c.errSide=Math.random()<0.5?-1:1}}
+          if(c.err>0){c.err-=dt;pace*=c.errK}
+          const target=maxSpeed*pace*aiCornerLimit(c);
+          c.braking=c.speed>target+80;
+          c.speed=c.speed<target?Math.min(target,c.speed+accelR*(0.65+0.45*c.skill)*dt)
+                                :Math.max(target,c.speed+brakeR*(0.22+0.3*c.skill)*dt);
+        }
+        let want=aiLine(c)+aiAvoid(c)+aiBlock(c);
+        if(c.err>0)want+=c.errSide*0.45;        // při chybě to pustí ven ze stopy
+        c.offset=clamp(c.offset+clamp(clamp(want,-0.95,0.95)-c.offset,-1,1)*dt*(1.5+2.5*c.skill),-0.95,0.95);
         const nz=incr(c.z,dt*c.speed,trackLen);c.traveled+=dt*c.speed;c.z=nz;
         c.pct=pctRem(nz,segLen);
         const ns=findSeg(nz);
@@ -1419,9 +1489,11 @@ const RACE=(()=>{
     g.font="600 12px system-ui,sans-serif";g.fillStyle="#9aa3d0";
     g.fillText(`POSLEDNÍ ${lastLap?fmtT(lastLap):"–"}   ·   NEJLEPŠÍ ${bestLap?fmtT(bestLap):"–"}`,W/2,66);
     // žebříček
-    g.fillStyle="rgba(8,10,24,.6)";rr(W-190,60,174,24+rk.length*22,14);g.fill();
-    g.font="700 14px system-ui,sans-serif";g.textAlign="left";
-    rk.forEach((r,i)=>{const y=88+i*22;g.fillStyle=r.me?"#5ef2c0":"#cfd4f5";g.fillText(`${i+1}. ${r.name}`,W-176,y);
+    g.fillStyle="rgba(8,10,24,.6)";rr(W-190,60,174,42+rk.length*22,14);g.fill();
+    g.font="700 11px system-ui,sans-serif";g.textAlign="left";g.fillStyle="#9aa3d0";
+    g.fillText("ÚROVEŇ BOTŮ: "+DIFFS[curDiff].n.toUpperCase(),W-176,80);
+    g.font="700 14px system-ui,sans-serif";
+    rk.forEach((r,i)=>{const y=104+i*22;g.fillStyle=r.me?"#5ef2c0":"#cfd4f5";g.fillText(`${i+1}. ${r.name}`,W-176,y);
       if(!r.me){g.fillStyle=r.color;g.fillRect(W-30,y-11,10,10)}else{g.fillStyle="#5ef2c0";g.fillRect(W-30,y-11,10,10)}});
     // rychlost
     g.fillStyle="rgba(8,10,24,.6)";rr(16,H-116,190,100,14);g.fill();
@@ -1482,9 +1554,9 @@ const RACE=(()=>{
       <div class="rov-t">🏎️ Závodní mód</div>
       <p class="muted" style="margin-bottom:12px">Čistý závod bez ekonomiky: žádné peníze, žádné bonusy. Jen ty, formule a pět soupeřů.</p>
       ${seg("Počet kol",["1","3","5","10"],[1,3,5,10].indexOf(cfg.laps))}
-      ${seg("Obtížnost",["Lehká","Střední","Těžká"],cfg.diff)}
+      ${seg("Úroveň botů",DIFFS.map(d=>d.n),cfg.diff)}
       ${seg("Prostředí",["Náhodné","Západ slunce","Den","Noc"],cfg.theme+1)}
-      <p style="margin-top:12px">🏆 Nejlepší čas: <b>${best?fmtT(best):"zatím žádný"}</b> <span class="muted">(${cfg.laps} ${cfg.laps===1?"kolo":cfg.laps<5?"kola":"kol"}, ${["lehká","střední","těžká"][cfg.diff]})</span><br><span class="muted">Závodů: ${rs.races} · výher: ${rs.wins}</span></p>
+      <p style="margin-top:12px">🏆 Nejlepší čas: <b>${best?fmtT(best):"zatím žádný"}</b> <span class="muted">(${cfg.laps} ${cfg.laps===1?"kolo":cfg.laps<5?"kola":"kol"}, ${DIFFS[cfg.diff].n})</span><br><span class="muted">Závodů: ${rs.races} · výher: ${rs.wins}</span></p>
       <p class="muted">Ovládání: <b>← →</b> / A D = zatáčení · <b>↑</b> / W = plyn · <b>↓</b> / S = brzda · <b>mezerník</b> = nitro (sbírej 🔥) · M = zvuk · Esc = vzdát se</p>
       <div class="btns" style="justify-content:center;margin-top:14px"><button class="btn ghost" id="rvCancel">Zavřít</button><button class="btn go" id="rvGo">🏁 Závodit</button></div></div>`;
     const rows=ov().querySelectorAll(".segrow");
@@ -1504,7 +1576,7 @@ const RACE=(()=>{
         <tr><td>🥇 1. místo</td><td>poptávka ×2,2 · 5 min</td></tr><tr><td>🥈 2. místo</td><td>×1,8 · 4 min</td></tr><tr><td>🥉 3. místo</td><td>×1,5 · 3 min</td></tr>
         <tr><td>4. místo</td><td>×1,25 · 2 min</td></tr><tr><td>5.–6. místo</td><td>×1,1 · 1 min / 30 s</td></tr>
       </table>
-      <p class="muted">Tři kola proti pěti konkurenčním značkám. Sbírej 🔥 nitro pady na trati. Ekonomika hry se během závodu zastaví.</p>
+      <p class="muted">Tři kola proti pěti značkám — úroveň soupeřů <b>${DIFFS[sponsorDiff()].n}</b> (roste s počtem odjetých sponzorských závodů). Sbírej 🔥 nitro pady na trati. Ekonomika hry se během závodu zastaví.</p>
       <p class="muted">Ovládání: <b>← →</b> / A D = zatáčení · <b>↑</b> / W = plyn · <b>↓</b> / S = brzda · <b>mezerník</b> = nitro · M = zvuk · Esc = vzdát se</p>
       <div class="btns" style="justify-content:center;margin-top:14px"><button class="btn ghost" id="rvCancel">Zrušit</button>
       <button class="btn go" id="rvGo" ${can?"":"disabled"}>Zaplatit ${kc(cost)} a závodit</button></div></div>`;
@@ -1522,7 +1594,7 @@ const RACE=(()=>{
       ov().innerHTML=`<div class="rov-in"><div class="rov-t">${med} ${finishRank}. místo</div>
         <p>Čas: <b>${fmtT(finishTime)}</b>${newRecord?` <span class="good" style="font-weight:800">🆕 NOVÝ REKORD!</span>`:""}</p>
         <p class="muted">${statsLine()}</p>
-        <p class="muted">Nejlepší čas (${laps} ${laps===1?"kolo":laps<5?"kola":"kol"}, ${["lehká","střední","těžká"][cfg.diff]}): <b>${best?fmtT(best):"–"}</b> · závodů ${rs.races} · výher ${rs.wins}</p>
+        <p class="muted">Nejlepší čas (${laps} ${laps===1?"kolo":laps<5?"kola":"kol"}, ${DIFFS[cfg.diff].n}): <b>${best?fmtT(best):"–"}</b> · závodů ${rs.races} · výher ${rs.wins}</p>
         <div class="btns" style="justify-content:center;margin-top:14px;flex-wrap:wrap"><button class="btn ghost" id="rvClose">Zavřít</button><button class="btn ghost" id="rvSet">Nastavení</button><button class="btn go" id="rvAgain">Znovu</button></div></div>`;
       $("rvClose").onclick=close;$("rvSet").onclick=showFreeIntro;$("rvAgain").onclick=startFree;
       return;
