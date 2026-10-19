@@ -1012,7 +1012,7 @@ const RACE=(()=>{
   const CAMS=[
     {n:"Za autem", h:1000, carW:0.26, carY:-24, show:true},
     {n:"Zblízka",  h:620,  carW:0.40, carY:-6,  show:true},
-    {n:"Kokpit",   h:330,  carW:0,    carY:0,   show:false, cockpit:true},
+    {n:"Kokpit",   h:430,  carW:0,    carY:0,   show:false, cockpit:true},
     {n:"Z výšky",  h:2400, carW:0.17, carY:-96, show:true},
   ];
   let camH=CAMS[0].h,playerZ=camH*camDepth,camIdx=0,camMsg=0;
@@ -1547,24 +1547,73 @@ const RACE=(()=>{
     if(w>80){g.fillStyle="#fff";g.textAlign="center";g.font=`800 ${Math.round(w*0.06)}px system-ui,sans-serif`;g.fillText(o.tag||"",0,wy+h*0.105)}
     g.restore();
   }
-  // pohled z kokpitu: boční kryty, zrcátka, halo a volant
+  // onboard pohled z formule: nos, přední kola, halo, zrcátka a volant
   function drawCockpit(steer,spct,bounce,col,brake){
-    const y0=H*0.74+bounce*0.4;
+    const bo=bounce*0.5, boost=state==="run"&&inp().N&&nitro>0;
     g.save();
-    g.fillStyle=shade(col,-.55);
-    g.beginPath();g.moveTo(0,H);g.lineTo(0,y0+40);g.quadraticCurveTo(W*0.22,y0-10,W*0.34,H);g.closePath();g.fill();
-    g.beginPath();g.moveTo(W,H);g.lineTo(W,y0+40);g.quadraticCurveTo(W*0.78,y0-10,W*0.66,H);g.closePath();g.fill();
-    g.fillStyle="#12141f";for(const sx of[W*0.2,W*0.8]){rr(sx-34,y0-6,68,30,8);g.fill()}
-    g.fillStyle="#38405e";for(const sx of[W*0.2,W*0.8]){rr(sx-29,y0-1,58,20,6);g.fill()}
-    g.strokeStyle="#1a1d2b";g.lineWidth=18;g.beginPath();g.arc(W/2,H*0.30,W*0.33,Math.PI*0.08,Math.PI*0.92);g.stroke();
-    g.fillStyle="#1a1d2b";g.fillRect(W/2-9,H*0.30-W*0.33,18,W*0.1);
-    g.save();g.translate(W/2,H+30+bounce);g.rotate(steer*0.5);
-    g.strokeStyle="#0d0f18";g.lineWidth=26;g.beginPath();g.arc(0,0,110,Math.PI*1.08,Math.PI*1.92);g.stroke();
-    g.fillStyle="#0d0f18";rr(-96,-36,192,56,12);g.fill();
-    g.fillStyle=brake?"#ff4d5e":"#5ef2c0";rr(-70,-26,140,10,5);g.fill();
-    for(let i=0;i<6;i++){g.fillStyle=spct*6>i?(i<3?"#5ef2c0":i<5?"#ffd84d":"#ff4d5e"):"#262a3c";
-      g.beginPath();g.arc(-50+i*20,-4,5,0,7);g.fill()}
-    g.restore();g.restore();
+    /* --- přední kola: kývou se a natáčejí podle řízení --- */
+    for(const sd of[-1,1]){
+      const wx=W/2+sd*(W*0.265)+steer*18*sd*0.4, wy=H*0.855+bo*1.6+Math.abs(steer)*6;
+      const ww=W*0.115, wh=H*0.3;
+      g.save();g.translate(wx,wy);g.rotate(sd*steer*0.07);
+      g.fillStyle="#0a0a10";rr(-ww/2,0,ww,wh,ww*0.18);g.fill();                    // pneumatika
+      g.fillStyle="#17171f";rr(-ww/2+ww*0.12,wh*0.1,ww*0.76,wh*0.1,4);g.fill();
+      g.fillStyle="#ffd23f";rr(-ww/2+ww*0.08,wh*0.3,ww*0.84,wh*0.055,3);g.fill();  // barevný pruh
+      g.fillStyle=shade(col,-.2);rr(-ww*0.18,wh*0.42,ww*0.36,wh*0.3,ww*0.08);g.fill(); // ráfek
+      g.restore();
+      // tyč zavěšení k nosu
+      g.strokeStyle=shade(col,-.45);g.lineWidth=H*0.018;
+      g.beginPath();g.moveTo(wx-sd*ww*0.3,wy+wh*0.22);g.lineTo(W/2-sd*W*0.045,H*0.95+bo);g.stroke();
+    }
+    /* --- nos vozu --- */
+    g.fillStyle=shade(col,-.3);
+    g.beginPath();g.moveTo(W/2-W*0.075,H+bo);g.lineTo(W/2-W*0.03,H*0.86+bo);
+    g.quadraticCurveTo(W/2,H*0.835+bo,W/2+W*0.03,H*0.86+bo);g.lineTo(W/2+W*0.075,H+bo);g.closePath();g.fill();
+    g.fillStyle=col;
+    g.beginPath();g.moveTo(W/2-W*0.028,H*0.96+bo);g.lineTo(W/2-W*0.016,H*0.865+bo);
+    g.lineTo(W/2+W*0.016,H*0.865+bo);g.lineTo(W/2+W*0.028,H*0.96+bo);g.closePath();g.fill();
+    /* --- boční kryty kokpitu --- */
+    g.fillStyle=shade(col,-.6);
+    g.beginPath();g.moveTo(0,H);g.lineTo(0,H*0.80+bo);g.quadraticCurveTo(W*0.15,H*0.825+bo,W*0.22,H);g.closePath();g.fill();
+    g.beginPath();g.moveTo(W,H);g.lineTo(W,H*0.80+bo);g.quadraticCurveTo(W*0.85,H*0.825+bo,W*0.78,H);g.closePath();g.fill();
+    /* --- zrcátka se soupeři za zády --- */
+    for(const sd of[-1,1]){
+      const mx=W/2+sd*W*0.315, my=H*0.775+bo;
+      g.save();g.translate(mx,my);g.rotate(sd*0.08);
+      g.fillStyle="#0d0f18";rr(-62,-26,124,52,10);g.fill();
+      g.fillStyle="#1b2236";rr(-55,-19,110,38,7);g.fill();
+      g.save();g.beginPath();rr(-55,-19,110,38,7);g.clip();
+      g.fillStyle="rgba(140,170,220,.25)";g.fillRect(-55,2,110,17);           // odraz trati
+      for(const c of cars){const d=traveled-c.traveled;                      // kdo je těsně za mnou
+        if(d>0&&d<1100&&(c.offset-playerX)*sd<0.9&&(c.offset-playerX)*sd>-1.8){
+          const sc=1-d/1100, px=clamp((c.offset-playerX)*38*sd,-44,44), w2=16+26*sc;
+          g.fillStyle=c.color;rr(px-w2/2,6-18*sc,w2,10+14*sc,3);g.fill();
+          g.fillStyle="rgba(0,0,0,.35)";rr(px-w2/2,6-18*sc,w2,(10+14*sc)*0.35,3);g.fill();}}
+      g.restore();g.restore();
+    }
+    /* --- halo: rám kolem výhledu + střední vzpěra --- */
+    g.strokeStyle="#15171f";g.lineWidth=H*0.042;g.lineCap="round";
+    g.beginPath();g.moveTo(-W*0.02,H*0.98+bo);
+    g.quadraticCurveTo(W/2,-H*0.3+bo,W*1.02,H*0.98+bo);g.stroke();
+    g.fillStyle="#1b1e29";g.fillRect(W/2-W*0.011,H*0.3+bo,W*0.022,H*0.24);
+    g.fillStyle="rgba(255,255,255,.07)";g.fillRect(W/2-W*0.011,H*0.3+bo,W*0.007,H*0.24);
+    /* --- volant s displejem --- */
+    g.save();g.translate(W/2,H*1.0+bo*1.3);g.rotate(steer*0.55);
+    g.strokeStyle="#0c0e16";g.lineWidth=30;g.lineCap="butt";
+    g.beginPath();g.arc(0,0,128,Math.PI*1.04,Math.PI*1.96);g.stroke();
+    g.fillStyle="#0c0e16";rr(-112,-44,224,66,14);g.fill();                    // střed volantu
+    g.fillStyle="#05070e";rr(-62,-36,124,32,6);g.fill();                      // displej
+    g.fillStyle=brake?"#ff4d5e":boost?"#ffb347":"#5ef2c0";
+    g.font="900 20px system-ui,sans-serif";g.textAlign="center";g.textBaseline="middle";
+    g.fillText(state==="idle"?"N":String(gear),0,-20);
+    g.textBaseline="alphabetic";
+    for(let i=0;i<10;i++){const on=rpmF*10>i&&speed>0;                        // otáčkoměr na volantu
+      g.fillStyle=on?(i<5?"#5ef2c0":i<8?"#ffd84d":"#ff4d5e"):"#20242f";
+      rr(-92+i*19,-42,13,7,2);g.fill()}
+    g.fillStyle=shade(col,0);rr(-104,-8,28,18,5);g.fill();                    // úchyty
+    g.fillStyle=shade(col,0);rr(76,-8,28,18,5);g.fill();
+    g.restore();
+    g.restore();
   }
   function withClip(sy,clipY,fn){if(sy>clipY){g.save();g.beginPath();g.rect(0,0,W,clipY);g.clip();fn();g.restore()}else fn()}
 
