@@ -1599,13 +1599,18 @@ const RACE=(()=>{
   const ov=()=>$("raceOv");
   /* statistiky čistého závodního módu (ukládají se zvlášť od hry) */
   const RKEY="mobilyICihlyRace";let newRecord=false;
-  function loadRS(){let r=null;try{r=JSON.parse(localStorage.getItem(RKEY))}catch(e){}
-    r=r||{};r.best=r.best||{};r.wins=r.wins||0;r.races=r.races||0;r.credits=r.credits||0;
+  // data závodního módu držíme i v paměti: když prohlížeč zakáže localStorage
+  // (třeba u souboru otevřeného z disku), kredity se aspoň nevynulují během hraní
+  let rsCache=null;
+  function loadRS(){
+    if(!rsCache){let r=null;try{r=JSON.parse(localStorage.getItem(RKEY))}catch(e){}rsCache=r||{}}
+    const r=rsCache;
+    r.best=r.best||{};r.wins=r.wins||0;r.races=r.races||0;r.credits=r.credits||0;
     r.up=Object.assign({eng:0,tyre:0,brk:0,nit:0},r.up);
     if(mode==="free"&&!loadRS.done){loadRS.done=true;if(r.cfg)Object.assign(cfg,r.cfg)}
     if(!Array.isArray(cfg.bots)||cfg.bots.length!==RIVALS.length||!cfg.bots.some(Boolean))cfg.bots=RIVALS.map(()=>true);
     return r}
-  function saveRS(r){r.cfg=Object.assign({},cfg);try{localStorage.setItem(RKEY,JSON.stringify(r))}catch(e){}}
+  function saveRS(r){rsCache=r;r.cfg=Object.assign({},cfg);try{localStorage.setItem(RKEY,JSON.stringify(r))}catch(e){}}
   function startFree(){ov().hidden=true;audioStart();reset();lastT=performance.now()}
   function seg(label,opts,cur){
     return `<div class="segrow"><span>${label}</span><div class="seg">${opts.map((o,i)=>`<button class="btn sm ghost${i===cur?" on":""}" data-i="${i}">${o}</button>`).join("")}</div></div>`;
