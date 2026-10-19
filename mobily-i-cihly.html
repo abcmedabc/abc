@@ -353,7 +353,7 @@
           <li>Zkus <b>🏁 sponzorský závod</b>: dobré umístění dá bonus k poptávce.</li>
         </ol>
         <h3>🏎️ Závod</h3>
-        <p>Zatáčej <b>← →</b>, plyn <b>↑</b>, brzda <b>↓</b>, <b>mezerník</b> = nitro. Pneumatiky se opotřebovávají, a když dojedou, auto klouže — zajeď doprava do <b>boxů</b>, zpomal a nechej si přezout. Jeď těsně za soupeřem a chytíš <b>závětří</b>. Podporuje i ovladač. V závodním módu si vybereš <b>úroveň botů</b> (Nováček až Legenda) i <b>které značky</b> pojedou proti tobě; ve sponzorském závodě roste sama s počtem odjetých závodů.</p>
+        <p>Zatáčej <b>← →</b>, plyn <b>↑</b>, brzda <b>↓</b>, <b>mezerník</b> = nitro. Pneumatiky se opotřebovávají, a když dojedou, auto klouže — zajeď doprava do <b>boxů</b>, zpomal a nechej si přezout. Jeď těsně za soupeřem a chytíš <b>závětří</b>. Podporuje i ovladač. V nastavení závodu si můžeš přepnout ovládání na <b>QAOPM</b> (Q plyn, A brzda, O/P zatáčení, M nitro). V závodním módu si vybereš <b>úroveň botů</b> (Nováček až Legenda) i <b>které značky</b> pojedou proti tobě; ve sponzorském závodě roste sama s počtem odjetých závodů.</p>
       </div>
       <div>
         <h3>⌨️ Klávesové zkratky</h3>
@@ -373,7 +373,7 @@
           <tr><td><kbd>← →</kbd> / <kbd>A D</kbd></td><td>zatáčení</td></tr>
           <tr><td><kbd>↑</kbd> / <kbd>W</kbd></td><td>plyn</td></tr>
           <tr><td><kbd>↓</kbd> / <kbd>S</kbd></td><td>brzda</td></tr>
-          <tr><td><kbd>mezerník</kbd></td><td>nitro 🔥</td></tr>
+          <tr><td><kbd>mezerník</kbd></td><td>nitro 🔥 (při QAOPM <kbd>M</kbd>)</td></tr>
           <tr><td><kbd>C</kbd></td><td>přepnout kameru</td></tr>
           <tr><td><kbd>P</kbd> · <kbd>M</kbd></td><td>pauza · zvuk</td></tr>
         </table>
@@ -1103,7 +1103,7 @@ const RACE=(()=>{
   /* ---- stav ---- */
   let carUp={eng:0,tyre:0,brk:0,nit:0},nitMax=1,lastPrize=0;
   let tyre=1,pitT=0,pitStops=0,pitLock=false;     // opotřebení pneumatik a zastávka v boxech
-  let mode="sponsor",laps=3,curDiff=2;const cfg={laps:3,diff:2,theme:-1,cam:0,bots:RIVALS.map(()=>true)};
+  let mode="sponsor",laps=3,curDiff=2;const cfg={laps:3,diff:2,theme:-1,cam:0,keys:0,bots:RIVALS.map(()=>true)};
   let theme=THEMES[0],state="idle",pos=0,speed=0,playerX=0,nitro=0.4,time=0,count=3,traveled=0,skyOff=0,hillOff=0,cars=[],finishRank=0,finishTime=0,shake=0,raf=0,lastT=0,flash=0,bump=0;
   const keys={},touch={};
   let actx=null,eng=null,engG=null,muted=false;
@@ -1122,6 +1122,7 @@ const RACE=(()=>{
 
   function reset(){
     loadRS();if(typeof cfg.cam==="number")setCam(cfg.cam);camMsg=0;
+    if(typeof cfg.keys==="number")setKeys(cfg.keys);
     carUp=Object.assign({eng:0,tyre:0,brk:0,nit:0},loadRS().up);
     nitMax=1+0.3*carUp.nit;lastPrize=0;
     curDiff=mode==="free"?clamp(cfg.diff|0,0,DIFFS.length-1):sponsorDiff();
@@ -1172,6 +1173,21 @@ const RACE=(()=>{
 
   /* ---- fyzika ---- */
   // vstupy: klávesnice, dotyk i ovladač (Gamepad API: levá páka = zatáčení, RT/A = plyn, LT/B = brzda, X/RB = nitro, Start = pauza)
+  // schémata ovládání; šipky fungují vždy, mění se jen písmena
+  const KEYSETS=[
+    {id:"wasd", n:"Šipky / WASD",
+     L:["ArrowLeft","KeyA"],R:["ArrowRight","KeyD"],G:["ArrowUp","KeyW"],B:["ArrowDown","KeyS"],
+     N:["Space","ShiftLeft","ShiftRight"],pause:"KeyP",mute:"KeyM",
+     popis:"<b>← →</b> / A D = zatáčení · <b>↑</b> / W = plyn · <b>↓</b> / S = brzda · <b>mezerník</b> = nitro · P = pauza · M = zvuk"},
+    {id:"qaopm",n:"QAOPM",
+     L:["ArrowLeft","KeyO"],R:["ArrowRight","KeyP"],G:["ArrowUp","KeyQ"],B:["ArrowDown","KeyA"],
+     N:["KeyM"],pause:"Space",mute:"KeyN",
+     popis:"<b>O P</b> = zatáčení · <b>Q</b> = plyn · <b>A</b> = brzda · <b>M</b> = nitro · mezerník = pauza · N = zvuk"},
+  ];
+  let keyIdx=0,keySet=KEYSETS[0];
+  const setKeys=i=>{keyIdx=((i|0)%KEYSETS.length+KEYSETS.length)%KEYSETS.length;keySet=KEYSETS[keyIdx];
+    for(const k in keys)keys[k]=false};
+  const drzi=a=>a.some(k=>keys[k]);
   const inp=()=>{
     let A,gG=0,gB=0,gN=false;
     const gp=(navigator.getGamepads&&navigator.getGamepads()[0])||null;
@@ -1183,9 +1199,9 @@ const RACE=(()=>{
       const st=!!(gp.buttons[9]&&gp.buttons[9].pressed);if(st&&!inp.st)togglePause();inp.st=st;
     }
     return {
-      L:keys.ArrowLeft||keys.KeyA||touch.L, R:keys.ArrowRight||keys.KeyD||touch.R, A,
-      G:keys.ArrowUp||keys.KeyW||touch.G||gG>0.1, B:keys.ArrowDown||keys.KeyS||touch.B||gB>0.1,
-      N:keys.Space||keys.ShiftLeft||keys.ShiftRight||touch.N||gN};
+      L:drzi(keySet.L)||touch.L, R:drzi(keySet.R)||touch.R, A,
+      G:drzi(keySet.G)||touch.G||gG>0.1, B:drzi(keySet.B)||touch.B||gB>0.1,
+      N:drzi(keySet.N)||touch.N||gN};
   };
   /* ---- umělá inteligence soupeřů ---- */
   // průměr zakřivení trati před autem (kladné = zatáčka doprava)
@@ -1830,14 +1846,16 @@ const RACE=(()=>{
       ${segBots()}
       ${seg("Prostředí",["Náhodné","Západ slunce","Den","Noc"],cfg.theme+1)}
       ${seg("Kamera",CAMS.map(c=>c.n),camIdx)}
+      ${seg("Ovládání",KEYSETS.map(k=>k.n),keyIdx)}
       <p style="margin-top:12px">🏆 Nejlepší čas: <b>${best?fmtT(best):"zatím žádný"}</b> <span class="muted">(${cfg.laps} ${cfg.laps===1?"kolo":cfg.laps<5?"kola":"kol"}, ${DIFFS[cfg.diff].n}, ${nb} ${nb===1?"soupeř":nb<5?"soupeři":"soupeřů"})</span><br><span class="muted">Závodů: ${rs.races} · výher: ${rs.wins}</span></p>
-      <p class="muted">Ovládání: <b>← →</b> / A D = zatáčení · <b>↑</b> / W = plyn · <b>↓</b> / S = brzda · <b>mezerník</b> = nitro (sbírej 🔥) · M = zvuk · Esc = vzdát se</p>
+      <p class="muted">Ovládání: ${keySet.popis} · Esc = vzdát se</p>
       <div class="btns" style="justify-content:center;margin-top:14px"><button class="btn ghost" id="rvCancel">Zavřít</button><button class="btn ghost" id="rvGar">🔧 Garáž · ${kred(rs.credits)}</button><button class="btn go" id="rvGo">🏁 Závodit</button></div></div>`;
     const rows=ov().querySelectorAll(".segrow");
     const apply=[v=>cfg.laps=[1,3,5,10][v],v=>cfg.diff=v,
       v=>{cfg.bots[v]=!cfg.bots[v];if(!cfg.bots.some(Boolean))cfg.bots[v]=true},   // aspoň jeden soupeř
       v=>cfg.theme=v-1,
-      v=>{setCam(v);cfg.cam=v}];
+      v=>{setCam(v);cfg.cam=v},
+      v=>{setKeys(v);cfg.keys=v}];
     rows.forEach((row,ri)=>row.querySelectorAll("button").forEach(b=>b.onclick=()=>{apply[ri](+b.dataset.i);saveRS(loadRS());showFreeIntro()}));
     $("rvCancel").onclick=close;$("rvGo").onclick=startFree;$("rvGar").onclick=showGarage;
   }
@@ -1854,7 +1872,7 @@ const RACE=(()=>{
         <tr><td>4. místo</td><td>×1,25 · 2 min</td></tr><tr><td>5.–6. místo</td><td>×1,1 · 1 min / 30 s</td></tr>
       </table>
       <p class="muted">Tři kola proti pěti značkám — úroveň soupeřů <b>${DIFFS[sponsorDiff()].n}</b> (roste s počtem odjetých sponzorských závodů). Sbírej 🔥 nitro pady na trati. Ekonomika hry se během závodu zastaví.</p>
-      <p class="muted">Ovládání: <b>← →</b> / A D = zatáčení · <b>↑</b> / W = plyn · <b>↓</b> / S = brzda · <b>mezerník</b> = nitro · M = zvuk · Esc = vzdát se</p>
+      <p class="muted">Ovládání: ${keySet.popis} · Esc = vzdát se</p>
       <div class="btns" style="justify-content:center;margin-top:14px"><button class="btn ghost" id="rvCancel">Zrušit</button>
       <button class="btn go" id="rvGo" ${can?"":"disabled"}>Zaplatit ${kc(cost)} a závodit</button></div></div>`;
     $("rvCancel").onclick=close;
@@ -1898,17 +1916,17 @@ const RACE=(()=>{
   }
   let render_main=()=>{};
   // vstupy
-  const GAMEKEYS=["ArrowLeft","ArrowRight","ArrowUp","ArrowDown","Space","KeyA","KeyD","KeyW","KeyS","ShiftLeft","ShiftRight"];
+  const gameKeys=()=>[...keySet.L,...keySet.R,...keySet.G,...keySet.B,...keySet.N,keySet.pause];
   addEventListener("keydown",e=>{
     if(!raceOn)return;
-    if(GAMEKEYS.includes(e.code)){keys[e.code]=true;e.preventDefault()}
-    if(e.code==="KeyM"){muted=!muted;if(engG)engG.gain.value=0;MUSIC.setOn(!muted)}
-    if(e.code==="KeyP"){togglePause()}
+    if(gameKeys().includes(e.code)){keys[e.code]=true;e.preventDefault()}
+    if(e.code===keySet.mute){muted=!muted;if(engG)engG.gain.value=0;MUSIC.setOn(!muted)}
+    if(e.code===keySet.pause){togglePause()}
     if(e.code==="KeyC"){setCam(camIdx+1);cfg.cam=camIdx;saveRS(loadRS())}
     if(e.code==="Escape"){if(state==="run"||state==="count"){state="over";close()}else close()}
     e.stopPropagation();
   },true);
-  addEventListener("keyup",e=>{if(GAMEKEYS.includes(e.code))keys[e.code]=false});
+  addEventListener("keyup",e=>{if(gameKeys().includes(e.code))keys[e.code]=false});
   addEventListener("blur",()=>{for(const k in keys)keys[k]=false});
   document.addEventListener("visibilitychange",()=>{if(document.hidden&&raceOn&&(state==="run"||state==="count")){racePaused=true;audioStop()}});
   document.querySelectorAll("#tctl button").forEach(b=>{
