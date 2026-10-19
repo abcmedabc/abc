@@ -374,6 +374,7 @@
           <tr><td><kbd>↑</kbd> / <kbd>W</kbd></td><td>plyn</td></tr>
           <tr><td><kbd>↓</kbd> / <kbd>S</kbd></td><td>brzda</td></tr>
           <tr><td><kbd>mezerník</kbd></td><td>nitro 🔥</td></tr>
+          <tr><td><kbd>C</kbd></td><td>přepnout kameru</td></tr>
           <tr><td><kbd>P</kbd> · <kbd>M</kbd></td><td>pauza · zvuk</td></tr>
         </table>
       </div>
@@ -1005,8 +1006,17 @@ const MUSIC=(()=>{
 
 const RACE=(()=>{
   const W=960,H=540,cv=$("raceCv"),g=cv.getContext("2d");cv.width=W;cv.height=H;
-  const segLen=200,rumbleLen=3,roadW=2000,lanes=3,camH=1000,drawDist=240,fov=100;
-  const camDepth=1/Math.tan((fov/2)*Math.PI/180),playerZ=camH*camDepth;
+  const segLen=200,rumbleLen=3,roadW=2000,lanes=3,drawDist=240,fov=100;
+  const camDepth=1/Math.tan((fov/2)*Math.PI/180);
+  // pohledy kamery: h = výška nad tratí (zároveň odstup od auta), carW/carY = vykreslení formule
+  const CAMS=[
+    {n:"Za autem", h:1000, carW:0.26, carY:-24, show:true},
+    {n:"Zblízka",  h:620,  carW:0.40, carY:-6,  show:true},
+    {n:"Kokpit",   h:330,  carW:0,    carY:0,   show:false, cockpit:true},
+    {n:"Z výšky",  h:2400, carW:0.17, carY:-96, show:true},
+  ];
+  let camH=CAMS[0].h,playerZ=camH*camDepth,camIdx=0,camMsg=0;
+  function setCam(i){camIdx=((i%CAMS.length)+CAMS.length)%CAMS.length;camH=CAMS[camIdx].h;playerZ=camH*camDepth;camMsg=1.6}
   const maxSpeed=segLen*60,accelR=maxSpeed/5,brakeR=-maxSpeed,decelR=-maxSpeed/5,offDecel=-maxSpeed/2,offLimit=maxSpeed/4;
   const centrifugal=0.3,PW=0.3,CW=0.3,CARW=600;
   const PIT_FROM=6,PIT_TO=110,PIT_IN=1.05,PIT_OUT=2.0,PIT_LIMIT=0.3,PIT_TIME=2.6;   // boxy: úsek trati, šířka uličky, limit rychlosti a délka zastávky
@@ -1093,7 +1103,7 @@ const RACE=(()=>{
   /* ---- stav ---- */
   let carUp={eng:0,tyre:0,brk:0,nit:0},nitMax=1,lastPrize=0;
   let tyre=1,pitT=0,pitStops=0,pitLock=false;     // opotřebení pneumatik a zastávka v boxech
-  let mode="sponsor",laps=3,curDiff=2;const cfg={laps:3,diff:2,theme:-1,bots:RIVALS.map(()=>true)};
+  let mode="sponsor",laps=3,curDiff=2;const cfg={laps:3,diff:2,theme:-1,cam:0,bots:RIVALS.map(()=>true)};
   let theme=THEMES[0],state="idle",pos=0,speed=0,playerX=0,nitro=0.4,time=0,count=3,traveled=0,skyOff=0,hillOff=0,cars=[],finishRank=0,finishTime=0,shake=0,raf=0,lastT=0,flash=0,bump=0;
   const keys={},touch={};
   let actx=null,eng=null,engG=null,muted=false;
@@ -1111,6 +1121,7 @@ const RACE=(()=>{
   function togglePause(){if(state==="run"||state==="count"){racePaused=!racePaused;if(racePaused)audioStop()}}
 
   function reset(){
+    loadRS();if(typeof cfg.cam==="number")setCam(cfg.cam);camMsg=0;
     carUp=Object.assign({eng:0,tyre:0,brk:0,nit:0},loadRS().up);
     nitMax=1+0.3*carUp.nit;lastPrize=0;
     curDiff=mode==="free"?clamp(cfg.diff|0,0,DIFFS.length-1):sponsorDiff();
@@ -1356,7 +1367,7 @@ const RACE=(()=>{
      }}
     // částice
     for(let i=parts.length-1;i>=0;i--){const p=parts[i];p.life-=dt;if(p.life<=0){parts.splice(i,1);continue}p.x+=p.vx*dt;p.y+=p.vy*dt;p.vy+=p.g*dt}
-    shake=Math.max(0,shake-dt*1.2);bump=Math.max(0,bump-dt*3);flash=Math.max(0,flash-dt);
+    shake=Math.max(0,shake-dt*1.2);bump=Math.max(0,bump-dt*3);flash=Math.max(0,flash-dt);camMsg=Math.max(0,camMsg-dt);
   }
   function ranking(){
     const arr=[{me:true,name:"TY",traveled,finished:state==="done"},...cars.map(c=>({me:false,name:c.name,traveled:c.traveled,finished:c.finished,color:c.color}))];
@@ -1536,6 +1547,25 @@ const RACE=(()=>{
     if(w>80){g.fillStyle="#fff";g.textAlign="center";g.font=`800 ${Math.round(w*0.06)}px system-ui,sans-serif`;g.fillText(o.tag||"",0,wy+h*0.105)}
     g.restore();
   }
+  // pohled z kokpitu: boční kryty, zrcátka, halo a volant
+  function drawCockpit(steer,spct,bounce,col,brake){
+    const y0=H*0.74+bounce*0.4;
+    g.save();
+    g.fillStyle=shade(col,-.55);
+    g.beginPath();g.moveTo(0,H);g.lineTo(0,y0+40);g.quadraticCurveTo(W*0.22,y0-10,W*0.34,H);g.closePath();g.fill();
+    g.beginPath();g.moveTo(W,H);g.lineTo(W,y0+40);g.quadraticCurveTo(W*0.78,y0-10,W*0.66,H);g.closePath();g.fill();
+    g.fillStyle="#12141f";for(const sx of[W*0.2,W*0.8]){rr(sx-34,y0-6,68,30,8);g.fill()}
+    g.fillStyle="#38405e";for(const sx of[W*0.2,W*0.8]){rr(sx-29,y0-1,58,20,6);g.fill()}
+    g.strokeStyle="#1a1d2b";g.lineWidth=18;g.beginPath();g.arc(W/2,H*0.30,W*0.33,Math.PI*0.08,Math.PI*0.92);g.stroke();
+    g.fillStyle="#1a1d2b";g.fillRect(W/2-9,H*0.30-W*0.33,18,W*0.1);
+    g.save();g.translate(W/2,H+30+bounce);g.rotate(steer*0.5);
+    g.strokeStyle="#0d0f18";g.lineWidth=26;g.beginPath();g.arc(0,0,110,Math.PI*1.08,Math.PI*1.92);g.stroke();
+    g.fillStyle="#0d0f18";rr(-96,-36,192,56,12);g.fill();
+    g.fillStyle=brake?"#ff4d5e":"#5ef2c0";rr(-70,-26,140,10,5);g.fill();
+    for(let i=0;i<6;i++){g.fillStyle=spct*6>i?(i<3?"#5ef2c0":i<5?"#ffd84d":"#ff4d5e"):"#262a3c";
+      g.beginPath();g.arc(-50+i*20,-4,5,0,7);g.fill()}
+    g.restore();g.restore();
+  }
   function withClip(sy,clipY,fn){if(sy>clipY){g.save();g.beginPath();g.rect(0,0,W,clipY);g.clip();fn();g.restore()}else fn()}
 
   function render(){
@@ -1582,8 +1612,9 @@ const RACE=(()=>{
     const spct=speed/maxSpeed,I=inp(),steer=steerV;
     const bounce=(Math.random()-.5)*2*(1+(playerX<-1||playerX>1?4:0))*spct+bump*5;
     const boost=state==="run"&&I.N&&nitro>0&&speed>maxSpeed*0.15;
-    const col=devColors(S.sel)[0];
-    drawCarRear(W/2,H-24+bounce,W*0.26,col,{tilt:steer*0.05*spct+bump*0.03,brake:I.B&&state==="run",flame:boost,tag:"TY"});
+    const col=devColors(S.sel)[0],CAM=CAMS[camIdx];
+    if(CAM.show)drawCarRear(W/2,H+CAM.carY+bounce,W*CAM.carW,col,{tilt:steer*0.05*spct+bump*0.03,brake:I.B&&state==="run",flame:boost,tag:"TY"});
+    else if(CAM.cockpit)drawCockpit(steer,spct,bounce,col,I.B&&state==="run");
     g.restore();
     // částice (prach, kouř, jiskry)
     for(const p of parts){const a=Math.max(0,p.life/p.max);g.fillStyle=`rgba(${p.c},${(p.c==="255,210,90"?1:0.5)*a})`;g.beginPath();g.arc(p.x,p.y,p.r*(p.c==="255,210,90"?1:(2-a)),0,7);g.fill()}
@@ -1641,6 +1672,12 @@ const RACE=(()=>{
       const m=Math.round(doBoxu*segLen/10);
       g.textAlign="center";g.font="800 16px system-ui,sans-serif";g.fillStyle=doBoxu===0?"#5ef2c0":"#ffd84d";
       g.fillText(doBoxu===0?"🛞 BOXY — zajeď doprava a zpomal":`🛞 BOXY ZA ${m} m`,W/2,H-150);
+    }
+    // název kamery chvíli po přepnutí
+    if(camMsg>0){
+      g.globalAlpha=Math.min(1,camMsg*1.6);g.textAlign="center";g.font="800 15px system-ui,sans-serif";
+      g.fillStyle="rgba(8,10,24,.7)";rr(W/2-95,96,190,30,12);g.fill();
+      g.fillStyle="#cfd4f5";g.fillText("🎥 "+CAMS[camIdx].n+"  ·  C",W/2,116);g.globalAlpha=1;
     }
     // probíhající zastávka v boxech
     if(pitT>0){
@@ -1743,13 +1780,15 @@ const RACE=(()=>{
       ${seg("Úroveň botů",DIFFS.map(d=>d.n),cfg.diff)}
       ${segBots()}
       ${seg("Prostředí",["Náhodné","Západ slunce","Den","Noc"],cfg.theme+1)}
+      ${seg("Kamera",CAMS.map(c=>c.n),camIdx)}
       <p style="margin-top:12px">🏆 Nejlepší čas: <b>${best?fmtT(best):"zatím žádný"}</b> <span class="muted">(${cfg.laps} ${cfg.laps===1?"kolo":cfg.laps<5?"kola":"kol"}, ${DIFFS[cfg.diff].n}, ${nb} ${nb===1?"soupeř":nb<5?"soupeři":"soupeřů"})</span><br><span class="muted">Závodů: ${rs.races} · výher: ${rs.wins}</span></p>
       <p class="muted">Ovládání: <b>← →</b> / A D = zatáčení · <b>↑</b> / W = plyn · <b>↓</b> / S = brzda · <b>mezerník</b> = nitro (sbírej 🔥) · M = zvuk · Esc = vzdát se</p>
       <div class="btns" style="justify-content:center;margin-top:14px"><button class="btn ghost" id="rvCancel">Zavřít</button><button class="btn ghost" id="rvGar">🔧 Garáž · ${kred(rs.credits)}</button><button class="btn go" id="rvGo">🏁 Závodit</button></div></div>`;
     const rows=ov().querySelectorAll(".segrow");
     const apply=[v=>cfg.laps=[1,3,5,10][v],v=>cfg.diff=v,
       v=>{cfg.bots[v]=!cfg.bots[v];if(!cfg.bots.some(Boolean))cfg.bots[v]=true},   // aspoň jeden soupeř
-      v=>cfg.theme=v-1];
+      v=>cfg.theme=v-1,
+      v=>{setCam(v);cfg.cam=v}];
     rows.forEach((row,ri)=>row.querySelectorAll("button").forEach(b=>b.onclick=()=>{apply[ri](+b.dataset.i);saveRS(loadRS());showFreeIntro()}));
     $("rvCancel").onclick=close;$("rvGo").onclick=startFree;$("rvGar").onclick=showGarage;
   }
@@ -1816,6 +1855,7 @@ const RACE=(()=>{
     if(GAMEKEYS.includes(e.code)){keys[e.code]=true;e.preventDefault()}
     if(e.code==="KeyM"){muted=!muted;if(engG)engG.gain.value=0;MUSIC.setOn(!muted)}
     if(e.code==="KeyP"){togglePause()}
+    if(e.code==="KeyC"){setCam(camIdx+1);cfg.cam=camIdx;saveRS(loadRS())}
     if(e.code==="Escape"){if(state==="run"||state==="count"){state="over";close()}else close()}
     e.stopPropagation();
   },true);
@@ -1827,7 +1867,7 @@ const RACE=(()=>{
     b.addEventListener("pointerdown",on(true));b.addEventListener("pointerup",on(false));b.addEventListener("pointerleave",on(false));b.addEventListener("pointercancel",on(false));
   });
   $("raceClose").onclick=()=>{if(state==="run"||state==="count")state="over";close()};
-  return {open,close,setRender:f=>{render_main=f},_dbg:{get state(){return state},step,render,reset,keys,get cars(){return cars},get traveled(){return traveled},get speed(){return speed},get playerX(){return playerX},get pos(){return pos},get trackLen(){return trackLen},get segs(){return segs},showResult,finishRace:()=>finishRace(true),get rank(){return finishRank},get tyre(){return tyre},get pitT(){return pitT},get pitStops(){return pitStops},set nitro(v){nitro=v},get nitro(){return nitro}}};
+  return {open,close,setRender:f=>{render_main=f},_dbg:{get state(){return state},step,render,reset,keys,get cars(){return cars},get traveled(){return traveled},get speed(){return speed},get playerX(){return playerX},get pos(){return pos},get trackLen(){return trackLen},get segs(){return segs},showResult,finishRace:()=>finishRace(true),get rank(){return finishRank},get tyre(){return tyre},setCam,get camIdx(){return camIdx},get pitT(){return pitT},get pitStops(){return pitStops},set nitro(v){nitro=v},get nitro(){return nitro}}};
 })();
 /* ============ START ============ */
 RACE.setRender(render);
