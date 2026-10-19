@@ -105,6 +105,22 @@
   #log div{padding:4px 0;border-bottom:1px solid rgba(255,255,255,.05)}
   .foot{display:flex;gap:8px;margin-top:14px}
   .foot .btn{flex:1}
+  /* úvodní rozcestník */
+  .modal.start{z-index:60;background:radial-gradient(900px 620px at 50% 0%,#1b2a66,transparent 72%),rgba(4,6,14,.97)}
+  .startbox{width:min(880px,100%);margin:auto}
+  .startlogo{display:flex;align-items:center;gap:14px;justify-content:center;margin-bottom:22px}
+  .startlogo i{font-style:normal;display:grid;place-items:center;width:62px;height:62px;border-radius:18px;background:linear-gradient(135deg,var(--acc),var(--acc2));font-size:34px;box-shadow:0 10px 30px #5ef2c055}
+  .startlogo h1{margin:0;font-size:clamp(22px,5vw,30px);letter-spacing:-.5px}
+  .startlogo p{margin:2px 0 0;color:var(--mut);font-size:14px}
+  .startgrid{display:grid;grid-template-columns:repeat(auto-fit,minmax(250px,1fr));gap:14px}
+  .startcard{text-align:left;color:var(--txt);background:var(--glass);border:1px solid var(--line);border-radius:22px;padding:22px;transition:.18s}
+  .startcard:hover{transform:translateY(-3px);background:var(--glass2);border-color:var(--acc)}
+  .startcard.race:hover{border-color:var(--acc3)}
+  .startcard .si{font-size:44px;line-height:1}
+  .startcard h2{margin:10px 0 6px;font-size:20px;font-weight:800;text-transform:none;letter-spacing:0;color:var(--txt)}
+  .startcard p{margin:0;color:var(--mut);font-size:13.5px;line-height:1.5}
+  .startcard .sgo{display:inline-block;margin-top:14px;font-weight:700;color:var(--acc)}
+  .startcard.race .sgo{color:var(--acc3)}
   /* toasty, nápověda, statistiky */
   .toasts{position:fixed;right:14px;bottom:14px;z-index:70;display:flex;flex-direction:column;gap:8px;max-width:min(380px,calc(100vw - 28px));pointer-events:none}
   .toast{background:rgba(18,22,44,.96);border:1px solid var(--line);border-left:4px solid var(--acc2);border-radius:12px;padding:10px 14px;font-size:14px;box-shadow:0 10px 30px #0008;animation:tin .28s ease both}
@@ -181,6 +197,7 @@
       <div class="chip"><small>Nápady 💡</small><b id="ideas">0</b></div>
       <div class="chip" id="stockChip" title=""><small>Sklad 📦</small><b id="stockTop">0</b></div>
       <button class="btn go" id="raceMode" title="Čistý závodní mód bez ekonomiky (F)">🏎️ Závodní mód</button>
+      <button class="btn ghost" id="homeBtn" title="Úvodní nabídka">⌂</button>
       <button class="btn ghost" id="musicBtn" title="Hudba zap/vyp (M)">🎵</button>
       <button class="btn ghost" id="helpBtn" title="Nápověda a klávesové zkratky (H)">❓</button>
       <div class="chip spd">
@@ -294,6 +311,27 @@
         <div class="btns" style="justify-content:flex-end"><button class="btn ghost" id="edCancel">Zrušit</button><button class="btn go" id="edApply">Použít návrh</button></div>
       </div>
     </div>
+  </div>
+</div>
+
+<div class="modal start" id="startModal">
+  <div class="startbox">
+    <div class="startlogo"><i>📱</i><div><h1>Mobily i cihly</h1><p>Vyber si, co chceš hrát</p></div></div>
+    <div class="startgrid">
+      <button class="startcard" id="startTycoon">
+        <div class="si">📱</div>
+        <h2>Budování firmy</h2>
+        <p>Vyráběj a prodávej telefony, hodinky, sluchátka, tablety i notebooky. Navrhuj zařízení, najímej lidi, nastavuj ceny a rosť.</p>
+        <span class="sgo">Hrát firmu →</span>
+      </button>
+      <button class="startcard race" id="startRace">
+        <div class="si">🏎️</div>
+        <h2>Závodní mód</h2>
+        <p>Čistý závod ve formuli bez ekonomiky. Vyber si počet kol, úroveň botů i soupeře a jeď na čas.</p>
+        <span class="sgo">Závodit →</span>
+      </button>
+    </div>
+    <p class="muted" style="text-align:center;margin-top:16px">Přepnout můžeš kdykoli tlačítkem ⌂ v hlavičce.</p>
   </div>
 </div>
 
@@ -1693,7 +1731,14 @@ $("musicBtn").textContent=MUSIC.isOn()?"🎵":"🔇";
 ["pointerdown","click","keydown"].forEach(ev=>addEventListener(ev,()=>MUSIC.resume(),{once:true}));
 $("helpBtn").onclick=openHelp;$("helpClose").onclick=closeHelp;$("helpOk").onclick=closeHelp;
 $("helpModal").onclick=e=>{if(e.target.id==="helpModal")closeHelp()};
-try{if(!localStorage.getItem("mobilyICihlyHelp"))openHelp()}catch(e){}
+/* úvodní rozcestník: na začátku si vybereš firmu nebo závodní mód */
+let startOpen=true,everStarted=false;
+const openStart=()=>{startOpen=true;$("startModal").hidden=false};
+const closeStart=()=>{startOpen=false;everStarted=true;$("startModal").hidden=true};
+$("startTycoon").onclick=()=>{closeStart();MUSIC.resume();
+  try{if(!localStorage.getItem("mobilyICihlyHelp"))openHelp()}catch(e){}};
+$("startRace").onclick=()=>{closeStart();MUSIC.resume();RACE.open("free")};
+$("homeBtn").onclick=openStart;
 
 /* klávesové zkratky */
 document.addEventListener("keydown",e=>{
@@ -1702,6 +1747,7 @@ document.addEventListener("keydown",e=>{
   const k=e.key;
   if(helpOpen()){if(k==="Escape"||k==="Enter"){closeHelp();e.preventDefault()}return}
   if(D)return; // editor zařízení je otevřený
+  if(startOpen){if(k==="Escape"&&everStarted)closeStart();return}
   if(k==="p"||k==="P"){paused=!paused;renderSpeed()}
   else if(k==="+"||k==="="){setSpeed(1)}
   else if(k==="-"){setSpeed(-1)}
@@ -1740,7 +1786,7 @@ function renderStats(){
 
 let last=performance.now();
 setInterval(()=>{const now=performance.now();const dt=(now-last)/1000;last=now;
-  if(!paused&&!raceOn){tick(dt*SPEEDS[speedIdx]);sampleHist(dt)}
+  if(!paused&&!raceOn&&!startOpen){tick(dt*SPEEDS[speedIdx]);sampleHist(dt)}
   S.t=Date.now();render();if($("p-stats").classList.contains("on"))renderStats()},250);
 setInterval(save,10000);
 log("Vítej! Vyrob první kusy klikáním a nastav cenu.");
