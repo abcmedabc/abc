@@ -353,7 +353,7 @@
           <li>Zkus <b>🏁 sponzorský závod</b>: dobré umístění dá bonus k poptávce.</li>
         </ol>
         <h3>🏎️ Závod</h3>
-        <p>Zatáčej <b>← →</b>, plyn <b>↑</b>, brzda <b>↓</b>, <b>mezerník</b> = nitro. Jeď těsně za soupeřem a chytíš <b>závětří</b>. Podporuje i ovladač. V závodním módu si vybereš <b>úroveň botů</b> (Nováček až Legenda) i <b>které značky</b> pojedou proti tobě; ve sponzorském závodě roste sama s počtem odjetých závodů.</p>
+        <p>Zatáčej <b>← →</b>, plyn <b>↑</b>, brzda <b>↓</b>, <b>mezerník</b> = nitro. Pneumatiky se opotřebovávají, a když dojedou, auto klouže — zajeď doprava do <b>boxů</b>, zpomal a nechej si přezout. Jeď těsně za soupeřem a chytíš <b>závětří</b>. Podporuje i ovladač. V závodním módu si vybereš <b>úroveň botů</b> (Nováček až Legenda) i <b>které značky</b> pojedou proti tobě; ve sponzorském závodě roste sama s počtem odjetých závodů.</p>
       </div>
       <div>
         <h3>⌨️ Klávesové zkratky</h3>
@@ -1009,6 +1009,7 @@ const RACE=(()=>{
   const camDepth=1/Math.tan((fov/2)*Math.PI/180),playerZ=camH*camDepth;
   const maxSpeed=segLen*60,accelR=maxSpeed/5,brakeR=-maxSpeed,decelR=-maxSpeed/5,offDecel=-maxSpeed/2,offLimit=maxSpeed/4;
   const centrifugal=0.3,PW=0.3,CW=0.3,CARW=600;
+  const PIT_FROM=6,PIT_TO=110,PIT_IN=1.05,PIT_OUT=2.0,PIT_LIMIT=0.3,PIT_TIME=2.6;   // boxy: úsek trati, šířka uličky, limit rychlosti a délka zastávky
   const clamp=(v,a,b)=>Math.max(a,Math.min(b,v)),interp=(a,b,p)=>a+(b-a)*p;
   const incr=(s,i,m)=>{let r=s+i;while(r>=m)r-=m;while(r<0)r+=m;return r};
   const pctRem=(n,t)=>(n%t)/t;
@@ -1045,6 +1046,13 @@ const RACE=(()=>{
     for(let n=60;n<segs.length-40;n+=90){const side=((n/90)|0)%2?1:-1;segs[n].sprites.push({type:"board",offset:side*1.45,w:1500,h:1400,v:((n/90)|0)%3})}
     for(let n=30;n<segs.length-20;n+=47){const lane=[-.55,0,.55][((n/47)|0)%3];segs[n].sprites.push({type:"pad",offset:lane,w:500,h:0,v:0})}
     segs[3].sprites.push({type:"gantry",offset:0,w:2600,h:1700,v:0});
+    // boxová ulička vpravo hned za cílovou rovinkou
+    for(let n=PIT_FROM;n<=PIT_TO;n++){segs[n].pit=true;segs[n].sprites=segs[n].sprites.filter(s=>s.offset<0.9)}
+    segs[PIT_FROM+55].sprites.push({type:"pitbox",offset:2.5,w:2800,h:1600,v:0});
+    segs[PIT_FROM+95].sprites.push({type:"pitbox",offset:2.5,w:2800,h:1600,v:0});
+    segs[PIT_FROM+1].sprites.push({type:"pitsign",offset:1.35,w:900,h:1100,v:0});
+    segs[(PIT_FROM-14+segs.length)%segs.length].sprites.push({type:"pitsign",offset:1.35,w:900,h:1100,v:0});
+    for(let n=PIT_FROM+12;n<PIT_TO-6;n+=14)segs[n].sprites.push({type:"tyres",offset:2.6,w:420,h:330,v:n%2});
     segs.forEach((s,i)=>{if(i<rumbleLen+1)s.start=true});
     buildMap();
   }
@@ -1084,6 +1092,7 @@ const RACE=(()=>{
 
   /* ---- stav ---- */
   let carUp={eng:0,tyre:0,brk:0,nit:0},nitMax=1,lastPrize=0;
+  let tyre=1,pitT=0,pitStops=0,pitLock=false;     // opotřebení pneumatik a zastávka v boxech
   let mode="sponsor",laps=3,curDiff=2;const cfg={laps:3,diff:2,theme:-1,bots:RIVALS.map(()=>true)};
   let theme=THEMES[0],state="idle",pos=0,speed=0,playerX=0,nitro=0.4,time=0,count=3,traveled=0,skyOff=0,hillOff=0,cars=[],finishRank=0,finishTime=0,shake=0,raf=0,lastT=0,flash=0,bump=0;
   const keys={},touch={};
@@ -1109,6 +1118,7 @@ const RACE=(()=>{
     theme=mode==="free"&&cfg.theme>=0?THEMES[cfg.theme]:THEMES[Math.floor(Math.random()*THEMES.length)];
     if(!segs.length)buildTrack();
     segs.forEach(s=>s.cars=[]);
+    tyre=1;pitT=0;pitStops=0;pitLock=false;
     pos=0;speed=0;playerX=0;nitro=0.4*nitMax;time=0;count=goAt=3.4+Math.random()*0.6;traveled=0;skyOff=0;hillOff=0;finishRank=0;finishTime=0;shake=0;flash=0;bump=0;
     MUSIC.setIntensity(0.3);
     steerV=0;roll=0;zoomV=0;lapStart=0;lastLap=0;bestLap=0;lapNo=1;topSpeed=0;overtakes=0;prevRank=6;rankCd=1;banner=null;slip=false;parts=[];lightsOn=0;racePaused=false;squeal=0;
@@ -1120,7 +1130,7 @@ const RACE=(()=>{
         skill:clamp(D.skill*(0.9+Math.random()*0.2),0.05,1),
         lane:(i%2?1:-1)*(0.45+0.1*(i%3)),
         react:0.08+(1-D.skill)*0.6*Math.random(),
-        err:0,errT:3+Math.random()*6,errK:1,errSide:1,
+        err:0,errT:3+Math.random()*6,errK:1,errSide:1,tyre:1,pitT:0,
         offset:(i%2?0.45:-0.45)*(i<2?1:(i%3?.9:-.9)),
         z,speed:0,traveled:(i+1)*520,finished:false,finTime:0,braking:false,pct:0};
       findSeg(z).cars.push(c);return c});
@@ -1227,15 +1237,23 @@ const RACE=(()=>{
       const ps=findSeg(pos+playerZ),spct=speed/maxSpeed,dx=dt*2*spct;
       const before=pos;
       pos=incr(pos,dt*speed,trackLen);traveled+=dt*speed;
-      const boost=state==="run"&&I.N&&nitro>0&&speed>maxSpeed*0.15;
+      const boost=state==="run"&&I.N&&nitro>0&&speed>maxSpeed*0.15&&pitT<=0;
+      const inPit=!!ps.pit&&playerX>PIT_IN&&playerX<PIT_OUT+0.45;   // jsem v boxové uličce
       // plynulé řízení: volant má setrvačnost, ovladač dává analogovou hodnotu
       const target=state==="run"?(I.A!==undefined?I.A:(I.R?1:0)-(I.L?1:0)):0;
       steerV+=(target-steerV)*Math.min(1,dt*(Math.abs(target)>Math.abs(steerV)?9:12));
       if(state==="run"){
-        playerX+=steerV*dx*(1+0.08*carUp.tyre);
+        playerX+=steerV*dx*(1+0.08*carUp.tyre)*(0.7+0.3*tyre);
         if(boost)nitro=Math.max(0,nitro-dt*0.28/(1+0.2*carUp.nit));
       }
-      playerX-=dx*spct*ps.curve*centrifugal*(1-0.13*carUp.tyre);
+      // opotřebení pneumatik: nejvíc ubývá v zatáčkách a mimo trať
+      const grip=0.6+0.4*tyre;
+      if(state==="run"){
+        const load=spct*(0.0075+Math.abs(ps.curve)*spct*0.0064+Math.abs(steerV)*0.0064)
+                  +((playerX<-1||playerX>1)&&!inPit?0.03*spct:0);
+        tyre=Math.max(0,tyre-dt*load/(1+0.25*carUp.tyre));
+      }
+      playerX-=dx*spct*ps.curve*centrifugal*(1-0.13*carUp.tyre)/grip;
       // závětří: těsně za soupeřem v jeho pruhu je méně odporu vzduchu
       slip=false;
       if(state==="run"&&speed>maxSpeed*0.5){for(let i=2;i<=14&&!slip;i++){const sg=segs[(ps.index+i)%segs.length];for(const c of sg.cars){if(Math.abs(c.offset-playerX)<0.3){slip=true;break}}}}
@@ -1243,6 +1261,15 @@ const RACE=(()=>{
       if(state==="run"&&I.G)speed+=(boost?accelR*2.2:accelR)*(1+0.035*carUp.eng)*(slip?1.25:1)*dt;
       else if(state==="run"&&I.B)speed+=brakeR*(1+0.18*carUp.brk)*dt;
       else speed+=decelR*dt;
+      // boxy: v uličce platí limit rychlosti, po zastavení ti přezují kola
+      if(state==="run"&&inPit){
+        if(speed>maxSpeed*PIT_LIMIT)speed=Math.max(maxSpeed*PIT_LIMIT,speed+brakeR*1.8*dt);
+        if(pitT<=0&&!pitLock&&speed<=maxSpeed*PIT_LIMIT*1.08&&tyre<0.999){pitT=PIT_TIME;beep(700,.2,.1,"sine")}
+      }else pitLock=false;                     // další zastávka až po opuštění uličky
+      if(pitT>0){
+        speed=0;pitT-=dt;
+        if(pitT<=0){tyre=1;pitLock=true;pitStops++;showBanner("🛞 NOVÉ PNEUMATIKY","#5ef2c0");beep(1100,.3,.12,"sine")}
+      }
       topSpeed=Math.max(topSpeed,speed);
       // kola a pozice
       const ln=Math.min(laps,Math.floor(traveled/trackLen)+1);
@@ -1258,16 +1285,16 @@ const RACE=(()=>{
       roll+=((-ps.curve*spct*0.0035+steerV*spct*0.012)-roll)*Math.min(1,dt*5);
       zoomV+=((spct*0.035+(boost?0.05:0))-zoomV)*Math.min(1,dt*4);
       // částice: prach mimo trať, kouř při brzdění a smyku
-      const offr=playerX<-1||playerX>1;
+      const offr=(playerX<-1||playerX>1)&&!inPit;
       if(offr&&speed>2000)for(let k=0;k<2;k++)emit(WHEELX[k]+(Math.random()-.5)*30,WHEELY,"dust");
       if(state==="run"&&I.B&&speed>maxSpeed*0.4&&Math.random()<0.5)emit(WHEELX[Math.random()<.5?0:1],WHEELY,"smoke");
       if(Math.abs(steerV)>0.7&&spct>0.7&&Math.random()<0.35)emit(WHEELX[steerV>0?0:1],WHEELY,"smoke");
       squeal=((Math.abs(steerV)>0.75&&spct>0.75)||(offr&&spct>0.2))?1:0;
       if(state==="done"){speed+=brakeR*0.35*dt}
-      if((playerX<-1||playerX>1)&&speed>offLimit)speed+=offDecel*dt;
-      if(playerX<-1||playerX>1){shake=Math.min(1,shake+dt*4)}else shake=Math.max(0,shake-dt*3);
+      if((playerX<-1||playerX>1)&&!inPit&&speed>offLimit)speed+=offDecel*dt;
+      if((playerX<-1||playerX>1)&&!inPit){shake=Math.min(1,shake+dt*4)}else shake=Math.max(0,shake-dt*3);
       // překážky u silnice
-      if(playerX<-1||playerX>1){for(const s of ps.sprites){
+      if((playerX<-1||playerX>1)&&!inPit){for(const s of ps.sprites){
         if(s.type==="pad"||s.type==="gantry"||s.type==="board"&&false)continue;
         const sw=(s.w/roadW);if(overlap(playerX,PW,s.offset+sw/2*(s.offset>0?1:-1),sw,1)){speed=maxSpeed/5;pos=incr(ps.p1.world.z,-playerZ,trackLen);thump();sparks();shake=1;bump=1;break}}}
       // nitro pady
@@ -1294,11 +1321,16 @@ const RACE=(()=>{
           // dojíždění: na nízkých úrovních se závod drží pohromadě, na vysokých skoro vůbec
           if(gap>trackLen*0.18)pace*=1-0.06*c.band;else if(gap<-trackLen*0.12)pace*=1+0.055*c.band;
           if(aiSlip(c))pace*=1.045;             // závětří
+          // pneumatiky soupeře: ojeté zpomalují, pak jede do boxů
+          c.tyre=Math.max(0,c.tyre-dt*0.016);
+          if(c.pitT<=0&&c.tyre<0.2&&!c.finished)c.pitT=PIT_TIME+0.6;
+          if(c.pitT>0){c.pitT-=dt;if(c.pitT<=0)c.tyre=1}
+          pace*=0.86+0.14*c.tyre;
           c.errT-=dt;                           // chyby jezdce
           if(c.errT<=0){c.errT=4+Math.random()*8;
             if(Math.random()<(1-c.skill*c.cons)*0.5){c.err=0.5+Math.random()*1.3;c.errK=0.76+Math.random()*0.16;c.errSide=Math.random()<0.5?-1:1}}
           if(c.err>0){c.err-=dt;pace*=c.errK}
-          const target=maxSpeed*pace*aiCornerLimit(c);
+          const target=c.pitT>0?maxSpeed*0.12:maxSpeed*pace*aiCornerLimit(c);
           c.braking=c.speed>target+80;
           c.speed=c.speed<target?Math.min(target,c.speed+accelR*(0.65+0.45*c.skill)*dt)
                                 :Math.max(target,c.speed+brakeR*(0.22+0.3*c.skill)*dt);
@@ -1390,6 +1422,12 @@ const RACE=(()=>{
     poly(x1-w1,y1,x1+w1,y1,x2+w2,y2,x2-w2,y2,s.start?(s.index%2?"#111":"#f2f2f2"):theme.road[b]);
     if(b===0&&!s.start){const lw1=w1*2/lanes,lw2=w2*2/lanes;let lx1=x1-w1+lw1,lx2=x2-w2+lw2;
       for(let l=1;l<lanes;l++,lx1+=lw1,lx2+=lw2)poly(lx1-l1/2,y1,lx1+l1/2,y1,lx2+l2/2,y2,lx2-l2/2,y2,theme.lane)}
+    if(s.pit){   // asfalt boxové uličky vpravo od trati
+      const p1=w1*PIT_OUT,p2=w2*PIT_OUT;
+      poly(x1+w1,y1,x1+p1,y1,x2+p2,y2,x2+w2,y2,shade(theme.road[b],-.12));
+      poly(x1+w1,y1,x1+w1+l1*2,y1,x2+w2+l2*2,y2,x2+w2,y2,"#f2f2f2");
+      if(b===0)poly(x1+p1-l1*2,y1,x1+p1,y1,x2+p2,y2,x2+p2-l2*2,y2,"#ffd84d");
+    }
     if(s.fog<1){g.globalAlpha=1-s.fog;g.fillStyle=theme.fog;g.fillRect(0,y2,W,y1-y2);g.globalAlpha=1}
   }
   /* sprity */
@@ -1421,6 +1459,34 @@ const RACE=(()=>{
     g.fillStyle=gr;g.fillRect(x-wp*0.5,by,wp,bh);
     if(wp>120){g.fillStyle="#04271c";g.textAlign="center";g.font=`900 ${Math.round(bh*0.55)}px system-ui,sans-serif`;g.fillText("START · CÍL",x,by+bh*0.7)}
     for(let i=0;i<14;i++){g.fillStyle=i%2?"#fff":"#111";g.fillRect(x-wp*0.5+i*wp/14,by+bh,wp/14,bh*0.4)}
+  }
+  // stánek s pneumatikami: zázemí boxů u uličky
+  function drawPitbox(x,y,wp,hp){
+    const bw=wp,bh=hp*0.62,by=y-bh;
+    g.fillStyle="#1b1f2e";g.fillRect(x-bw/2,by,bw,bh);                        // budova
+    g.fillStyle="#262c40";g.fillRect(x-bw/2,by,bw,bh*0.2);                    // střecha
+    const gr=g.createLinearGradient(x-bw/2,by,x+bw/2,by);gr.addColorStop(0,"#5ef2c0");gr.addColorStop(1,"#7b8cff");
+    g.fillStyle=gr;g.fillRect(x-bw/2,by-hp*0.16,bw,hp*0.16);                  // poutač
+    if(bw>90){g.fillStyle="#04271c";g.textAlign="center";g.font=`900 ${Math.round(hp*0.1)}px system-ui,sans-serif`;
+      g.fillText("BOXY · VÝMĚNA KOL",x,by-hp*0.05)}
+    // tři garážová stání
+    for(let i=-1;i<=1;i++){const gx=x+i*bw*0.3;
+      g.fillStyle="#0b0d16";g.fillRect(gx-bw*0.12,by+bh*0.28,bw*0.24,bh*0.72);
+      g.fillStyle="#39405c";g.fillRect(gx-bw*0.12,by+bh*0.28,bw*0.24,bh*0.06)}
+    if(bw>70){ // mechanici s kolem
+      g.fillStyle="#ffd84d";g.beginPath();g.arc(x-bw*0.34,y-bh*0.12,bw*0.022,0,7);g.fill();
+      g.fillStyle="#ff6fb1";g.beginPath();g.arc(x+bw*0.36,y-bh*0.12,bw*0.022,0,7);g.fill()}
+  }
+  function drawTyres(x,y,wp,hp,v){      // stoh pneumatik u uličky
+    for(let i=0;i<3;i++){const ty=y-hp*0.3*(i+1),r=wp*0.3;
+      g.fillStyle=i===1?"#15151c":"#0e0e14";g.beginPath();g.ellipse(x,ty,r,hp*0.19,0,0,7);g.fill();
+      g.fillStyle=v?"#ff5e62":"#e8ecff";g.beginPath();g.ellipse(x,ty,r*0.42,hp*0.08,0,0,7);g.fill()}
+  }
+  function drawPitsign(x,y,wp,hp){      // cedule BOXY se šipkou
+    g.fillStyle="#2a2a35";g.fillRect(x-wp*0.05,y-hp*0.6,wp*0.1,hp*0.6);
+    g.fillStyle="#ffd84d";rr(x-wp/2,y-hp,wp,hp*0.42,wp*0.06);g.fill();
+    if(wp>60){g.fillStyle="#1a1300";g.textAlign="center";g.font=`900 ${Math.round(hp*0.18)}px system-ui,sans-serif`;
+      g.fillText("BOXY →",x,y-hp*0.68)}
   }
   function drawPad(x,y,wp,used){
     if(used){return}
@@ -1508,7 +1574,8 @@ const RACE=(()=>{
         if(wp<2)continue;
         withClip(sy,s.clip,()=>{
           switch(sp.type){case"tree":drawTree(sx,sy,wp,hp,sp.v,theme.stars?"n":"d");break;case"palm":drawPalm(sx,sy,wp,hp,sp.v);break;case"rock":drawRock(sx,sy,wp,hp);break;
-            case"bush":drawBush(sx,sy,wp,hp);break;case"board":drawBoard(sx,sy,wp,hp,sp.v);break;case"gantry":drawGantry(sx,sy,wp,hp);break;case"pad":drawPad(sx,sy,wp,sp.used);break}});
+            case"bush":drawBush(sx,sy,wp,hp);break;case"board":drawBoard(sx,sy,wp,hp,sp.v);break;case"gantry":drawGantry(sx,sy,wp,hp);break;case"pad":drawPad(sx,sy,wp,sp.used);break;
+            case"pitbox":drawPitbox(sx,sy,wp,hp);break;case"tyres":drawTyres(sx,sy,wp,hp,sp.v);break;case"pitsign":drawPitsign(sx,sy,wp,hp);break}});
       }
     }
     // hráč
@@ -1555,16 +1622,36 @@ const RACE=(()=>{
     rk.forEach((r,i)=>{const y=104+i*22;g.fillStyle=r.me?"#5ef2c0":"#cfd4f5";g.fillText(`${i+1}. ${r.name}`,W-176,y);
       if(!r.me){g.fillStyle=r.color;g.fillRect(W-30,y-11,10,10)}else{g.fillStyle="#5ef2c0";g.fillRect(W-30,y-11,10,10)}});
     // rychlost
-    g.fillStyle="rgba(8,10,24,.6)";rr(16,H-116,190,100,14);g.fill();
-    g.fillStyle="#fff";g.textAlign="left";g.font="900 40px system-ui,sans-serif";g.fillText(Math.round(speed/maxSpeed*330),30,H-70);
-    g.font="700 14px system-ui,sans-serif";g.fillStyle="#9aa3d0";g.fillText("km/h",118,H-70);
+    g.fillStyle="rgba(8,10,24,.6)";rr(16,H-146,190,130,14);g.fill();
+    g.fillStyle="#fff";g.textAlign="left";g.font="900 40px system-ui,sans-serif";g.fillText(Math.round(speed/maxSpeed*330),30,H-100);
+    g.font="700 14px system-ui,sans-serif";g.fillStyle="#9aa3d0";g.fillText("km/h",118,H-100);
+    // pneumatiky
+    g.fillStyle="rgba(255,255,255,.12)";rr(30,H-66,156,10,5);g.fill();
+    g.fillStyle=tyre>0.5?"#5ef2c0":tyre>0.25?"#ffd84d":"#ff4d5e";rr(30,H-66,Math.max(2,156*tyre),10,5);g.fill();
+    g.fillStyle=tyre>0.25?"#cfd4f5":"#ff8a94";g.font="700 11px system-ui,sans-serif";
+    g.fillText(`🛞 PNEUMATIKY ${Math.round(tyre*100)} %${tyre<0.25?" · DO BOXŮ!":""}`,30,H-76);
     // nitro
-    g.fillStyle="rgba(255,255,255,.12)";rr(30,H-36,156,10,5);g.fill();
-    const ng=g.createLinearGradient(30,0,186,0);ng.addColorStop(0,"#ffb347");ng.addColorStop(1,"#ff5e62");g.fillStyle=ng;rr(30,H-36,Math.max(2,156*Math.min(1,nitro/nitMax)),10,5);g.fill();
-    g.fillStyle="#cfd4f5";g.font="700 11px system-ui,sans-serif";g.fillText("🔥 NITRO · mezerník",30,H-46);
+    g.fillStyle="rgba(255,255,255,.12)";rr(30,H-30,156,10,5);g.fill();
+    const ng=g.createLinearGradient(30,0,186,0);ng.addColorStop(0,"#ffb347");ng.addColorStop(1,"#ff5e62");g.fillStyle=ng;rr(30,H-30,Math.max(2,156*Math.min(1,nitro/nitMax)),10,5);g.fill();
+    g.fillStyle="#cfd4f5";g.font="700 11px system-ui,sans-serif";g.fillText("🔥 NITRO · mezerník",30,H-40);
+    // kolik zbývá k boxům, když jsou pneumatiky ojeté
+    if(state==="run"&&tyre<0.4&&pitT<=0){
+      const si=findSeg(pos+playerZ).index;
+      const doBoxu=si<=PIT_TO?(si<PIT_FROM?(PIT_FROM-si):0):(segs.length-si+PIT_FROM);
+      const m=Math.round(doBoxu*segLen/10);
+      g.textAlign="center";g.font="800 16px system-ui,sans-serif";g.fillStyle=doBoxu===0?"#5ef2c0":"#ffd84d";
+      g.fillText(doBoxu===0?"🛞 BOXY — zajeď doprava a zpomal":`🛞 BOXY ZA ${m} m`,W/2,H-150);
+    }
+    // probíhající zastávka v boxech
+    if(pitT>0){
+      g.textAlign="center";g.fillStyle="rgba(8,10,24,.8)";rr(W/2-150,H*0.52,300,74,16);g.fill();
+      g.fillStyle="#5ef2c0";g.font="900 28px system-ui,sans-serif";g.fillText("🛞 VÝMĚNA KOL",W/2,H*0.52+34);
+      g.fillStyle="rgba(255,255,255,.15)";rr(W/2-120,H*0.52+48,240,10,5);g.fill();
+      g.fillStyle="#5ef2c0";rr(W/2-120,H*0.52+48,240*(1-pitT/PIT_TIME),10,5);g.fill();
+    }
     // stupeň a otáčky (LED lišta: zelené → červené)
-    g.fillStyle="#fff";g.font="900 30px system-ui,sans-serif";g.textAlign="right";g.fillText(state==="idle"?"N":gear,200,H-72);
-    for(let i=0;i<10;i++){const on=rpmF*10>i&&speed>0;g.fillStyle=on?(i<5?"#5ef2c0":i<8?"#ffd84d":"#ff4d5e"):"rgba(255,255,255,.13)";g.beginPath();g.arc(32+i*16,H-104,5,0,7);g.fill()}
+    g.fillStyle="#fff";g.font="900 30px system-ui,sans-serif";g.textAlign="right";g.fillText(state==="idle"?"N":gear,200,H-100);
+    for(let i=0;i<10;i++){const on=rpmF*10>i&&speed>0;g.fillStyle=on?(i<5?"#5ef2c0":i<8?"#ffd84d":"#ff4d5e"):"rgba(255,255,255,.13)";g.beginPath();g.arc(32+i*16,H-134,5,0,7);g.fill()}
     if(slip){g.textAlign="center";g.font="800 15px system-ui,sans-serif";g.fillStyle="#9ad8ff";g.fillText("💨 ZÁVĚTŘÍ",W/2,H-34)}
     // hlášky (pozice, kola)
     if(banner){const age=(performance.now()-banner.at)/2200;
@@ -1686,7 +1773,7 @@ const RACE=(()=>{
     $("rvGo").onclick=()=>{if(S.money<cost)return;S.money-=cost;S.races=(S.races||0)+1;ov().hidden=true;audioStart();reset();lastT=performance.now();render_ui_refresh()};
   }
   function render_ui_refresh(){try{render_main()}catch(e){}}
-  const statsLine=()=>`Nejvyšší rychlost <b>${Math.round(topSpeed/maxSpeed*330)} km/h</b> · předjetí <b>${overtakes}</b> · nejlepší kolo <b>${bestLap?fmtT(bestLap):"–"}</b>`;
+  const statsLine=()=>`Nejvyšší rychlost <b>${Math.round(topSpeed/maxSpeed*330)} km/h</b> · předjetí <b>${overtakes}</b> · nejlepší kolo <b>${bestLap?fmtT(bestLap):"–"}</b> · zastávky v boxech <b>${pitStops}</b>`;
   function showResult(){
     if(!raceOn||state!=="done")return;
     const med=["","🥇","🥈","🥉"][finishRank]||"🏁";
@@ -1740,7 +1827,7 @@ const RACE=(()=>{
     b.addEventListener("pointerdown",on(true));b.addEventListener("pointerup",on(false));b.addEventListener("pointerleave",on(false));b.addEventListener("pointercancel",on(false));
   });
   $("raceClose").onclick=()=>{if(state==="run"||state==="count")state="over";close()};
-  return {open,close,setRender:f=>{render_main=f},_dbg:{get state(){return state},step,render,reset,keys,get cars(){return cars},get traveled(){return traveled},get speed(){return speed},get playerX(){return playerX},get pos(){return pos},get trackLen(){return trackLen},get segs(){return segs},showResult,finishRace:()=>finishRace(true),get rank(){return finishRank},set nitro(v){nitro=v},get nitro(){return nitro}}};
+  return {open,close,setRender:f=>{render_main=f},_dbg:{get state(){return state},step,render,reset,keys,get cars(){return cars},get traveled(){return traveled},get speed(){return speed},get playerX(){return playerX},get pos(){return pos},get trackLen(){return trackLen},get segs(){return segs},showResult,finishRace:()=>finishRace(true),get rank(){return finishRank},get tyre(){return tyre},get pitT(){return pitT},get pitStops(){return pitStops},set nitro(v){nitro=v},get nitro(){return nitro}}};
 })();
 /* ============ START ============ */
 RACE.setRender(render);
