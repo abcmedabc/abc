@@ -1,0 +1,2574 @@
+<!doctype html><html lang="cs"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><meta name="robots" content="noindex,nofollow"><style>:root{color-scheme:light;padding-top:env(safe-area-inset-top);padding-bottom:env(safe-area-inset-bottom)}body{margin:0;font:14px system-ui,sans-serif}img{max-width:100%}[hidden]{display:none!important}</style></head><body><div id="gate" style="position:fixed;inset:0;z-index:99999;background:#1b1714;color:#f3ead4;display:flex;align-items:center;justify-content:center;font:16px system-ui,sans-serif;padding:16px">
+<form id="gateF" style="display:flex;flex-direction:column;gap:10px;width:min(320px,100%)">
+<b style="font-size:20px">Jitrnička a Jelítko</b>
+<input id="gateP" type="password" placeholder="heslo" autocomplete="current-password" style="font-size:18px;padding:10px;border-radius:8px;border:0">
+<button style="font-size:18px;padding:10px;border-radius:8px;border:0;background:#d9607f;color:#fff">Vstoupit</button>
+<span id="gateE" style="color:#f08ba4;min-height:1.2em"></span></form></div>
+<script>(function(){var g=document.getElementById("gate"),ok=function(){g.remove()};
+try{if(localStorage.getItem("jj-gate")==="1")return ok()}catch(e){}
+document.getElementById("gateF").addEventListener("submit",function(e){e.preventDefault();
+var p=document.getElementById("gateP").value.trim().toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g,"");
+if(p==="jelitko"){try{localStorage.setItem("jj-gate","1")}catch(e){}ok()}else document.getElementById("gateE").textContent="Špatné heslo."});})();</script>
+<title>Jelítko a Jitrnička</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@600;800&family=Literata:ital,opsz,wght@0,7..72,400;0,7..72,600;1,7..72,400&display=swap">
+<style>
+/* Layout: one narrow script column; acts as tabs; one shared cast; two-row player docked at the bottom */
+:root {
+  --bg: #efe3c2; --surface: #fbf6e9; --ink: #3a2a1c; --muted: #76604a; --line: #d8c59a;
+  --jitrnicka: #d9607f; --jitrnicka-tint: #f7dde3;
+  --jelitko: #9a5a2e;   --jelitko-tint: #efdcc8;
+  --karel: #36598a;     --karel-tint: #dce5f1;
+  --pastika: #a8650d;   --pastika-tint: #f3e2c2;
+  --saman: #7a3f9a;     --saman-tint: #ebdcf2;
+  --duch: #52708c;      --duch-tint: #dde6ee;
+  --vypravec: #76604a;  --vypravec-tint: #f3ead4;
+  --song: #5f7a2a;      --song-tint: #e3ebcf;
+  --lastovicka: #2f7d6d; --lastovicka-tint: #d6ece6;
+  --klara: #b0479a; --klara-tint: #f3dbee;
+  --komediant: #b2452f; --komediant-tint: #f4dbd4;
+  --barbina: #d1497c; --barbina-tint: #fadce8;
+  --metalak: #3d3d4a; --metalak-tint: #e0e0e6;
+  --podnikatel: #5a5fae; --podnikatel-tint: #e0e1f3;
+  --x1: #2f7d6d; --x1-tint: #d6ece6;
+  --x2: #b2452f; --x2-tint: #f4dbd4;
+  --x3: #5a5fae; --x3-tint: #e0e1f3;
+  --x4: #8a6d1c; --x4-tint: #efe5c6;
+  --bar: #3a2a1c; --bar-ink: #fbf6e9; --bar-line: #6a5644; --ok: #2f7a3a;
+  --display: "Baloo 2", "Trebuchet MS", system-ui, sans-serif;
+  --body: "Literata", Georgia, "Times New Roman", serif;
+}
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) {
+  --bg: #1d1712; --surface: #29211a; --ink: #f1e6d1; --muted: #b6a186; --line: #46392b;
+  --jitrnicka: #f08ba4; --jitrnicka-tint: #3d2229;
+  --jelitko: #d99a66;   --jelitko-tint: #3a2a1d;
+  --karel: #8fb1e0;     --karel-tint: #1f2a3b;
+  --pastika: #e6ad55;   --pastika-tint: #3a2c14;
+  --saman: #c99ce3;     --saman-tint: #30233a;
+  --duch: #a6bed4;      --duch-tint: #222b34;
+  --vypravec: #b6a186;  --vypravec-tint: #2c241c;
+  --song: #a9c56a;      --song-tint: #27301a;
+  --lastovicka: #7cc9b6; --lastovicka-tint: #1c302b;
+  --klara: #e79bd6; --klara-tint: #36202f;
+  --komediant: #ec9580; --komediant-tint: #3a211b;
+  --barbina: #f39abd; --barbina-tint: #3b1f2b;
+  --metalak: #c4c4d4; --metalak-tint: #2a2a33;
+  --podnikatel: #a9acec; --podnikatel-tint: #25263d;
+  --x1: #7cc9b6; --x1-tint: #1c302b;
+  --x2: #ec9580; --x2-tint: #3a211b;
+  --x3: #a9acec; --x3-tint: #25263d;
+  --x4: #dcc177; --x4-tint: #352d17;
+  --bar: #0f0c09; --bar-ink: #f1e6d1; --bar-line: #4a3d30; --ok: #7fcf8a;
+  color-scheme: dark;
+} }
+:root[data-theme="dark"] {
+  --bg: #1d1712; --surface: #29211a; --ink: #f1e6d1; --muted: #b6a186; --line: #46392b;
+  --jitrnicka: #f08ba4; --jitrnicka-tint: #3d2229;
+  --jelitko: #d99a66;   --jelitko-tint: #3a2a1d;
+  --karel: #8fb1e0;     --karel-tint: #1f2a3b;
+  --pastika: #e6ad55;   --pastika-tint: #3a2c14;
+  --saman: #c99ce3;     --saman-tint: #30233a;
+  --duch: #a6bed4;      --duch-tint: #222b34;
+  --vypravec: #b6a186;  --vypravec-tint: #2c241c;
+  --song: #a9c56a;      --song-tint: #27301a;
+  --lastovicka: #7cc9b6; --lastovicka-tint: #1c302b;
+  --klara: #e79bd6; --klara-tint: #36202f;
+  --komediant: #ec9580; --komediant-tint: #3a211b;
+  --barbina: #f39abd; --barbina-tint: #3b1f2b;
+  --metalak: #c4c4d4; --metalak-tint: #2a2a33;
+  --podnikatel: #a9acec; --podnikatel-tint: #25263d;
+  --x1: #7cc9b6; --x1-tint: #1c302b;
+  --x2: #ec9580; --x2-tint: #3a211b;
+  --x3: #a9acec; --x3-tint: #25263d;
+  --x4: #dcc177; --x4-tint: #352d17;
+  --bar: #0f0c09; --bar-ink: #f1e6d1; --bar-line: #4a3d30; --ok: #7fcf8a;
+  color-scheme: dark;
+}
+
+* { box-sizing: border-box; }
+[hidden] { display: none !important; }
+body {
+  background: var(--bg); color: var(--ink);
+  font-family: var(--body); font-size: 17px; line-height: 1.6;
+  padding-left: max(16px, env(safe-area-inset-left, 0px));
+  padding-right: max(16px, env(safe-area-inset-right, 0px));
+  padding-block: 0 calc(150px + env(safe-area-inset-bottom, 0px));
+  background-image: repeating-linear-gradient(-12deg, transparent 0 22px, color-mix(in srgb, var(--line) 35%, transparent) 22px 23px);
+}
+.wrap { max-width: 720px; margin: 0 auto; display: flex; flex-direction: column; gap: 22px; }
+
+header { padding-top: 32px; display: flex; flex-direction: column; gap: 6px; }
+.eyebrow { font-family: var(--display); font-weight: 600; font-size: 13px; letter-spacing: .12em; text-transform: uppercase; color: var(--muted); }
+h1 { font-family: var(--display); font-weight: 800; font-size: clamp(38px, 9vw, 60px); line-height: 1; margin: 0; text-wrap: balance; }
+h1 .a { color: var(--jitrnicka); } h1 .b { color: var(--jelitko); }
+.lead { margin: 6px 0 0; color: var(--muted); max-width: 60ch; }
+
+/* Act tabs */
+.acts { display: flex; gap: 8px; flex-wrap: wrap; }
+.act-tab {
+  font-family: var(--display); font-weight: 800; font-size: 17px; line-height: 1.15;
+  padding: 10px 16px; border-radius: 12px; border: 1.5px solid var(--line);
+  background: var(--surface); color: var(--ink); cursor: pointer; text-align: left;
+  display: flex; flex-direction: column; min-height: 44px;
+}
+.act-tab small { font-family: var(--body); font-weight: 400; font-size: 13px; color: var(--muted); }
+.act-tab[aria-selected="true"] { background: var(--ink); color: var(--surface); border-color: var(--ink); }
+.act-tab[aria-selected="true"] small { color: var(--surface); opacity: .75; }
+
+.opts-box { font-size: 15px; }
+.opts-t { font-family: var(--display); font-weight: 700; color: var(--ink); }
+.opts { display: flex; flex-wrap: wrap; gap: 8px 18px; font-size: 15px; color: var(--muted); }
+.opts label { display: inline-flex; align-items: center; gap: 8px; cursor: pointer; min-height: 32px; }
+.opts input { accent-color: var(--ink); width: 18px; height: 18px; }
+
+.learn { display: flex; flex-wrap: wrap; align-items: center; gap: 10px 18px; padding: 12px 14px; border-radius: 12px; background: var(--surface); border: 1.5px solid var(--line); }
+.learn.on { border-color: var(--c); background: var(--tint); }
+.learn-l { display: flex; align-items: center; gap: 10px; font-family: var(--display); font-weight: 800; font-size: 16px; flex-wrap: wrap; }
+.learn-l select { font: 600 15px var(--display); padding: 8px 10px; min-height: 40px; border-radius: 10px; border: 1.5px solid var(--line); background: var(--bg); color: var(--ink); max-width: 100%; }
+.learn-h { display: inline-flex; align-items: center; gap: 8px; font-size: 15px; color: var(--muted); cursor: pointer; }
+.learn-h input { width: 18px; height: 18px; accent-color: var(--ink); }
+.learn-x { display: flex; flex-wrap: wrap; flex-basis: 100%; min-width: 0; max-width: 100%; box-sizing: border-box; align-items: center; gap: 6px 10px; font-size: 15px; color: var(--muted); }
+.learn-x span { flex-basis: 100%; }
+.learn-x input { flex: 1 1 0; width: 0; min-width: 0; max-width: 260px; margin: 0; accent-color: var(--ink); }
+.learn-x output { font-weight: 700; color: var(--ink); min-width: 4.5ch; font-variant-numeric: tabular-nums; }
+.learn-p { flex-basis: 100%; margin: 0; font-size: 14px; color: var(--muted); }
+.line.mine .who::after { content: "tvoje replika"; font-family: var(--body); font-weight: 400; letter-spacing: 0; text-transform: none; font-size: 12px; color: var(--surface); background: var(--c); padding: 0 8px; border-radius: 999px; }
+.hide-mine .line.mine .say { color: transparent; background: color-mix(in srgb, var(--c) 18%, transparent); border-radius: 4px; text-shadow: none; }
+.hide-mine .line.mine.reveal .say, .hide-mine .line.mine.revealed .say { color: inherit; background: none; }
+.hide-mine .line.mine .dir, .hide-mine .line.mine-stage .dir { color: transparent; background: color-mix(in srgb, var(--c) 18%, transparent); border-radius: 4px; text-shadow: none; }
+.hide-mine .line.mine.revealed .dir, .hide-mine .line.mine-stage.revealed .dir, .hide-mine .line.mine.reveal .dir { color: inherit; background: none; }
+.say.yourturn { outline: 2px solid var(--c); outline-offset: 2px; border-radius: 4px; background: linear-gradient(90deg, color-mix(in srgb, var(--c) 30%, transparent) var(--p, 0%), transparent var(--p, 0%)); }
+.notice { background: var(--surface); border: 1px dashed var(--line); border-radius: 10px; padding: 12px 14px; font-size: 15px; color: var(--muted); }
+.notice strong { color: var(--ink); }
+
+/* Cast */
+details.cast { background: var(--surface); border: 1px solid var(--line); border-radius: 14px; }
+details.cast > summary { cursor: pointer; padding: 14px 18px; list-style: none; display: flex; justify-content: space-between; align-items: center; gap: 12px; }
+details.cast > summary::-webkit-details-marker { display: none; }
+.sum-l { display: flex; flex-direction: column; gap: 6px; min-width: 0; }
+.sum-t { font-family: var(--display); font-weight: 800; font-size: 20px; line-height: 1.1; }
+.chips { display: flex; flex-wrap: wrap; gap: 4px 6px; }
+.chip { font-family: var(--display); font-weight: 600; font-size: 13px; padding: 1px 9px; border-radius: 999px; background: var(--tint); color: var(--c); }
+details.cast > summary::after { content: "▾"; font-size: 16px; color: var(--muted); transition: transform .2s; flex: none; }
+details.cast[open] > summary::after { transform: rotate(180deg); }
+.cast-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(100%, 250px), 1fr)); gap: 12px; padding: 0 18px 18px; }
+.role { display: flex; flex-direction: column; gap: 10px; padding: 14px; border-radius: 10px; background: var(--tint); min-width: 0; }
+.role-head { display: flex; align-items: center; gap: 10px; }
+.role-name { font-family: var(--display); font-weight: 800; font-size: 19px; line-height: 1.1; color: var(--c); }
+.role-desc { font-size: 13px; color: var(--muted); line-height: 1.35; }
+.role label { font-size: 13px; color: var(--muted); display: flex; flex-direction: column; gap: 4px; }
+.role select { font: inherit; font-size: 14px; padding: 6px 8px; border-radius: 8px; border: 1px solid var(--line); background: var(--surface); color: var(--ink); width: 100%; min-width: 0; }
+.role .slider { display: flex; justify-content: space-between; font-variant-numeric: tabular-nums; }
+.role input[type=range] { width: 100%; accent-color: var(--c); }
+.rh { min-width: 0; }
+.toggles { display: flex; flex-wrap: wrap; gap: 8px; }
+.gender { display: inline-flex; border: 1.5px solid var(--c); border-radius: 999px; overflow: hidden; align-self: flex-start; }
+.gender button { font: 700 14px var(--display); padding: 6px 14px; min-height: 34px; border: 0; background: transparent; color: var(--c); cursor: pointer; }
+.gender button[aria-pressed="true"] { background: var(--c); color: var(--surface); }
+.vpick { display: flex; flex-direction: column; gap: 8px; min-width: 0; }
+.pills { display: flex; flex-wrap: wrap; gap: 6px; min-width: 0; }
+.pills button { font: 600 14px var(--display); padding: 5px 12px; min-height: 32px; border-radius: 999px; border: 1.5px solid var(--c); background: var(--surface); color: var(--c); cursor: pointer; max-width: 100%; overflow-wrap: anywhere; text-align: left; }
+.pills.cat { display: flex; flex-wrap: nowrap; gap: 0; border: 1.5px solid var(--c); border-radius: 18px; overflow: hidden; }
+.pills.cat button { flex: 1 1 auto; min-width: min-content; overflow-wrap: normal; word-break: normal; border: 0; border-radius: 0; background: transparent; font: 800 12.5px var(--display); padding: 6px 5px; min-height: 36px; text-align: center; line-height: 1.15; display: flex; align-items: center; justify-content: center; flex-wrap: wrap; gap: 0 4px; }
+.pills.cat button + button { border-left: 1.5px solid var(--c); }
+.pills.cat button .n { margin-left: 0; }
+.pills.mod button { font-size: 13px; min-height: 28px; padding: 3px 10px; border-style: dashed; }
+.pills.voi button { font-weight: 500; }
+.pills button[aria-pressed="true"] { background: var(--c); color: var(--surface); border-style: solid; }
+.pills button .n { opacity: .7; font-weight: 500; margin-left: 4px; }
+.pills button .tag { font-size: 11px; opacity: .75; margin-left: 5px; }
+.pills.voi button { display: inline-flex; flex-direction: column; align-items: flex-start; line-height: 1.2; }
+.pills .pd { font: 400 11.5px var(--body); opacity: .8; }
+.pills .pz { font: 600 12px var(--display); opacity: .9; }
+.pills button.cur { border-color: var(--ok); color: var(--ok); box-shadow: inset 0 0 0 1px var(--ok); }
+.pills button.cur[aria-pressed="true"] { background: var(--ok); color: var(--surface); }
+.pills button.loading .pl1::after { content: ""; display: inline-block; width: 11px; height: 11px; margin-left: 7px; vertical-align: -1px; border: 2px solid currentColor; border-right-color: transparent; border-radius: 50%; animation: spin .7s linear infinite; }
+@keyframes spin { to { transform: rotate(360deg); } }
+@media (prefers-reduced-motion: reduce) { .pills button.loading .pl1::after { animation-duration: 2s; } }
+.btn-save { align-self: flex-start; font: 700 14px var(--display); padding: 6px 16px; border-radius: 999px; border: 1.5px solid var(--ok); background: var(--ok); color: var(--surface); cursor: pointer; }
+.btn-save[disabled] { opacity: .45; cursor: default; }
+.defask { border: 1.5px solid var(--x2, var(--ink)); border-radius: 10px; padding: 10px 12px; display: flex; flex-direction: column; gap: 8px; background: var(--surface); }
+.defask p { margin: 0; font-size: 14px; }
+.saved-note { font-size: 13px; color: var(--muted); }
+.pills .empty { font: 13px var(--body); color: var(--muted); }
+.snote { font-size: 13px; color: var(--muted); display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
+.snote strong { color: var(--ink); font-weight: 600; }
+.btn-try[disabled] { opacity: .45; cursor: default; }
+.btn-req { font: 600 13px var(--display); padding: 4px 12px; border-radius: 999px; border: 1.5px solid var(--c); background: var(--c); color: var(--surface); cursor: pointer; }
+.gsel, .gsrc { font-size: 15px !important; padding: 8px !important; }
+.gpick { display: flex; flex-direction: column; gap: 6px; }
+.gpick select { width: 100%; min-width: 0; }
+.zad textarea { font: inherit; font-size: 14px; line-height: 1.4; padding: 8px; border-radius: 8px; border: 1px solid var(--line); background: var(--surface); color: var(--ink); width: 100%; min-width: 0; resize: vertical; min-height: 64px; box-sizing: border-box; }
+.zad-row { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; }
+.zad-row button { font: 600 12px var(--display); padding: 4px 10px; border-radius: 999px; border: 1px solid var(--line); background: var(--surface); color: var(--muted); cursor: pointer; }
+.badge { display: inline-block; margin-left: 6px; font: 600 12px var(--display); padding: 0 8px; border-radius: 999px; background: var(--surface); color: var(--muted); }
+.badge.ok { color: var(--song); } .badge.warn { color: var(--x2); }
+.role.changed { outline: 2px dashed var(--c); outline-offset: -2px; }
+details.fb summary { cursor: pointer; font-size: 13px; color: var(--muted); }
+details.fb[open] { display: flex; flex-direction: column; gap: 8px; }
+.gen { margin: 0 18px 18px; padding: 16px; border-radius: 12px; border: 1.5px solid var(--line); background: var(--bg); display: flex; flex-direction: column; gap: 10px; }
+.gen-t { font-family: var(--display); font-weight: 800; font-size: 18px; }
+.queue { display: flex; flex-direction: column; gap: 8px; margin-top: 6px; padding-top: 12px; border-top: 1px dashed var(--line); }
+.q-list { margin: 0; padding: 0; list-style: none; display: flex; flex-direction: column; gap: 10px; }
+.q-item .gst-row span { min-width: 0; }
+.q-item.ok { opacity: .7; }
+.q-cap-t { font: 700 13px var(--display); color: var(--muted); }
+.q-cap { margin: 0; padding: 0; list-style: none; display: flex; flex-wrap: wrap; gap: 6px 14px; font-size: 14px; }
+.q-cap span { color: var(--muted); }
+.glist { margin: 0; padding: 0; list-style: none; display: flex; flex-direction: column; gap: 4px; font-size: 15px; }
+.glist .dot { display: inline-block; width: 10px; height: 10px; border-radius: 50%; background: var(--c); margin-right: 8px; }
+.geta, .gnone, .gnote { font-size: 14px; color: var(--muted); margin: 0; }
+.gnote:empty { display: none; }
+.gbtn { align-self: flex-start; font: 800 16px var(--display); padding: 10px 20px; min-height: 44px; border-radius: 999px; border: 0; background: var(--ink); color: var(--surface); cursor: pointer; }
+.gbtn:disabled { opacity: .45; cursor: default; }
+.gst { display: flex; flex-direction: column; gap: 6px; padding: 10px 12px; border-radius: 10px; background: var(--surface); }
+.gst-row { display: flex; justify-content: space-between; gap: 10px; flex-wrap: wrap; font-variant-numeric: tabular-nums; font-size: 14px; }
+.gst.done strong { color: var(--song); } .gst.error strong, .gst.waiting_quota strong { color: var(--x2); }
+.gbar { height: 8px; border-radius: 4px; background: var(--line); overflow: hidden; }
+.gbar span { display: block; height: 100%; background: var(--jitrnicka); transition: width .4s; }
+.gmsg { font-size: 13px; color: var(--muted); }
+.btn-try { align-self: flex-start; font: 600 14px var(--display); padding: 6px 14px; border-radius: 999px; border: 1.5px solid var(--c); background: transparent; color: var(--c); cursor: pointer; }
+.btn-try:hover { background: var(--surface); }
+.role-btns { display: flex; gap: 8px; flex-wrap: wrap; }
+.btn-undo { align-self: flex-start; font: 600 14px var(--display); padding: 6px 14px; min-height: 34px; border-radius: 999px; border: 1.5px dashed var(--muted); background: transparent; color: var(--ink); cursor: pointer; }
+.btn-undo:hover { border-style: solid; }
+.fbp { display: flex; flex-direction: column; gap: 8px; padding: 10px; border-radius: 8px; background: var(--surface); }
+.dlg { position: fixed; inset: 0; z-index: 50; background: color-mix(in srgb, #000 45%, transparent); display: grid; place-items: center; padding: 16px; }
+.dlg-box { width: min(440px, 100%); background: var(--surface); color: var(--ink); border-radius: 16px; padding: 20px; display: flex; flex-direction: column; gap: 12px; box-shadow: 0 20px 60px rgba(0,0,0,.35); }
+.dlg-t { font-family: var(--display); font-weight: 800; font-size: 22px; }
+.dlg-body p { margin: 0 0 8px; }
+.dlg-eta { font-family: var(--display); font-weight: 700; font-size: 17px; }
+.dlg-btns { display: flex; justify-content: flex-end; gap: 10px; flex-wrap: wrap; }
+.dlg-cancel { font: 700 16px var(--display); padding: 10px 18px; min-height: 44px; border-radius: 999px; border: 1.5px solid var(--line); background: transparent; color: var(--ink); cursor: pointer; }
+.linkbtn { font: inherit; color: var(--c); background: none; border: 0; padding: 0; text-decoration: underline; cursor: pointer; }
+.avatar { width: 40px; height: 40px; flex: none; }
+.fx-box { margin: 0 18px 18px; display: block; }
+details.sub > summary { cursor: pointer; list-style: none; display: flex; justify-content: space-between; align-items: center; gap: 10px; min-height: 32px; }
+details.sub > summary::-webkit-details-marker { display: none; }
+details.sub > summary::after { content: "▾"; font-size: 14px; color: var(--muted); transition: transform .2s; flex: none; }
+details.sub[open] > summary::after { transform: rotate(180deg); }
+details.sub[open] > summary ~ * { margin-top: 8px; }
+.chip { border: 0; cursor: pointer; }
+.chip[aria-pressed="true"] { background: var(--c); color: var(--surface); }
+.cast-only { margin: 0 18px 12px; }
+.say.hold { outline: 2px dashed var(--c); outline-offset: 2px; border-radius: 4px; }
+.status { position: relative; align-items: center; }
+.set-btn { flex: none; position: relative; z-index: 1; width: 34px; height: 34px; margin-left: auto; border-radius: 50%; border: 1.5px solid var(--bar-line); background: var(--bar); color: var(--bar-ink); display: grid; place-items: center; cursor: pointer; padding: 0; }
+.set-btn svg { width: 18px; height: 18px; }
+.set-btn:hover { background: color-mix(in srgb, var(--bar-ink) 12%, transparent); }
+.fx-t { font-family: var(--display); font-weight: 800; font-size: 16px; }
+.fx-credit { margin: 8px 0 0; font-size: 12px; color: var(--muted); }
+.fx-list { display: flex; flex-wrap: wrap; gap: 6px; }
+.fx-btn { font: 600 14px var(--display); padding: 6px 12px; min-height: 36px; border-radius: 999px; border: 1.5px solid var(--line); background: var(--bg); color: var(--ink); cursor: pointer; }
+.fx-btn:hover { border-color: var(--ink); }
+.fx-btn small { font-family: var(--body); font-weight: 400; color: var(--muted); margin-left: 4px; font-variant-numeric: tabular-nums; }
+
+/* Script */
+.script { display: flex; flex-direction: column; gap: 10px; margin: 0; padding: 0; list-style: none; }
+.line {
+  display: grid; grid-template-columns: 40px 1fr; gap: 12px; align-items: start;
+  padding: 14px 16px; border-radius: 12px; background: var(--surface);
+  border: 1.5px solid transparent; cursor: pointer; transition: background .2s, border-color .2s;
+  scroll-margin-block: 90px 170px;
+}
+.line:hover { border-color: var(--line); }
+.line:focus-visible, button:focus-visible, select:focus-visible, summary:focus-visible, input:focus-visible { outline: 3px solid var(--c, var(--ink)); outline-offset: 2px; }
+.line.active { background: var(--tint); border-color: var(--c); }
+.line .body { min-width: 0; }
+.who { font-family: var(--display); font-weight: 800; font-size: 14px; letter-spacing: .08em; text-transform: uppercase; color: var(--c); display: flex; align-items: center; gap: 8px; }
+.who .n { font-family: var(--body); font-weight: 400; letter-spacing: 0; color: var(--muted); font-variant-numeric: tabular-nums; font-size: 13px; margin-left: auto; }
+.text { margin: 2px 0 0; overflow-wrap: anywhere; }
+.dir { font-style: italic; color: var(--vypravec); }
+.line:not(.stage) .dir::before { content: "("; } .line:not(.stage) .dir::after { content: ")"; }
+.speaking { background: color-mix(in srgb, var(--c) 22%, transparent); border-radius: 4px; box-decoration-break: clone; -webkit-box-decoration-break: clone; }
+.dir.speaking { background: color-mix(in srgb, var(--vypravec) 22%, transparent); }
+.line.stage { background: transparent; padding-block: 6px; }
+.line.stage .avatar { width: 28px; height: 28px; justify-self: center; }
+.line.stage .text { margin: 0; font-size: 16px; }
+.line.stage.active { background: var(--tint); }
+.line.cue { border: 1.5px dashed var(--song); }
+.cue-title { font-family: var(--display); font-weight: 800; font-size: 17px; color: var(--song); display: flex; gap: 10px; align-items: baseline; flex-wrap: wrap; }
+.cue-title .track { font-variant-numeric: tabular-nums; font-size: 13px; letter-spacing: .08em; text-transform: uppercase; opacity: .85; }
+.cue-title .n { margin-left: auto; font-family: var(--body); font-weight: 400; font-size: 13px; color: var(--muted); font-variant-numeric: tabular-nums; }
+.lyrics { white-space: pre-line; margin: 6px 0 0; font-size: 15px; color: var(--muted); }
+.eq { display: none; gap: 2px; align-items: flex-end; height: 12px; }
+.line.active .eq { display: inline-flex; }
+.eq i { width: 3px; background: var(--c); border-radius: 1px; animation: eq .9s ease-in-out infinite; }
+.eq i:nth-child(2) { animation-delay: .15s; } .eq i:nth-child(3) { animation-delay: .3s; }
+@keyframes eq { 0%,100% { height: 3px; } 50% { height: 12px; } }
+.paused .eq i { animation-play-state: paused; }
+.act-info { list-style: none; padding: 14px 16px; border-radius: 12px; border: 1.5px solid var(--line); background: var(--bg); font-size: 15px; }
+.ai-t { font-family: var(--display); font-weight: 800; font-size: 19px; margin-bottom: 6px; }
+.act-info dl { margin: 0; display: grid; grid-template-columns: auto 1fr; gap: 2px 12px; }
+.act-info dt { color: var(--muted); font-size: 13px; padding-top: 2px; }
+.act-info dd { margin: 0; min-width: 0; }
+.line.tech { opacity: .7; } .tech-t { font-size: 14px !important; color: var(--muted); font-style: italic; }
+.act-next { list-style: none; min-height: 75vh; display: flex; flex-direction: column; align-items: center; gap: 6px; padding-top: 28px; color: var(--muted); text-align: center; }
+.act-next b { font-family: var(--display); font-weight: 600; font-size: 17px; color: var(--fg); }
+.act-next .arrow { font-size: 22px; animation: nudge 1.6s ease-in-out infinite; }
+.act-next .sentinel { margin-top: auto; height: 1px; width: 100%; }
+@keyframes nudge { 0%,100% { transform: translateY(0) } 50% { transform: translateY(6px) } }
+@media (prefers-reduced-motion: reduce) { .act-next .arrow { animation: none; } }
+.act-end { text-align: center; font-family: var(--display); font-weight: 600; color: var(--muted); font-size: 15px; padding: 8px 0; list-style: none; }
+
+/* Player bar: row 1 = status, row 2 = act picker + transport */
+.bar {
+  position: fixed; left: 0; right: 0; bottom: 0; z-index: 20;
+  background: var(--bar); color: var(--bar-ink);
+  padding-left: max(12px, env(safe-area-inset-left, 0px));
+  padding-right: max(12px, env(safe-area-inset-right, 0px));
+  padding-top: 10px; padding-bottom: calc(10px + env(safe-area-inset-bottom, 0px));
+}
+.progress { position: absolute; top: 0; left: 0; right: 0; height: 3px; background: var(--bar-line); }
+.progress span { display: block; height: 100%; width: 0; background: var(--jitrnicka); transition: width .3s; }
+.bar-in { max-width: 720px; margin: 0 auto; display: flex; flex-direction: column; gap: 8px; }
+.status { display: flex; align-items: baseline; gap: 10px; min-width: 0; padding-inline: 4px; }
+.status .now { flex: 1; min-width: 0; font-family: var(--display); font-weight: 800; font-size: 16px; line-height: 1.25; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.status .pos { flex: none; font-family: var(--display); font-weight: 800; font-size: 16px; opacity: .7; font-variant-numeric: tabular-nums; }
+.controls { display: flex; align-items: center; gap: 8px; }
+.act-pick { position: relative; flex: none; width: 72px; }
+.controls { justify-content: center; }
+.act-arrow { opacity: .85; }
+.act-arrow:disabled { opacity: .3; cursor: default; }
+.transport { display: flex; align-items: center; gap: 8px; }
+.act-btn { width: 100%; height: 44px; display: flex; align-items: center; justify-content: space-between; gap: 6px; padding: 0 12px; border-radius: 12px; border: 1.5px solid var(--bar-line); background: transparent; color: var(--bar-ink); font: 800 17px var(--display); cursor: pointer; font-variant-numeric: tabular-nums; }
+.act-btn[aria-expanded="true"] { background: color-mix(in srgb, var(--bar-ink) 14%, transparent); }
+.act-menu { position: absolute; left: 0; bottom: calc(100% + 8px); min-width: 220px; max-width: calc(100vw - 24px); max-height: 50vh; overflow-y: auto; background: var(--surface); color: var(--ink); border-radius: 14px; padding: 6px; box-shadow: 0 10px 40px rgba(0,0,0,.35); display: flex; flex-direction: column; gap: 2px; }
+.act-menu button { display: flex; align-items: baseline; gap: 10px; width: 100%; text-align: left; padding: 10px 12px; min-height: 44px; border: 0; border-radius: 10px; background: transparent; color: var(--ink); font: 600 16px var(--body); cursor: pointer; }
+.act-menu button b { font-family: var(--display); font-weight: 800; font-size: 18px; min-width: 2ch; font-variant-numeric: tabular-nums; }
+.act-menu button small { margin-left: auto; color: var(--muted); font-size: 13px; }
+.act-menu button:hover, .act-menu button[aria-current="true"] { background: var(--bg); }
+.ctl { flex: none; width: 44px; height: 44px; border-radius: 50%; border: 0; background: transparent; color: var(--bar-ink); display: grid; place-items: center; cursor: pointer; }
+.ctl:hover { background: color-mix(in srgb, var(--bar-ink) 12%, transparent); }
+.ctl svg { width: 22px; height: 22px; }
+.play { width: 52px; height: 52px; background: var(--jitrnicka); color: #fff; }
+.silent .play { background: var(--bar-line); color: var(--bar-ink); opacity: .6; cursor: default; }
+.silent .line.active { border-style: dashed; }
+.play:hover { background: var(--jitrnicka); filter: brightness(1.08); }
+.play svg { width: 24px; height: 24px; }
+
+@media (prefers-reduced-motion: reduce) { .eq i { animation: none; height: 8px; } * { transition: none !important; } }
+@media (max-width: 420px) { .line { grid-template-columns: 32px 1fr; padding: 12px; } .avatar { width: 32px; height: 32px; } .controls { gap: 4px; } }
+</style>
+
+<div class="wrap">
+  <header>
+    <div class="eyebrow">Čtená hra · loutkové divadlo</div>
+    <h1><span class="b">Jelítko</span> a <span class="a">Jitrnička</span></h1>
+    <p class="lead">Stiskni přehrát a hra poběží jednání za jednáním až do konce. Ťuknutím na repliku začneš od ní.</p>
+  </header>
+
+  <div class="acts" role="tablist" id="acts"></div>
+
+  <details class="opts-box sub" id="optsBox"><summary class="opts-t">Možnosti přehrávání</summary>
+  <div class="opts">
+    <label for="opt-dirs"><input type="checkbox" id="opt-dirs" checked> Číst scénické poznámky</label>
+    <label for="opt-stop"><input type="checkbox" id="opt-stop"> Zastavit u hudby</label>
+    <label for="opt-fx"><input type="checkbox" id="opt-fx"> Zvuky · chrochtání, zívání…</label>
+    <label for="opt-car"><input type="checkbox" id="opt-car"> Do auta · hraje na pozadí i se zamčeným telefonem, play/pauza z volantu, ztlumí Spotify, displej nezhasíná</label>
+    <label for="opt-silent"><input type="checkbox" id="opt-silent"> Tichý režim · jen čtení scénáře</label>
+    <label for="opt-studio" id="studio-wrap" hidden><input type="checkbox" id="opt-studio" checked> Nahrané hlasy Google</label>
+  </div>
+  </details>
+
+  <div class="learn" id="learnbox">
+    <label for="learnSel" class="learn-l"><span>Učím se roli</span>
+      <select id="learnSel"><option value="">— nikdo, hraje celá hra —</option></select>
+    </label>
+    <label for="opt-hide" class="learn-h"><input type="checkbox" id="opt-hide"> Skrýt text mé role</label>
+    <label for="opt-learnstop" class="learn-h"><input type="checkbox" id="opt-learnstop"> Zastavit před další replikou</label>
+    <label for="opt-loop" class="learn-h"><input type="checkbox" id="opt-loop"> Jednání pořád dokola</label>
+    <label for="opt-extra" class="learn-x"><span>Víc času na mou repliku</span><input type="range" id="opt-extra" min="0" max="100" step="10" value="0"><output id="extraVal">+0 %</output></label>
+    <p class="learn-p" id="learnHint" hidden>Tvoje repliky ani scénické poznámky k tvé postavě se nečtou (ostatní poznámky ano). Místo tvé repliky je pauza stejně dlouhá jako replika. Když potřebuješ víc času, klepni během ní na svou repliku – hra počká, dokud na ni neklepneš znovu (nebo na ▶ či na další repliku).</p>
+  </div>
+
+  <div class="notice" id="notice" hidden></div>
+
+  <details class="cast" id="castbox">
+    <summary><span class="sum-l"><span class="sum-t">Hlasy</span><span class="chips" id="chips"></span></span></summary>
+    <div class="cast-grid" id="cast"></div>
+    <div class="gen" id="gen"></div>
+    <details class="fx-box sub"><summary class="fx-t">Zvuky ze scénických poznámek</summary><p class="fx-credit">Při přehrávání hrají, jen když je zapnuté „Zvuky“. Tady si je můžeš pustit vždy, u zvuků s víc nahrávkami se varianty náhodně střídají.</p><div class="fx-list" id="fxlist"></div><p class="fx-credit">Skutečné nahrávky: BigSoundBank (CC0) a ESC-50 / Freesound (CC BY-NC, prasata, slepice, nalévání, kroky).</p></details>
+  </details>
+
+  <ol class="script" id="script"></ol>
+</div>
+
+<div class="dlg" id="gdlg" hidden role="dialog" aria-modal="true" aria-labelledby="gdlgT">
+  <div class="dlg-box">
+    <div class="dlg-t" id="gdlgT">Spustit nahrávání?</div>
+    <div class="dlg-body"></div>
+    <div class="dlg-btns"><button class="dlg-cancel" type="button">Zrušit</button><button class="dlg-ok gbtn" type="button">Spustit nahrávání</button></div>
+  </div>
+</div>
+
+<div class="bar">
+  <div class="progress"><span id="prog"></span></div>
+  <div class="bar-in">
+    <div class="status"><span class="pos" id="pos"></span><span class="now" id="now">Připraveno</span>
+      <button class="set-btn" id="setBtn" type="button" aria-label="Nastavení" title="Nastavení"><svg viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M19.4 13a7.5 7.5 0 0 0 0-2l2-1.6-2-3.4-2.4 1a7.6 7.6 0 0 0-1.7-1L15 3.5h-4l-.4 2.5a7.6 7.6 0 0 0-1.7 1l-2.4-1-2 3.4L6.6 11a7.5 7.5 0 0 0 0 2l-2 1.6 2 3.4 2.4-1a7.6 7.6 0 0 0 1.7 1l.4 2.5h4l.4-2.5a7.6 7.6 0 0 0 1.7-1l2.4 1 2-3.4zM13 15.5a3.5 3.5 0 1 1 0-7 3.5 3.5 0 0 1 0 7z" transform="translate(-1 0)"/></svg></button></div>
+    <div class="controls">
+      <div class="act-pick" hidden><button class="act-btn" id="actBtn" type="button" aria-haspopup="true" aria-expanded="false" aria-label="Jednání"><span id="actNum"></span><span aria-hidden="true">▴</span></button>
+        <div class="act-menu" id="actMenu" hidden role="menu"></div></div>
+      <div class="transport"><button class="ctl act-arrow" id="actPrev" type="button" aria-label="Předchozí jednání" title="Předchozí jednání"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="2.5" y="5" width="2.4" height="14" rx="1" fill="currentColor"/><path d="M13 5.5v13L5.6 12zM21.4 5.5v13L14 12z" fill="currentColor"/></svg></button>
+      <button class="ctl" id="prev" aria-label="Předchozí replika"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="5" y="5" width="2.6" height="14" rx="1" fill="currentColor"/><path d="M19 5.5v13L9 12z" fill="currentColor"/></svg></button>
+      <button class="ctl play" id="play" aria-label="Přehrát"></button>
+      <button class="ctl" id="next" aria-label="Další replika"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="16.4" y="5" width="2.6" height="14" rx="1" fill="currentColor"/><path d="M5 5.5v13L15 12z" fill="currentColor"/></svg></button>
+      <button class="ctl act-arrow" id="actNext" type="button" aria-label="Další jednání" title="Další jednání"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M2.6 5.5v13L10 12zM11 5.5v13L18.4 12z" fill="currentColor"/><rect x="19.1" y="5" width="2.4" height="14" rx="1" fill="currentColor"/></svg></button></div>
+    </div>
+  </div>
+</div>
+
+<!--
+  SCÉNÁŘ — piš sem text tak, jak je ve zdrojovém scénáři:
+  JEDNÁNÍ 5 · Název         → začátek jednání
+  JMÉNO: replika (poznámka)  → replika postavy, poznámky v závorce
+  (poznámka)                 → samostatná scénická poznámka (čte vypravěč)
+  [[[13-Název písně]]]       → hudba, odsazené řádky pod ní = text písně
+  Řádek bez jména hned pod replikou (bez prázdného řádku) = pokračování téže postavy.
+-->
+<script type="text/plain" id="scenar">
+POSTAVY
+LAŠTOVIČKA – veterinář Maxmilián (a jeho dvojče, řezník Minimalián); cynický, unavený, rád dělá zabíjačky
+KLÁRA – Karlova žena; ezoterička, citlivá, nervózní, často pláče
+KAREL – sedlák; bodrý, na pivo a guláš, těší se na zabíjačku, nakonec guru prasoterapie
+JELÍTKO – prase domácí, marioneta; lenoch, myslí jen na jídlo
+JITRNIČKA – prasnička, marioneta; snílek, chce do světa
+PAŠ-TI-KA – africké prase z cirkusu, marioneta; zimomřivý světák
+ŠAMAN – africký kouzelník; mluví schválně kostrbatě
+KOMEDIANT – ženská role: cirkusačka z Cirkusu Praga Kopecký s francouzským přízvukem; mluví hantýrkou, handlíř
+BÁRBÍNA – fitness slečna; ňuňínci, kabelky a shopping
+METALÁK – rocker z kapely Vepřoni; kámoš, vostrej
+PODNIKATEL – zbohatlík; zakládá masokombinát, míří do politiky
+DUCH SLONA – duch ze savany; vznešený, hluboký hlas
+
+JEDNÁNÍ 1 · Porod
+
+Scéna: prasnice rodí vlevo / schovaná za paravanem
+Postavy: Laštovička, Klára, prasnice
+Loutky: malá prasátka
+Rekvizity: Laštovička věci (bilý plášť, vizitky, kufřík s paličkou a stetoskopem), Ezo věci: (vonné tyčinky, bylinky, kazeťák, hrnek)
+[[[01-chlívek mezisong - uvod]]]
+LAŠTOVIČKA: (bílý plášť) Proboha kolik je? (zívne a koukne na hodinky) Půl třetí ráno! Kafe! Nutně potřebuju kafe!? Máš kafe? (na děti) Schválně jestli poznáte, kdo já jsem. (děti hádají veterináře) Správně jsem veterinář, Doktor Laštovička, soukromá praxe. Ale věřte mi, radši bych nebyl. Jaký nesmysly já musím denně řešit to si neumíte představit. Například včera v ordinaci - nejdřív pejsek s rýmičkou, pak kočička s bolavým bříškem protože snědla myšičku - a vrcholem všeho - paní, že její králík je v depresi! Jestli neznám nějakého psychiatra. Králík koukal takhle (předvede - dlouze tupě kouká), chtěl mrkev podle mě normálně a psychiatra by potřebovala spíš ta paní. No a před chvílí? Ve dvě ráno telefon, že prý prase rodí. No bóže, tak prase rodí! Se z toho všichni nezblázníme, že? Ještě před pár lety by se s tím nikdo takhle nepatlal. Ale co se dá dělat: Náš zákazník, náš pán! Doufám, že to prase je aspoň prasnice a opravdu rodí a ne prase, co má zaražené prdíky…
+[[[02-veterina blues]]]
+   ... Veterina, strašlivá je dřina - furt si v jednom kole - léto nebo zima…
+   ...Veterina, není žádná psina - páníčci se zcvokli a zvířátka s nima…
+
+LAŠTOVIČKA: Tak kde je ta svině! Ať to mám za sebou a můžu si jít zase lehnout. (zívne)
+
+KLÁRA: No dovolte, vy jste ale hulvát.
+
+LAŠTOVIČKA: Pardon! Měl jsem na mysli rodičku. Prasečí matka se nazývá svině, nebo bachyně. Pokud ještě neměla selátka, nazýváme ji prasnicí…
+
+KLÁRA: Já se moc omlouvám. Jsem strašně nervózní a vy popravdě moc nevypadáte jako doktor.
+
+LAŠTOVIČKA: Možná nevypadám, ale jsem nefalšovaný a řádně vystudovaný medicinae veterinariae doctor, MVDr. Maxmilián Laštovička. Zde je moje vizitka
+
+KLÁRA: Proč máte na vizitce sekyru a prasečí hlavu…
+
+LAŠTOVIČKA: (vytrhne Kláře vizitku) Promiňte, špatná vizitka. Ale ať se nezdržujeme: Kdepak máme naší rodičku? Určitě už je netrpělivá…
+
+KLÁRA: Asi bych vám měla říci, že naše …. je prvorodička. Porod to je posvátná věc, zrození nového života, dar matky země. Proto Vás poprosím o maximálně citlivý přístup (nasadí si inseminační rukavice) a věřím, že budete respektovat všechna přání rodičky.
+
+LAŠTOVIČKA: Ee… doufám, že nedošlo k nějakému nedorozumění…Tak ještě jednou: jsem veterinář a někdo mě volal k prasečímu porodu…
+
+KLÁRA: Vždyť o tom mluvím, naše “Mezi nebem a sluncem” bude mít selátka.
+
+LAŠTOVIČKA: Vaše co?
+
+KLÁRA: To jméno jsem jí dala já, krásné, že? “Mezi nebem a sluncem”. Cítíte tu sílu v tom jméně… “Mezi - nebem - a - sluncem”. Ta energie…
+
+LAŠTOVIČKA: … No já nevím, jestli je to to nejlepší jméno pro prase.
+
+KLÁRA: Ale manžel jí říká “Sele veselé”... víte, my si už pár let zrovna moc nerozumíme, jak bych vám to řekla, on je spíš na to pivo a na guláš. Nedokáže se jako já naladit na vesmírnou energii… A o veganské stravě nechce ani slyšet…No a teď si odjel někam na dovolenou a já jsem tu na všechno úplně sama (plačtivě)
+
+LAŠTOVIČKA: Asi si potřeboval odpočinout. Docela ho chápu. (K divákům) Ten se má, že tu není, že? …narozdíl ode mě. Tak pojďme na to, ať to máme za sebou. (vyndá paličku)
+
+KLÁRA: Proboha co to má být! (omdlí)
+
+LAŠTOVIČKA: Jejda, pardon! (k divákům) Že chodím po práci dělat občas zabíjačky, jí asi radši říkat nebudu. (potěžká paličku) Taková zabijačka, to je pro mě skutečný relax… Popravdě i někdy v ordinaci mám chuť vzít tuhle paličku (přiblíží se k dětem) a toho mazlíčka takhle pěkně šup přes hlavu a hned potom páníčka taky takhle šup přes hlavu (předvádí na divácích - mírně sadisticky)… No nic, (zandá paličku a vytáhne stetoskop ) Probere Kláru…
+
+KLÁRA: Promiňte, to ty nervy. Všichni se musíme uklidnit… uklidnit a nacítit se…. Už vím. Mám tady připravený nástroj, na který zahraji meditační porodní muziku od bohyně Marty. Pustím ji a vy zkuste ponořit do jejich tónů a připravit se na výkon vašeho poslání…
+
+LAŠTOVIČKA: (vezme ji za ramena) A co kdyby vy jste se zkusila uklidnit a šla mi uvařit třeba kafe? Ujišťuji vás, že, prase, tedy pardon - Mezi nebem a … peklem?
+
+KLÁRA: A sluncem… (hystericky zafňuká)
+
+LAŠTOVIČKA: A sluncem… je v nejlepších rukou. Tak kde bych našel váženou paní rodičku?
+
+KLÁRA: (odhrne paravan) Tady je, jak se cítíš Mezi nebem a sluncem?
+[[[03-efekt FARMA a chlívek -10 ]]]
+PRASNICE: chrocht, chrocht!
+
+LAŠTOVIČKA: Buďte od tý dobroty a dojděte mi pro to kafe. (moc se jí nechce a doktor na ní musí zadupat) No tak huš!
+(Klára odběhne.)
+LAŠTOVIČKA: (k divákům) Jak jsem říkal, klient má vždycky pravdu - ale co je moc to je moc, tohle bude to za příplatek. A za pořádnej! (otočí se na prasnici) Doufám, že aspoň ty jsi normální. No co koukáš! Vykat ti nebudu…
+
+LAŠTOVIČKA: (zpozorní) Koukám, že už to začíná…
+
+KLÁRA: (vběhne na pódium, rituálně pálí byliny) Ať matka příroda požehná tomuto porodu… (opět odběhne - pro kafe)
+
+LAŠTOVIČKA: Prosím klid! Takhle to mě ani rodičce neulehčujete… (vychutnává si Kláru, teátrálně) Tak drahá Mezi…blablabla, drahá maminko, uvolníme se, zhluboka dýcháme (předvádí dýchaní u porodu - pokukuje po Kláře)
+
+KLÁRA: (vběhne s vonnými tyčinkami a s kafem a vykuřuje nad plentou) Zlé síly odejděte…! (tyčinkou mává před veterinářem)
+
+LAŠTOVIČKA: Milá paní, takhle by to opravdu nešlo… Co kdyby jste mi radši podala to kafe?
+(Klára podá kafe)
+LAŠTOVIČKA: Díky (napije se, vyprskne) Fuj, tomuhle říkáte kafe?
+
+KLÁRA: Káva bez nezdravého kofeinu, se sojovým mlékem oslazená stevií…
+
+LAŠTOVIČKA: Vypadá to, že už vidím první prasátko.
+
+LAŠTOVIČKA: Víte co? Odebírejte si ode mě pěkně ta selátka. Tady máte první.
+
+KLÁRA: To je krásný! (zvedne prasátko nad hlavu) Vítej duše! Podle krásného rypáčku ti dávám jméno Květinka! (dá prasátko pod lampu)
+
+LAŠTOVIČKA: (k dětem) No tak to jsem zvědav, kdo si to zapamatuje takovýhle praštěný jméno! - Děti, schválně si to zkuste zapamatovat, já vás pak vyzkouším - takže tohle je - Květinka. (skloní se) A hele, už je tady druhé (podá Kláře)
+
+KLÁRA: (zvedne prasátko nad hlavu) Vítej duše! Podle skvrnky na bříšku ti dávám jméno Mráček!
+
+LAŠTOVIČKA: Další bláznivý jméno pro prase - No tak tedy Mráček. Vám se líbí? … A už tu mám další…
+
+KLÁRA: (zvedne prasátko nad hlavu) Vítej duše! Podle zakrouceného ocásku ti dávám jméno Klubíčko!
+
+LAŠTOVIČKA: Klubíčko? Trochu infantilní ne? Já bych dal třeba vývrtka. … A už leze další, no tak polez, polez (vytáhne další)
+
+KLÁRA: (zvedne prasátko nad hlavu) Vítej duše! Ty jsi maličká, jako Kapička! Dávám ti jméno Kapička.
+
+LAŠTOVIČKA: Kapička! (uchechtne se) No když to musí být... Tedy, to je prasátek, kolik jich už bylo? (k dětem, opakuje s dětmi ) To bylo Květinka, Mráček, Klubíčko, Kapička...
+LAŠTOVIČKA: A… už tu máme páté, tomu se nějak nechce (tahá a svalí se s ním na zadek) Uf a je to! To je cvalda! To už bude asi poslední
+
+KLÁRA: (vezme prasátko) Vítej… ty jsi nějaké těžké, tebe asi nad hlavu nezvednu, budeš se jmenovat Kamínek!
+
+LAŠTOVIČKA: Kamínek? Spíš balvan. No co, moje prasátka to nejsou.
+
+KLÁRA: Tak pojď, Mezi nebem a sluncem, krásně jsi splnila své mateřské poslání, zasloužíš si wellness.
+(posílá prasnici pryč, Klára zůstává na scéně)
+[[[opět pustit zvuky farmy]]]
+LAŠTOVIČKA: No a teď trochu méně poetická část programu - teď vám tady vystavím fakturu (píše) Takže to máme, noční výjezd, dvojnásobná sazba, komplikovaný porod - za příplateček samozřejmě, (podívá se na Kláru) ztížené pracovní podmínky - rozhodně příplateček, kafe - hnusný - tak to minimálně dvě stovky navrch… takže to máme suma sumárum 7770 Kč (podává účtenku) Sedmička je šťastné číslo, a vy máte na účtence hned tři sedmičky
+
+KLÁRA: Počkejte, vy myslíte peníze? (překvapeně bere fakturu)
+
+LAŠTOVIČKA: To jsem mohl tušit - ano, víte, to je takový prastarý koncept (vysvětluje jak neandrtálci) já - pro - vás - udělal práce - vy - mě - za - to - peníze.
+
+KLÁRA: (rozfňuká se) No, ale to on peníze se stará manžel a ten je na dovolené… No snad to nějak zvládnu… (nešťastně)... Mám našetřeno na letní meditační tábor s Guru Květoslavem…
+(Klára odejde)
+
+LAŠTOVIČKA: Tak snad to nějak zvládne. Ale jinak šlo všechno hladce, byl jsem tu víceméně k ničemu. Maminka Slunce mezi blablabla byla statečná a porodila pět krásných a zdravých selátek. Tedy pokud nebudou mít nějakou psychickou újmu z těch svých jmen. A pamatujete si ta jejich jména? (Soutěž v hádání jmen )
+
+LAŠTOVIČKA: Ano, jsou to hloupý jména, ale selátka za ně nemůžou. Možná si říkáte, že se prasátkům budou ostatní zvířátka kvůli těm jménům posmívat. Co myslíte? Budou?
+LAŠTOVIČKA: Nebudou! To by napadlo jedině lidi. Hloupý lidi. Bohužel hloupých lidí je spousta a hloupost žádný doktor nevyléčí. Ani veterinář… (odejde ze scény)
+[[[04-KAREL SONG podcast loop drums]]]
+
+JEDNÁNÍ 2 · Prodej
+
+Scéna: vlevo postavená tabule, malá prasátka na scéně vpravo
+Postavy: Karel, později: Klára, Barbína, metalák, Podnikatel
+Loutky: malá prasátka
+Rekvizity: Karel věci (naf. kruh, šnorchl, lahváč)
+
+KAREL: (v plavkách, v kruhu, se šnorchlem a s lahváčem) Ženo! Jsem doma! Dovolená skončila! Dal jsem si ráno poslední koupačku a hurá domů! Doufám, že tě napadlo koupit nějaký lahváče.
+
+KLÁRA: (přiběhne) No sláva! To je dost Karle, že jsi konečně tady! Ty nevíš, co se tu všechno stalo (natahuje), a já tu byla úplně sama! A zastrč ten pupek, to je hrůza! Ty jsi zase přibral. Takhle jsi jel s těma svejma podivnejma kámošema naposled, to ti povídám! A to nemluvím o tom nezdravém jídle, kterým se tam vždycky cpete.
+
+KAREL: Ale Klárinko, sluníčko, tak se nevztekej, výborně tam vařili, co jsem měl dělat!? (pohladí si pupek) Všechno jsi to určitě skvěle zvládla! A co naše hospodářství?
+
+KLÁRA: Tak to se ptáš správně! Celou noc jsem byla vzhůru! Máme selátka!
+
+KAREL: No to je mi novinka! Ukaž, kde jsou? No ty jsou ale super! (skloní se k nim) A že jich teda je! (počítá a ukazuje jeden, dva… pět) To jsi vážně zvládla všechno sama?
+
+KLÁRA: Sama… skoro sama. I jsem je už pojmenovala. Tohle je… jak to bylo… Květinka, Mráček, Klubíčko, Kapička a Kamínek.
+
+KAREL: Co? Ty seš fakt ale praštěná, co to má jako bejt? Až z nich bude dvěstěkilové prase, tak se pořád budou jmenovat Květinka nebo Kapička? Já ti řeknu, jak to bude… (prohlíží prasátka) Dvě si necháme pěkně na výkrm (vybere tlustýho) ten je pěknej, pěkně natloustlej - ten se bude jmenovat třeba (mlsně zamlaská) Jelítko a tohle je (koukne zezadu) holka, tak (zamlaská a olízne se) to bude Jitrnička. - a zbytek… to je asi jedno, ty musíme stejně prodat… Je jich požehnaně!
+
+KLÁRA: Tohle já nebudu poslouchat, takoví miláčkové vždyť to je boží požehnání… jdu radší meditovat…
+(Klára odběhne)
+KAREL: Jen si běž… a co děti, co myslíte, za kolik je budeme prodávat?
+(ptá se dětí kolik mají stát a napíše na tabuli křídou - PRODEJ PRASAT 1 kus - 500 korun)
+KAREL: To bude peněz!
+[[[05-KAREL SONG predehra]]]
+   Dnes je u nás svátek, máme pět selátek.
+   Jsou z dobrého vrhu, tři prodáme na trhu
+   a dvě zbylé s křenem, v zimě sežerem.
+(Karel se odejde převléknout, vystřídá ho Klára)
+(Klára zpívá ezo píseň.)
+[[[06-EZO podcast 3x]]]
+
+   …Vítejte všechny duše - co jste k nám přišly z Venuše.
+   Ať naše srdce vyléčí - prastará duše prasečí.
+(Klára odejde, vystřídá ji Karel)
+
+KAREL: (vyvolává) Kupte prasátka! Čerstvě narozená! Extra roztomilá! Za výhodnou cenu!
+
+BARBÍNA: Prasátka říkáte? Kámoška prej tuhle četla v časáku, že prasata jsou strašně chytrý a čistotný. Ukažte - No, ale to jsou vážně ňuňínci. To je ale skandál v čem tady u vás žijou! Pojď sem, budeš mít růžovej polštářek u mě na gauči a budem spolu koukat na telku a chroupat čipsíky. Holky budou koukat, až tě vezmu s sebou do fitka! A co to tady leží, na tom stylovém koberečku? Vypadá to jako ho… (zarazí se)
+
+KAREL: Ano. Pravý, přírodní. Chcete ho přibalit?
+
+BARBÍNA: Fuj. (znechuceně zakroutí hlavou)
+
+KAREL: Tak to bude rovných 500 Kč. (Barbína podává peníze)
+
+BARBÍNA: Aspoň tohohle pusíka musím z týhle žumpy vysvobodit. To teda nevím, jestli se mi do tý kabelky vejde (rve prasátko do kabelky) Asi budu potřebovat novou kabelku nebo co. No co se dá dělat, zítra půjdem spolu na shopping… Jak já ti budu říkat? Co třeba ŽůžoRůžoBejby! ŽůžoRůžoBejby a nová kabelka, prostě nejvíc nej víkend! (vezme do ruky a odejde) !
+
+KAREL: Chtěl bych bejt u toho až ŽůžoRůžoBejby vyroste a rozsedne gauč. A hele, další zákazníci… Kupte prasátka! Čerstvě narozená! Malá a roztomilá! Za výhodnou cenu!
+
+METALÁK: Dobrej! Ty brďo, fakt, že jo, prasata, hustý, se kouknu. Jako potřebovali bysme maskota do kapely... a prase, to by byl dobrej úlet! Třeba tohohle tlustoprda.
+
+KAREL: Tak ten je bohužel na výkrm, není na prodej.
+
+METALÁK: Na výkrm? To ho jako sežerete jo? To je teda vostrý... Jo, ty už to máš spočítaný, kámo. No tak tohohle? Toho úplně vidím na plakátě - s tímhle rypákem s tebou vyprodáme Lucernu… Bysme si mohli normálně přejmenovat kapelu, třeba - “Vepřoni” a hlavní hit třeba - Mlaskej a Chrochtej… Počkej (vezme kytaru) už mi to nabíhá, novej hit
+[[[07-solo metal]]]
+   …Mlaskej a chrochtej - dej si do rypáku, ou jé.
+   Seš kámo vostrej - máš všechno na háku, ou jé…
+
+METALÁK: To bude pecka, beru. Na kolik to přijde takový prase?
+
+KAREL: Rovných 500.
+
+METALÁK: Pětikilo, pohoda, zadáčo. Tady jsou. Budu ti říkat třeba Prasoň. Jo, Prasoň, Prasoň z kapely Vepřoni. (vezme prase a odnese)
+KAREL: No vy ale jdete na dračku, čuňátka moje, to teda nevím, jestli bych neměl zdražit. Co myslíte? (na děti. navrhnou vyšší částku, vyleze a přepíše ceduli.)
+
+PODNIKATEL: Haló, je tu někdo???
+
+KAREL: Omlouvám se za zdržení. Co si račte přát?
+
+PODNIKATEL: To je dost! Tyhle prodáváš?
+
+KAREL: Jasně. 900 za kus.
+
+PODNIKATEL: A to máš jenom obyčejný prasata, jo? Lidi dneska chtěj víc, chtěj exotiku! Kde máš třeba nutrie, lame, pštrose??? Musíš dělat velký věci! Na vidlácích nezbohatneš!
+PODNIKATEL: Hele já třeba teď zakládám masokombinát! A až mě to přestane bavit, tak pudu do politiky. To bude bomba! No nic, tak kolik za ně chceš? Tady máš. Chlapi ode mě si pro ně přijedou.
+[[[08-ZVONĚNÍ MOBILU -10]]]
+PODNIKATEL: (vytáhne z kapsy mobil, upadne mu do chlívku, zvedne dvěma prsty a opucuje) No fuj. Haló!? Vepřový stoupá? Koupit! Kupte všecko! Potřebujem prasata!
+PODNIKATEL: Tak čau lidi!
+(podnikatel odejde)
+KAREL: Kláro, Kláro… máme prodáno…
+
+KLÁRA: (přiběhne) Ty jsi tak šikovný, ty to prostě s těmi penězi umíš… ehm, když už jsme u těch peněz, tady mám takový papírek… já tomu nějak nerozumím…
+
+KAREL: Kláro, co má tohle znamenat? (v ruce drží účet)
+
+KLÁRA: No víš Karle, já úplně zapomněla, To je účet od veterináře. Za porod.
+
+KAREL: Osm táců za porod. Co to bylo za podvodníka?
+
+KLÁRA: Žádných osm táců. Jen 7.770 Korun a sedm korun, jako spropitné, víš že sedmička je šťastné číslo. A nebyl to žádný podvodník. Na první pohled bylo vidět, že miluje zvířátka…
+
+(Karel počítá na tabuli, zapojí i děti a zjistí… 4 000 minus 7 777 je minus 3 777 korun.)
+
+KAREL: Tak tohle podnikání teda moc nevynáší. Musím to udělat, jak říkal ten podnikatel. Musím sehnat něco extra. Co budou všichni chtít, co nikdo nemá. Jak to říkal? Exotika? To tedy nevím.
+
+KLÁRA: Dvě prasátka nám zbyla, tak co k nim pořídit nějaké prasátko z ciziny?
+KAREL: Ty máš ale nápady a kde tady asi seženu (posměšným hlasem) prasátko z ciziny?
+
+KLÁRA: Tak si dej inzerát.
+
+KAREL: To je nápad.
+(všichni odejdou ze scény)
+[[[09-chlívek-MEZI SONG]]]
+JEDNÁNÍ 3 · Chlívek
+
+Scéna: uprostřed korýtko
+Postavy: Karel
+Loutky: Jitrnička, Jelítko
+Rekvizity: cedule: O šest měsíců později, kýbl
+[[[10-efekt farma chlívek]]]
+
+JITRNIČKA: Jelítko, vstávej! (šťouchá do něj rypákem) No tak, Jelítko! Nespi, ty lenochu.
+
+JELÍTKO: Mně se nechce, už donesli jídlo?
+
+JITRNIČKA: Ještě ne.
+
+[[[stahnout efekt farma chlívek]]]
+
+JELÍTKO: Tak to si ještě schrupnu. Až něco bude, tak mě vzbuď, Jitrničko. Dal bych si ty báječný šťouchaný vařený brambory (zamlaská) A nebo trochu šrotíku s mlíkem. Mňam. (zachrochtá)
+
+JITRNIČKA: Ach jo, on se jenom válí a žere. Ale vlastně má pravdu, co se tady v chlívku dá taky jinýho dělat. A já bych tak chtěla do světa! Musí to tam být krásné a veliké. Všude louky a stromy a řeky a obloha a spousta jiných zvířat. Ale tady? Jen ty brambory každej den…
+
+JELÍTKO: (připrobudí se a zívne) Už zase fantazíruješ? Já se ti divím, Jitrničko. Slyšela jsi, jsme na výkrm. Tak jez! Vždyť je to paráda…
+
+JITRNIČKA: A co ta zabíjačka? Co je vlastně ta zabíjačka?
+
+JELÍTKO: Určitě to bude něco skvělýho, když se na to Karel tak těší! Vždycky celý září, když mluví o zabíjačce!
+
+JITRNIČKA: Ale Klára vždycky pláče, když Karel mluví o zabíjačce… Mě výkrm asi nebaví. Já bych chtěla cestovat, poznávat svět a nový prasata... Jak se asi mají bráchové a ségry…
+
+JELÍTKO: Já nevím, že si pořád stěžuješ, vždyť nám nic nechybí… Počkej, neslyšíš něco? Možná už nesou ty brambory.
+
+KAREL: (přinese v kýblu brambory) Tak, jen si pěkně pošmákněte. (odejde, prasata chvíli baští…)
+[[[11-mezisong cirkus]]]
+
+JEDNÁNÍ 4 · Komediant
+
+Postavy: Komediant, Karel, Klára
+Loutky: Paštika
+Rekvizity: -
+
+KOMEDIANT: Ale to je fantastické publikum, to je fofr, to je komédie, brávo, brávo. Já jsem z Cirkus Praga Kopecký. Du na ten váš inzerát. Mám tu pro vás šampióna - jezdí na motorce, chodí po láně. Zažil jsem s ním věci nevídané… A jak ho chceš vlastně drezurovat ty? Počkej, budu hádat: chceš ho naučit salto mortale? Nene, nafutruješ ho do kanonu a vystřelíš pěkně až pod šapitó? Nene… máš tu pěknej privát, ale manéž nikde, kitr taky ne... co ty si za pantátu? Že ty ho chceš na chov? Že sem to uhád? Hloupej nejsi... a já taky ne… víš, jak se u nás říká: kšeft je svatej, tak se spolu domluvíme: Prase černý jako noc a nestojí vůbec moc. Kolik máš?
+
+KAREL: 5.000, ale tolik dát nechci, šla by nějaká slevička.
+
+KOMEDIANT: 5000 taková láce, ale počkej dostaneš slevu, prase je za 7, 2 tisíce je sleva, dej mi všechno co máš, šampion je tvůj - nebudeš litovat. Uděláš s ním štěstí - terno! A já musím jít na další štaci. Cirkus Praga Kopecký valí zase dál. Tak se tady mějte…. (pro sebe) Chrapouni.
+(komediant odejde)
+KAREL: Kláro, Kláro, pojď se honem podívat, co jsem sehnal…
+
+KLÁRA: To je ale miláček, ten se ti povedl.
+
+KAREL: Ták a teď když máme cizokrajné prase, nastane pár změn! Jitrnička už nebude prasnice na výkrm, stejně moc nevyrostla, ale chovná prasnice!
+
+KLÁRA: Tak to ráda slyším. Budou další selátka.
+
+KAREL: Přesně tak. Zakládám totiž PRASEČÍ FARMU ČESKO AFRICKÉHO PŘÁTELSTVÍ. (odnáší Paštiku za scénu, při odchodu) Tak tohle bude tvůj nový domov a hezky se seznam se svými novými kamarády…
+[[[12-intro afrika šaman]]
+
+JEDNÁNÍ 5 · Šaman
+
+Scéna: -
+Postavy: šaman, masky
+Loutky: Jitrnička, Jelítko, Paštika
+Rekvizity: -
+
+JITRNIČKA: (pomalu vstane a opatrně šťouchne do Paš-Ti-Ky) Co jsi zač?
+
+PAŠ-TI-KA: Jsem prase. Nepoznáš prase?
+
+JITRNIČKA: No já nevím, ty moc jako prase nevypadáš.
+
+PAŠ-TI-KA: Já jsem ale divoké prase, prase z Afriky.
+
+JITRNIČKA: Óoch, ty jsi až z Afriky!? To musí být strašně daleko! Určitě je to tam krásné! A jak se jmenuješ? Já jsem Jitrnička (stydlivě)
+
+PAŠ-TI-KA: U nás v Africe máme tři jména, jedno po babičce: Pááš, druhé po dědečkovi: Tííí a pak ještě moje jméno: Kcháá
+
+JELÍTKO: Cože?
+
+PAŠ-TI-KA: No, Pááš - Tííí - Kcháá
+
+JITRNIČKA: Aha, takže Paštika?
+
+PAŠ-TI-KA: No, vlastně jo.
+
+JELÍTKO: A jak ses sem vlastně dostal?
+
+PAŠ-TI-KA: Přijel jsem s cirkusem - jezdil jsem po celém světě a teď jsem skončil tady v týhle díře. Je tu hrozzzzná zzzzzima (drkotá zubama) Zapněte topení.
+
+JITRNIČKA: Ty jsi viděl celý svět!? Jak já ti tak závidím... A víš, že jsi docela hezkej, když si prase zvykne (začíná flirtovat)
+
+PAŠ-TI-KA: A podívej, jakej mám zakroucenej ocásek… ale teď mi je hrozná zima. Zzzzzmrzznu zzzzaživa. Zzzde mrazzzzák.
+
+JELÍTKO: Neměli bysme mu nějak pomoct? Nějak ho zahřát nebo něco.
+
+JITRNIČKA: Počkej já tě zahřeju (lísá se)
+
+PAŠ-TI-KA: (snaží se ustoupit) To je trochu lepší, ale stejně asi umřu zzzimou… Já mám nápad: moje babička mi dala tenhle kouzelný kazeťák…
+
+(Přilétne stříbrný kazeťák. Když dozní píseň, tak zase odlétne.)
+
+PAŠ-TI-KA: …když ho zapnu - zavolá opravdového afrického šamana na pomoc. Pozor.
+[[[13-AFRIKA paštika]]]
+   Tiki-Taky Afrika
+   zachraň tvoje Paš-Ti-Ka
+   Mamba-Rumba Zimbabwe
+   Paš-ti-ka má zas trable
+
+   Tiki-Taky Afrika, mamba rumba paprika
+
+ŠAMAN: Kdo volat Šaman veliká? (otráveně) Už zase Pááš-tííí-kcháá? Proč ty furt otravovat stará šaman. Jednou se ti nelíbí cirkusový kostým, jindy si chceš jen popovídat a naposledy jsi mě volal, abych tě podrbal na zádech…
+
+JITRNIČKA: Nezlobte se na něj, ona je mu chudákovi strašná zima… A co znamená to Šaman?
+
+ŠAMAN: Šaman - to veliká kouzelník z Afrika. Když se zkouřit a bubnovat tak hovořit s duchy ze savana. A vy být kdo - podivná růžová stvoření?
+
+JITRNIČKA: My jsme prasata, já se jmenuju Jitrnička a tady to je můj brácha, Jelítko.
+
+ŠAMAN: Prasata? Která chuligán vás natřít na růžovo?
+
+JITRNIČKA: U nás jsou prostě prasata růžová.
+
+ŠAMAN: A proč vy žít v týhle fujtajksl studená díra?
+
+JITRNIČKA: My musíme, já jsem chovná a brácha je na výkrm a pak ho čeká zabíjačka (smutně)
+
+JELÍTKO: Ano! Zabíjačka! Já se tak těším!
+
+ŠAMAN: Ajajajaj… zabíjačka, to je potíž, velká potíž.
+
+JELÍTKO: Nezapomněli jste na Paš-ti-ku? Už je úplně zmrzlej…
+
+ŠAMAN: Brácha mit recht. No, komu zima ten potřebovat obléct. Na to nemuset být žádná velká koumes... Co tak dát jemu? Divná růžová děti, kdo půjčit fusekle pro Paš-ti-ka? (vezme od dětí ponožky, může k nim taky čuchnout a natáhne je Paš-ti-kovi na nohy a na hlavu) Já dát jedna moje tlustá taky (stáhne starou smradlavou ponožku a čuchne k ní) Fusekle nevonět zrovna, ale zahřát dobře. Osm let nesundal, schválně čuchnout (dává dětem taky čuchnout)
+
+PAŠ-TI-KA: Fuj to je smrad. Ale teploučko - to se musí nechat. Hnedle je mi líp.
+
+JITRNIČKA: Tobě to sluší (vyprskne smíchy) Projdi se.
+
+PAŠ-TI-KA: (korzuje přes podium) A můžu zpátky do cirkusu - za šaška.
+
+JELÍTKO: Děkujeme ti, Šamane, že jsi pomohl Paštikovi… A neumíš ještě vykouzlit brambory??
+
+ŠAMAN: Na brambory zapomeň. Já vám radší teď povídm, co je to ta zabíjačka. Poslouchejte: Oni tě nejdřív vykrmí a pak tě pic, říz - zabijou a sníst, žádna sranda.
+(všechna prasátka sedí jako opařená)
+
+JELÍTKO: Myslím, že už se na zabíjačku těším mnohem méně. Tedy vlastně vůbec.
+
+ŠAMAN: Do soboty zbývají dva dny. Poradím se s ostatními šamany a třeba něco vymyslíme… (šaman odejde)
+
+JITRNIČKA: Já mám strach, já se o tebe bojím Jelítko.
+
+JELÍTKO: Kdybych věděl, co je to ta zabíjačka, (smutně) tak bych se tak nekrmil těma bramborama.
+
+JITRNIČKA: (brečí)
+
+PAŠ-TI-KA: Nebuďte malomyslní, vždyť nám pomůže šaman, tak ho zase zavoláme.
+
+(Přilétne stříbrný kazeťák. Když dozní píseň, tak zase odlétne.)
+[[[14-AFRIKA jelítko]]]
+   Tiki-Taky Afrika
+   zas tě volá Paš-Ti-Ka
+   zní kouzelné chrastítko,
+   Zachraň prosím Jelítko
+
+   Tiki-Taky Afrika, mamba rumba paprika
+
+ŠAMAN: Mám špatná zpráva. Africká šaman krátká na česká zabíjačka… My muset zavolat duchy savana, ale ti moc moc daleko… Možná, kdyby nám pomohla divná růžová děti… Když já bubnovat - vy tleskat a tancovat a zpívat tajná africká zaklínadlo,. tak duchy přivoláme, opakujte po mě.:
+ŠAMAN: Tiki Taky Afrika (děti opakují Tiki Taky Afrika)
+ŠAMAN: Mamba Rumba paprika (děti opakují Mamba Rumba paprika)
+ŠAMAN: A teď s hudbou:
+[[[ 15-AFRIKA refren]]]
+   Tiki Taky Afrika - Mamba Rumba paprika
+   Tiki Taky Afrika - Mamba Rumba paprika
+   Tiki Taky Afrika - Mamba Rumba paprika
+(zadýmit) (objeví se duch slona) [[[16-SLON]]]
+DUCH SLONA: Jsem duch slona - vládnu všem slonům, slonicím a slůňatům v celé savaně. Můj chobot nasaje řeku Zambezi, a pak ji rozpráší jako déšť do pouště Kalahari.
+
+ŠAMAN: My mít velká štěstí, duchové vyslyšet nás z taková šílená dálka. Všichni se poklonit až na zem, nebo ho duchové sežrat až na kost. (s dětmi se skloní až k zemi)
+
+ŠAMAN: Teď velké ticho, já poradit se s duchy savaná.
+
+Šaman se radí s duchem slona… [[[17-zvuk kouzla]]
+(Duch slona odejde.)
+
+ŠAMAN: To je ono, přišla vize! Už vím, jak zabránit krutá zabijačka. Duchové mi poradila, že na řezníka platí velká přesila. On neleikne se jedna prase, dvě prase, tři prase, on bude se bát veliká stádo prasat. O v tom vy, pomůžete. Tu máte kouzelná proprieta - já vykouzlila tyto rypáčky - duchové rozdají… vy nasadit a zahrát každý prase, vždyť jste růžová jako prasátka. Až přijde řezník: vy dupat a chrochtat, ať se lekne velkého stáda prasat a vezme nohy na ramena. Vy zachránit hodná Jelítko. Já se teď už vrátit domů - do afrika a vy nezapomenout, až přijde řezník, vy dupat a chochtat a zachránít. Ať vám duchové savana pomohou v pravý čas…
+(Zadýmit. Šaman zmizí.)
+JITRNIČKA: Děti, spolu to zvládnem.
+
+PAŠŤIKA: My se teď schováme, a až budeme potřebovat pomoc, tak vás zavoláme!
+
+[[[06-EZO podcast 3x]]]
+
+JEDNÁNÍ 6 · Zabijačka
+
+Postavy: Karel, Laštovička, Klára, duchové
+Loutky: Jelítko, Jitrnička, Paštika
+
+(Karel s Klárou cvičí jógu.)
+
+KAREL: To už stačí, to pro mě není… já už nemůžu…
+
+KLÁRA: Ještě jednu asánu, Karlíčku a pak ti dám pokoj…. jen se hezky - protáhni - ták - to ti pročistí čakry - (docvičí) … teď si jdu zarelaxovat na zahradu a ty by sis měl taky…
+(Klára odejde)
+[[[ztišit hudbu]]]
+KAREL: Jen běž, běž… Já si odpočinu tady…. (posadí se) Tak na dnešek jsem se fakt těšil (zamne si ruce). Dneska je velký den…. zabíjačka…
+[[[18-DRAMA]]]
+(Laštovička vejde)
+LAŠTOVIČKA: Dobrý den.
+
+KAREL: Vítejte, mistře. Na rozjezd si dáme slivovičku, domácí, což? (nalije panáky)
+
+LAŠTOVIČKA: Karle, jestli ti můžu tykat. Na zdraví! (napije se) A když už si tykáme, ta tvoje žena - to je teda éro, to ti řeknu.
+
+KAREL: Mně to vyprávěj, já s ní žiju… Furt samý mastičky, svíčíčky, olejíčky, čajíčky… A jak se objeví nějaká další novinka, hned to musí mít. Já nevím, proč někdo potřebuje ke štěstí takovejch krámů a nějaký nadpřirozený nesmysly. Přitom ke štěstí stačí taková pravá obyčejná vesnická zabíjačka. Nemám pravdu? (znovu nalije) Tak do druhý nohy.
+
+LAŠTOVIČKA: (napijou se) No já jsem naštěstí starej mládenec. Se ženskejma nechci mít nic společnýho, mně stačej ty v ordinaci. Včera zase - nějaká madam přišla se slepicí! Že vypadá nějak divně. Od kdy se chodí k veterináři se slepicí? Za nás, když slepice vypadala divně tak šup na špalek a bylo… Zkrátka dneska někoho zapíchnu docela rád (sadisticky vyndá nůž a brousí)
+
+KAREL: Výborně, tak já jdu zatopit a nakrájet cibuli na ovar!
+
+LAŠTOVIČKA: Tak kdepak tě máme? (obrací se na Paštiku) (Přichází Klára)
+
+KLÁRA: Á pane doktore! Co vy tady? Přišel jste se podívat na prasátka?
+
+LAŠTOVIČKA: Eeee. Doktore? Aha! Vy si mě pletete s bratrem. To se nám stává pořád. Jsme totiž jednovaječná dvojčata. Dovolte, abych se představil. Laštovička… Minimalián Laštovička… Řezník.
+
+KLÁRA: (rozpláče se a odchází)
+
+LAŠTOVIČKA: (volá za Klárou) No tak počkejte, neplačte…
+
+KAREL: Kláro, to se nedá nic dělat… Tak já jdu pro Jelítka, přišel jeho čas.
+
+(přivádí Jelítka, tomu se nechce, ryčí hrůzou) [[[19-DRAMA SONG kus noze]]]
+
+LAŠTOVIČKA: (brousí si nože) Tak kdepak je to prase na porážku… ehm… Jelítko, neboj se, já ti nic neudělám… Je to holt tak dáno, že někdo musí umřít, aby jiný mohl jíst, ha ha ha
+
+(Prasátka vyskočí z úkrytu.)
+JITRNIČKA+PAŠTIKA: Děti, pomožte nám, chro, chro, chro, my Jelítka nedáme, nás je tady víc.
+
+LAŠTOVIČKA: No co to je, takovejch prasat, kde se tady vzali a co je to tu za příšery. Já mám halucinace. Karle, pomóc! Pojďte sem.
+(Přiběhne Karel, v ruce flašku.)
+
+KAREL: Co to vidím. Duchové - to musí být z toho pití a těch prasat, co tu je. Aspoň 10x víc než jich tu chováme. To je mámení.
+
+LAŠTOVIČKA: To není žádný mámení, určitě nějaká magie a podívejte: všude samý prasata a jsou ňáký rozuřený. Kdepak, tohle jsme si nedomluvili. Tady já nebudu, to nemám zapotřebí. To jsou kšefty… To je blázinec. Tohle není nic pro mě. Jdu domů a tohle (vezme flašku Karlovi) si vezmu do ordinace jako desinfekci. A se zabíjačkama končím!
+
+(Laštovička prchá, Karel se zhroutí. Duchové zmizí. Děti by se měly zklidnit…)
+
+KAREL: Tak jestli to není tím pitím, tak to musí být něco nadpřirozeného. Kláro, pomóc. Tak ta moje žena měla nakonec pravdu, nadpřirozené věci existují.
+(Přiběhne Klára.)
+KAREL: Podívej, podívej (ukazuje na děti s rypáčky)!
+
+KLÁRA: To je znamení, že Jelítko nemáme zabíjet! Vesmír promluvil.
+
+KAREL: Byl jsem hlupák, měl jsem ti věřit. Jsou věci mezi nebem a zemí…
+
+KLÁRA: Karlíčku můj nejmilejší! (hubička) a teď tu bude všechno jinak - v harmonii! Pojď mi pomoct, to půjde raz dva… (Karel si bere korále a podává na střed ceduli, Klára zapaluje tyčinku, oba si sedají na střed a začínají zpívat)
+[[[20-ezosong konec]]]
+
+JEDNÁNÍ 7 · Závěr
+
+Scéna: Na scéně sedí Karel s Klárou a Jelítkem, později přijdou všichni ostatní
+Postavy: Karel, Klára, později metalák
+Loutky: Jelítko, později prasoň
+Rekvizity: Cedule: GURU KÁJA - Prasoterapie (Léčba objímáním s prasetem. Individuální lekce: 1000 Kč. Víkendový workshop: 2000 Kč)
+[[[20-ezosong (pokračuje)]]]
+   …Vítejte všechny duše, co jste k nám přišly z Venuše.
+   Ať naše srdce vyléčí, prastará duše prasečí…
+
+JELÍTKO: Přišel další email od Jitrničky a Paš-ti-ky ze svatební cesty z Tibetu! Poslali spoustu fotek. To byste nevěřili, jaká tam žijí zvláštní prasata… V kolik bude meditace? A večeře?
+
+METALÁK: Čus! Jedeme kolem s Vepřoněma na turné a tak mě napadlo, že by moh Prasoň navštívit rodinu! A zazpíváme si tu naši!
+(Přijdou všichni na scénu.)
+[[[21-METAL podcast]]]
+   Mlaskej a chrochtej,
+   dej si do rypáku.
+   Seš kámo vostrej,
+   máš všechno na háku.
+
+   Africký šamani
+   a ezo ženštiny,
+   Kravaťák v obleku
+   mele tu kraviny.
+
+   Veterinář, je vlastně ras,
+   hroch, zebra, slon, prase,
+   zláme jim vaz.
+
+   Mlaskej a chrochtej,
+   dej si do rypáku.
+   Když budeš vostrej,
+   neskončíš na háku.
+
+   Jelítka, kopýtka,
+   ovar a prejt.
+   Jen tak tě kámo
+   nenechaj bejt.
+
+   Řezníka, ať si odnese ďas
+   Dejte nám svobodu
+   nežerte nás
+
+[[[22-Děkovačka]]]
+</script>
+
+<script id="parser">
+(function (G) {
+  const strip = s => s.normalize("NFD").replace(/[\u0300-\u036f]/g, "");
+  const normName = s => strip(s).toUpperCase().replace(/[^A-Z0-9]/g, "");
+  const normText = s => s.replace(/\s+/g, " ").trim();
+  function hashKey(s) {
+    const b = new TextEncoder().encode(s); let h = 0x811c9dc5;
+    for (const x of b) { h ^= x; h = Math.imul(h, 0x01000193) >>> 0; }
+    return h.toString(16).padStart(8, "0");
+  }
+  const cap = s => s ? s[0].toUpperCase() + s.slice(1) : s;
+  const isCaps = s => /[A-ZÁČĎÉĚÍŇÓŘŠŤÚŮÝŽ]/.test(s) && s === s.toUpperCase();
+
+  function parseScript(src, roles, opts = {}) {
+    const palette = opts.palette || ["x1", "x2", "x3", "x4"];
+    const alias = {};
+    for (const [id, R] of Object.entries(roles)) [R.name, ...(R.aliases || [])].forEach(a => alias[normName(a)] = id);
+    const extra = {};
+    function roleFor(name) {
+      const n = normName(name);
+      if (alias[n]) return alias[n];
+      const id = "r_" + n.toLowerCase();
+      if (!extra[id]) {
+        const nice = name.trim().toLowerCase().split(/\s+/).map(cap).join(" ");
+        extra[id] = { name: nice, desc: "nová postava", tok: palette[Object.keys(extra).length % palette.length], gender: "x", sample: "Dobrý den." };
+        alias[n] = id;
+      }
+      return id;
+    }
+    const acts = []; let act = null;
+    const ensureAct = () => { if (!act) { act = { id: String(acts.length + 1), title: "Jednání " + (acts.length + 1), name: "", items: [] }; acts.push(act); } return act; };
+    const push = it => { const A = ensureAct(); it.i = A.items.length; A.items.push(it); };
+    const splitSegs = (who, text) => {
+      const segs = [];
+      text.split(/(\([^)]*\)?)/).forEach(p => {
+        const t = p.trim(); if (!t) return;
+        if (t.startsWith("(")) { const d = normText(t.replace(/^\(|\)$/g, "")); if (d) segs.push({ type: "dir", text: d, key: hashKey("vypravec|" + d) }); }
+        else if (!/[\p{L}\p{N}]/u.test(t)) { const last = [...segs].reverse().find(x => x.type === "say"); if (last) { last.text += t; last.key = hashKey(who + "|" + last.text); } }
+        else segs.push({ type: "say", text: normText(t), key: hashKey(who + "|" + normText(t)) });
+      });
+      return segs;
+    };
+    const stageText = t => cap(t.split(/[()]/).map(normText).filter(Boolean).map((p, i, a) => cap(i < a.length - 1 && !/[.!?…:,]$/.test(p) ? p + "." : p)).join(" "));
+    const pushStage = t => { const s = stageText(t); if (s && !/^(pustit|pusť|pustit song)\.?$/i.test(s)) push({ kind: "stage", who: "vypravec", segs: [{ type: "dir", text: s, key: hashKey("vypravec|" + s) }] }); };
+
+    const lines = src.replace(/\r/g, "").split("\n");
+    let prev = "blank", lastWho = null, cue = null, lyricGap = false, inCast = false;
+    const cast = {};
+    const reCastHead = /^(?:#+\s*)?(POSTAVY|OSOBY|OBSAZENÍ|OBSAZENI|DRAMATIS PERSONAE)\s*:?\s*$/i;
+    const reCastLine = /^[-•*\s]*([^\s:–—-][^:–—]{0,34}?)\s*(?:[:–—]|\s-\s)\s*(.+)$/;
+    const reHead = /^(?:#+\s*)?(?:(\d+)\s*[.)]\s*)?JEDN[AÁ]N[IÍ]\s*(\d+)?\.?\s*[\-–—·:.,|]*\s*(.*)$/i;
+    const reCue = /\[\[\[\s*([^\]]*?)\s*\]\]\]?/;
+    const reSpeech = /^([^\s:(][^:()]{0,34}?)\s*:\s*(.*)$/;
+    const reMeta = /^(Scéna|Postavy|Loutky|Rekvizity)\s*:\s*(.*)$/i;
+    const CUE_FX = opts.cueFx || G.CUE_FX || [];
+    for (const raw of lines) {
+      const line = raw.trim();
+      if (!line) { if (prev === "lyric" || prev === "cue") lyricGap = true; else prev = "blank"; continue; }
+      if ((prev === "cue" || prev === "lyric") && /^\s/.test(raw) && !reCue.test(line) && !reSpeech.test(line) && !reHead.test(line)) {
+        cue.lyrics = (cue.lyrics ? cue.lyrics + (lyricGap ? "\n\n" : "\n") : "") + line; lyricGap = false; prev = "lyric"; continue;
+      }
+      lyricGap = false;
+      let m;
+      if (reCastHead.test(line)) { inCast = true; continue; }
+      if (inCast && !reHead.test(line)) {
+        if ((m = reCastLine.exec(line))) { const who = roleFor(m[1]); cast[who] = (cast[who] ? cast[who] + " " : "") + normText(m[2]); }
+        continue;
+      }
+      inCast = false;
+      if ((m = reHead.exec(line))) {
+        const id = m[2] || m[1] || String(acts.length + 1);
+        act = { id, title: "Jednání " + id, name: normText(m[3] || ""), items: [] }; acts.push(act);
+        prev = "blank"; lastWho = null; continue;
+      }
+      if (act && (m = reMeta.exec(line))) { (act.meta = act.meta || []).push([cap(m[1].toLowerCase()), normText(m[2])]); continue; }
+      if ((m = reCue.exec(line))) {
+        const before = line.slice(0, m.index), after = line.slice(m.index + m[0].length);
+        if (before.trim()) pushStage(before);
+        const c = m[1]; const t = /^(\d+)\s*[-–.:]?\s*(.*)$/.exec(c);
+        const title = normText((t ? t[2] : c).replace(/\s*-\s*\d+\s*$/, "")) || "Hudba";
+        const fx = /^(stáhnout|stahnout|ztišit|vypnout)/i.test(title) ? null : (CUE_FX.find(([re]) => re.test(title)) || [])[1] || null;
+        const tech = !t && /^(stáhnout|stahnout|ztišit|zesílit|opět|pustit|vypnout)/i.test(title);
+        const ann = `Hudba${/^(hudba|píseň|song)$/i.test(title) ? "" : ": " + title.replace(/\s*\(pokračuje\)/, "")}.`;
+        cue = { kind: tech ? "tech" : "cue", who: "song", track: t ? t[1] : "", title, lyrics: "", fx,
+                segs: [tech || fx ? { type: "cue" } : { type: "cue", text: ann, key: hashKey("vypravec|" + ann) }] };
+        push(cue);
+        if (after.trim()) { pushStage(after); prev = "blank"; } else prev = "cue";
+        lastWho = null; continue;
+      }
+      if ((m = reSpeech.exec(line))) {
+        const name = m[1];
+        if (isCaps(name) || alias[normName(name)] || name.split("+").every(n => isCaps(n) || alias[normName(n)])) {
+          const names = name.split("+").map(x => x.trim()).filter(Boolean);
+          const whoAll = names.map(roleFor), who = whoAll[0];
+          lastWho = who;
+          if (m[2].trim()) {
+            const segs = splitSegs(who, m[2]);
+            if (whoAll.length > 1) segs.forEach(sg => { if (sg.type === "say") sg.also = whoAll.slice(1).map(w => ({ who: w, key: hashKey(w + "|" + sg.text) })); });
+            push({ kind: "speech", who, with: whoAll.slice(1), segs });
+          }
+          prev = "speech"; continue;
+        }
+      }
+      if (line.startsWith("(")) { pushStage(line); prev = "stage"; continue; }
+      if (prev === "speech" && lastWho) { push({ kind: "speech", who: lastWho, segs: splitSegs(lastWho, line) }); continue; }
+      pushStage(line); prev = "stage";
+    }
+    for (const [who, d] of Object.entries(cast)) { const R = roles[who] || extra[who]; if (R) R.desc = d; }
+    return { acts: acts.filter(A => A.items.length), extraRoles: extra, cast };
+  }
+  // sound-effect cues in the script ([[[03-efekt FARMA…]]]) play a generated sound instead of a song
+  G.CUE_FX = [[/efekt\s*farm|zvuky\s*farm|farma/i, "farm"], [/zvonění|mobil/i, "phone"], [/zvuk\s*kouzla|kouzlo/i, "magic"]];
+  G.parseScript = parseScript; G.hashKey = hashKey;
+})(typeof window !== "undefined" ? window : globalThis);
+</script>
+
+<script>
+(() => {
+const ROLES = {
+  jitrnicka: { name: "Jitrnička", aliases: ["JITRNIČKA", "JITRNICKA"], tok: "jitrnicka", gender: "f", desc: "ženský hlas · snílek", sample: "Óoch, ty jsi až z Afriky!? To musí být strašně daleko! Určitě je to tam krásné! A jak se jmenuješ? Já jsem Jitrnička." },
+  jelitko:   { name: "Jelítko",   aliases: ["JELÍTKO"], tok: "jelitko", gender: "m", desc: "mužský hlas · lenoch", sample: "Už zase fantazíruješ? Já se ti divím, Jitrničko. Slyšela jsi, jsme na výkrm. Tak jez! Vždyť je to paráda…" },
+  karel:     { name: "Karel",     aliases: ["KAREL"], tok: "karel", gender: "m", desc: "jiný mužský hlas · sedlák", sample: "No vy ale jdete na dračku, čuňátka moje, to teda nevím, jestli bych neměl zdražit. Co myslíte?" },
+  pastika:   { name: "Paštika",   aliases: ["PAŠ-TI-KA", "PAŠŤIKA", "PAŠTIKA"], tok: "pastika", gender: "m", desc: "nový mužský hlas · divoké prase z Afriky", sample: "Přijel jsem s cirkusem, jezdil jsem po celém světě a teď jsem skončil tady v týhle díře. Je tu hrozzzzná zzzzzima." },
+  saman:     { name: "Šaman",     aliases: ["ŠAMAN"], tok: "saman", gender: "f", desc: "ženský hlas · kouzelník ze savany", sample: "Šaman - to veliká kouzelník z Afrika. Když se zkouřit a bubnovat tak hovořit s duchy ze savana. A vy být kdo - podivná růžová stvoření?" },
+  duch:      { name: "Duch slona", aliases: ["DUCH", "DUCH SLONA", "SLON"], tok: "duch", gender: "m", desc: "vlastní hlas · hluboký a pomalý", sample: "Jsem duch slona, vládnu všem slonům, slonicím a slůňatům v celé savaně." },
+  lastovicka: { name: "Laštovička", aliases: ["LAŠTOVIČKA", "LASTOVICKA"], tok: "lastovicka", gender: "m", desc: "veterinář a řezník", sample: "Možná nevypadám, ale jsem nefalšovaný a řádně vystudovaný medicinae veterinariae doctor, MVDr. Maxmilián Laštovička." },
+  klara:     { name: "Klára",     aliases: ["KLÁRA"], tok: "klara", gender: "f", desc: "Karlova žena, ezoterička", sample: "Porod, to je posvátná věc, zrození nového života, dar matky země. To jméno jsem jí dala já, krásné, že? Mezi nebem a sluncem. Cítíte tu sílu v tom jméně… Ta energie…" },
+  komediant: { name: "Komediant", aliases: ["KOMEDIANT"], tok: "komediant", gender: "f", desc: "cirkusačka s francouzským přízvukem", sample: "Ale to je fantastické publikum, to je fofr, to je komédie, brávo, brávo. Já jsem z Cirkus Praga Kopecký. Mám tu pro vás šampióna - jezdí na motorce, chodí po láně." },
+  barbina:   { name: "Bárbína",   aliases: ["BÁRBÍNA", "BARBÍNA", "BARBINA"], tok: "barbina", gender: "f", desc: "fitness slečna", sample: "Prasátka říkáte? No, ale to jsou vážně ňuňínci. Pojď sem, budeš mít růžovej polštářek u mě na gauči a budem spolu koukat na telku a chroupat čipsíky." },
+  metalak:   { name: "Metalák",   aliases: ["METALÁK"], tok: "metalak", gender: "m", desc: "rocker z kapely Vepřoni", sample: "Dobrej! Ty brďo, fakt, že jo, prasata, hustý, se kouknu. Jako potřebovali bysme maskota do kapely." },
+  podnikatel: { name: "Podnikatel", aliases: ["PODNIKATEL"], tok: "podnikatel", gender: "m", desc: "zbohatlík", sample: "Lidi dneska chtěj víc, chtěj exotiku! Musíš dělat velký věci! Na vidlácích nezbohatneš!" },
+  prasnice:  { name: "Prasnice",  aliases: ["PRASNICE"], tok: "jitrnicka", gender: "x", desc: "chrochtá – přehraje se zvuk", sample: "chrocht", fx: "grunt" },
+  vypravec:  { name: "Scénické poznámky", aliases: ["VYPRAVĚČ"], tok: "vypravec", gender: "x", desc: "vypravěč · stejný ve všech jednáních", sample: "Laštovička prchá, Karel se zhroutí. Duchové zmizí." }
+};
+const parsed = parseScript(document.getElementById("scenar").textContent, ROLES);
+Object.assign(ROLES, parsed.extraRoles);
+const ACTS = {}; const ORDER = [];
+parsed.acts.forEach(A => { ACTS[A.id] = A; ORDER.push(A.id); A.lines = A.items; });
+const style = who => { const t = (ROLES[who] || { tok: who }).tok || who; return `--c:var(--${t});--tint:var(--${t}-tint)`; };
+
+// scénická poznámka → zvuk (první shoda vyhrává; pořadí je důležité)
+const FX = [
+  [/o život|zabíjen|zabijou|řezník.*(pic|říz)|kvičí.*strach|ryčí hrůzou/i, "panic"],
+  [/prasátko nad hlavu|vytáhne další|podá Kláře|už leze další/i, "piglet"],
+  [/vyskočí z úkrytu/i, "stomp"],
+  [/nalije/i, "pour"],
+  [/hubička|políb/i, "kiss"],
+  [/omdlí|svalí se|zhroutí/i, "thud"],
+  [/kvič|kvik|zakvič|ječí/i, "squeal"],
+  [/zamlask|mlask/i, "smack"],
+  [/bašt|žer[eou]|chroup|cpe se|hltá/i, "munch"],
+  [/chrocht|chrochtá|zachrocht/i, "grunt"],
+  [/zívn|zívá/i, "yawn"],
+  [/šťouch/i, "poke"],
+  [/drkot/i, "chatter"],
+  [/kýbl/i, "bucket"],
+  [/zadýmit|dým|kouř/i, "smoke"],
+  [/přilétne|odlétne|přiletí|odletí/i, "fly"],
+  [/dup/i, "stomp"],
+  [/bubn/i, "drum"],
+  [/tlesk/i, "clap"],
+  [/čuch|čich|očuch/i, "sniff"],
+  [/kouzl|čár|zmizí|objeví se/i, "magic"],
+  [/vrz|dveře|vrata/i, "creak"],
+  [/brousí|nůž|nože/i, "knife"]
+];
+ORDER.forEach(id => ACTS[id].lines.forEach(L => L.segs.forEach(s => { if (s.type === "dir") s.fx = (FX.find(([re]) => re.test(s.text)) || [])[1] || null; })));
+
+// ---------- avatars ----------
+const pigFace = (ears, tusks) => `<svg class="avatar" viewBox="0 0 40 40" aria-hidden="true">${ears}<circle cx="20" cy="21" r="17" fill="var(--tint)" stroke="var(--c)" stroke-width="2"/><circle cx="13" cy="16" r="1.8" fill="var(--c)"/><circle cx="27" cy="16" r="1.8" fill="var(--c)"/><ellipse cx="20" cy="26" rx="8" ry="5.5" fill="var(--c)"/><ellipse cx="17" cy="26" rx="1.6" ry="2.2" fill="var(--tint)"/><ellipse cx="23" cy="26" rx="1.6" ry="2.2" fill="var(--tint)"/>${tusks ? `<path d="M11 28 Q9 22 12 20 M29 28 Q31 22 28 20" stroke="var(--ink)" stroke-width="2.2" fill="none" stroke-linecap="round"/>` : ""}</svg>`;
+const EARS_F = `<path d="M9 9 L14 4 L16 12 Z M31 9 L26 4 L24 12 Z" fill="var(--c)"/>`;
+const EARS_M = `<path d="M8 12 L12 5 L16 11 Z M32 12 L28 5 L24 11 Z" fill="var(--c)"/>`;
+function avatar(who) {
+  switch (who) {
+    case "jitrnicka": return pigFace(EARS_F, false);
+    case "jelitko": return pigFace(EARS_M, false);
+    case "pastika": return pigFace(EARS_M, true);
+    case "karel": return `<svg class="avatar" viewBox="0 0 40 40" aria-hidden="true"><circle cx="20" cy="20" r="19" fill="var(--tint)" stroke="var(--c)" stroke-width="2"/><path d="M8 18 Q20 4 32 18 Z" fill="var(--c)"/><rect x="6" y="17" width="28" height="3" rx="1.5" fill="var(--c)"/><circle cx="15" cy="25" r="1.6" fill="var(--c)"/><circle cx="25" cy="25" r="1.6" fill="var(--c)"/><path d="M14 31 Q20 34 26 31" stroke="var(--c)" stroke-width="2" fill="none" stroke-linecap="round"/></svg>`;
+    case "saman": return `<svg class="avatar" viewBox="0 0 40 40" aria-hidden="true"><ellipse cx="13" cy="8" rx="2.6" ry="7" transform="rotate(-25 13 8)" fill="var(--c)"/><ellipse cx="20" cy="6" rx="2.6" ry="7" fill="var(--c)"/><ellipse cx="27" cy="8" rx="2.6" ry="7" transform="rotate(25 27 8)" fill="var(--c)"/><circle cx="20" cy="23" r="15" fill="var(--tint)" stroke="var(--c)" stroke-width="2"/><path d="M11 20 h5 M24 20 h5 M12 29 l3 -2 l3 2 l2 -2 l2 2 l3 -2 l3 2" stroke="var(--c)" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"/></svg>`;
+    case "duch": return `<svg class="avatar" viewBox="0 0 40 40" aria-hidden="true"><circle cx="8" cy="18" r="7" fill="var(--tint)" stroke="var(--c)" stroke-width="2" stroke-dasharray="3 2"/><circle cx="32" cy="18" r="7" fill="var(--tint)" stroke="var(--c)" stroke-width="2" stroke-dasharray="3 2"/><circle cx="20" cy="18" r="11" fill="var(--tint)" stroke="var(--c)" stroke-width="2" stroke-dasharray="3 2"/><circle cx="16" cy="16" r="1.6" fill="var(--c)"/><circle cx="24" cy="16" r="1.6" fill="var(--c)"/><path d="M20 22 Q19 32 25 35" stroke="var(--c)" stroke-width="3" fill="none" stroke-linecap="round"/></svg>`;
+    case "vypravec": return `<svg class="avatar" viewBox="0 0 40 40" aria-hidden="true"><path d="M5 11 Q12 8 20 12 Q28 8 35 11 V31 Q28 28 20 32 Q12 28 5 31 Z" fill="var(--tint)" stroke="var(--c)" stroke-width="2" stroke-linejoin="round"/><path d="M20 12 V32" stroke="var(--c)" stroke-width="2"/></svg>`;
+    case "song": return `<svg class="avatar" viewBox="0 0 40 40" aria-hidden="true"><circle cx="20" cy="20" r="19" fill="var(--tint)" stroke="var(--c)" stroke-width="2"/><path d="M17 27V12l11-3v15" stroke="var(--c)" stroke-width="2.4" fill="none" stroke-linejoin="round"/><circle cx="14.5" cy="27" r="3.5" fill="var(--c)"/><circle cx="25.5" cy="24" r="3.5" fill="var(--c)"/></svg>`;
+  }
+  const ch = ((ROLES[who] && ROLES[who].name) || "?")[0];
+  return `<svg class="avatar" viewBox="0 0 40 40" aria-hidden="true"><circle cx="20" cy="20" r="18" fill="var(--tint)" stroke="var(--c)" stroke-width="2"/><text x="20" y="26.5" text-anchor="middle" font-family="Baloo 2, sans-serif" font-weight="800" font-size="18" fill="var(--c)">${ch}</text></svg>`;
+}
+const esc = s => s.replace(/[&<>"]/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
+
+// ---------- options ----------
+const opts = { readDirs: true, stopAtMusic: false, studio: true, learn: "", hideMine: false, learnStop: false, loopAct: false, extra: 0, car: true, silent: false, fx: true };
+try { const o = JSON.parse(localStorage.getItem("jj-opts-2") || "{}"); if (!o.fxDefaultOn) { delete o.fx; o.fxDefaultOn = true; } Object.assign(opts, o); } catch (e) {}   // sounds are on by default now
+function saveOpts() { try { localStorage.setItem("jj-opts-2", JSON.stringify(opts)); } catch (e) {} }
+[["opt-dirs", "readDirs"], ["opt-stop", "stopAtMusic"], ["opt-fx", "fx"], ["opt-studio", "studio"], ["opt-silent", "silent"], ["opt-car", "car"]].forEach(([id, k]) => {
+  const el = document.getElementById(id); el.checked = opts[k];
+  el.addEventListener("change", () => { opts[k] = el.checked; saveOpts(); if (k === "studio") buildCast(); if (k === "silent") applySilent(); if (k === "car") { routeOut(); mediaSync(); } });
+});
+
+// ---------- learning mode ----------
+let holdOn = false, holding = false, releaseFn = null;
+const $learn = document.getElementById("learnSel"), $hide = document.getElementById("opt-hide");
+Object.keys(ROLES).filter(r => r !== "vypravec").forEach(r => {
+  if (!ORDER.some(id => ACTS[id].lines.some(L => L.who === r))) return;
+  const o = document.createElement("option"); o.value = r; o.textContent = ROLES[r].name; $learn.appendChild(o);
+});
+if (![...$learn.options].some(o => o.value === opts.learn)) opts.learn = "";
+$learn.value = opts.learn; $hide.checked = opts.hideMine;
+function applyLearn() {
+  const box = document.getElementById("learnbox");
+  box.classList.toggle("on", !!opts.learn); box.setAttribute("style", opts.learn ? style(opts.learn) : "");
+  document.getElementById("learnHint").hidden = !opts.learn;
+  document.body.classList.toggle("hide-mine", !!opts.learn && opts.hideMine);
+  document.querySelectorAll(".line").forEach(li => li.classList.toggle("mine", !!opts.learn && li.dataset.who === opts.learn));
+  if (ACTS[actId]) lines().forEach(L => L.el && L.el.classList.toggle("mine-stage", L.kind === "stage" && myStage(L, L.segs[0])));
+}
+$learn.addEventListener("change", () => { opts.learn = $learn.value; saveOpts(); applyLearn(); });
+$hide.addEventListener("change", () => { opts.hideMine = $hide.checked; saveOpts(); applyLearn(); });
+const $lstop = document.getElementById("opt-learnstop"); $lstop.checked = !!opts.learnStop;
+$lstop.addEventListener("change", () => { opts.learnStop = $lstop.checked; saveOpts(); });
+const $loop = document.getElementById("opt-loop"); $loop.checked = !!opts.loopAct;   // keep replaying the current act until another one is chosen
+$loop.addEventListener("change", () => { opts.loopAct = $loop.checked; saveOpts(); });
+const $extra = document.getElementById("opt-extra"), $extraVal = document.getElementById("extraVal");   // extra time for my silent line, in %
+const showExtra = () => { $extra.value = opts.extra || 0; $extraVal.textContent = `+${opts.extra || 0} %`; };
+showExtra(); $extra.addEventListener("input", () => { opts.extra = +$extra.value; showExtra(); saveOpts(); });
+// how long the line would take: the recording's length, or an estimate from the text
+async function lineDuration(s, who) {
+  const src = clipFor(s);
+  if (src) { try { const b = await getBuf(src); return b.duration * 1000; } catch (e) {} }
+  const rate = (cfg[who] && cfg[who].rate) || 1;
+  return Math.max(1200, s.text.length * 70 / rate + 400);
+}
+// learning mode: a stage direction that names the learner ("Jelítko zachrochtá") is their sound too
+function myStage(L, s) {
+  if (!opts.learn || L.kind !== "stage") return false;
+  const R = ROLES[opts.learn]; if (!R) return false;
+  const stems = [R.name, ...(R.aliases || [])].map(n => n.toLowerCase().replace(/[-\s]/g, "")).map(n => n.length > 4 ? n.slice(0, -1) : n);
+  const txt = s.text.toLowerCase().replace(/-/g, "");
+  return stems.some(st => new RegExp("(^|[^\\p{L}])" + st, "u").test(txt));
+}
+function fxDuration(name) { const b = fxBufs[name]; return b && b.length ? b[0].dur * 1000 + 100 : 1200; }
+async function yourSound(name, span, t) {
+  const ms = fxDuration(name); if (t !== token) return;
+  span && span.classList.add("yourturn");
+  document.getElementById("now").textContent = `Tvůj zvuk · ${FX_LIB[name] ? FX_LIB[name].label.toLowerCase() : ""}`;
+  await wait(ms);
+  if (span) { span.classList.remove("yourturn"); span.classList.add("done"); }
+}
+async function yourTurn(s, who, span, t) {
+  const ms = (await lineDuration(s, who)) * (1 + (opts.extra || 0) / 100);
+  if (t !== token) return;
+  span && span.classList.add("yourturn");
+  const t0 = performance.now();
+  follow = { span, t0, dur: ms };
+  await new Promise(res => {
+    const tick = () => {
+      if (t !== token || holdOn) return res();
+      const el = performance.now() - t0, p = Math.min(100, el / ms * 100);
+      span && span.style.setProperty("--p", p + "%");
+      document.getElementById("now").textContent = `Tvoje replika · ${Math.max(0, Math.ceil((ms - el) / 1000))} s`;
+      if (el >= ms) return res();
+      setTimeout(tick, 100);   // timers keep running in the background (requestAnimationFrame does not)
+    };
+    tick();
+  });
+  if (span) { span.classList.remove("yourturn"); span.style.removeProperty("--p"); span.classList.add("done"); }
+}
+// learning: wait until the learner taps their line again (or ▶, or another line)
+function releaseHold() { holdOn = false; if (releaseFn) { const f = releaseFn; releaseFn = null; f(); } }
+async function waitHold(span, t) {
+  holding = true; renderBtn();
+  span && span.classList.add("hold");
+  document.getElementById("now").textContent = "Mluv · pak klepni na svou repliku nebo ▶";
+  await new Promise(res => { releaseFn = res; const chk = () => { if (t !== token) { releaseFn = null; return res(); } if (releaseFn) setTimeout(chk, 200); }; chk(); });
+  holding = false; holdOn = false; renderBtn();
+  span && span.classList.remove("hold");
+}
+// hidden text in learning: a finished line of mine shows for 5 s, or until I tap another character's line
+let revealTimer = null;
+function hideRevealed() { clearTimeout(revealTimer); document.querySelectorAll(".line.revealed").forEach(li => li.classList.remove("revealed")); }
+function revealLine(L) { hideRevealed(); L.el.classList.add("revealed"); revealTimer = setTimeout(hideRevealed, 5000); }
+const isMine = L => !!opts.learn && (L.who === opts.learn || (L.with || []).includes(opts.learn));
+function lineTap(L, e) {
+  if (!isMine(L)) hideRevealed();
+  if (opts.silent) { cur = L.i; setActive(L.i, false); return; }
+  if (playing && cur === L.i && isMine(L)) { if (holding) releaseHold(); else holdOn = true; return; }   // my line now: hold / go on
+  // second tap on the line being read: continue from the tapped sentence (first tap = the line from its start)
+  if (playing && !holding && cur === L.i) { const pos = tapPos(L, e); if (pos) { unlock(); playFrom(L.i, pos); return; } }
+  unlock(); playFrom(L.i);
+}
+// sentences of a text with their start offsets (same split as chunks())
+function sentences(text) {
+  const out = [], re = /[^.!?…:]+(?:[.!?…:]+|$)/g; let m;
+  while ((m = re.exec(text))) { const lead = m[0].length - m[0].trimStart().length; if (m[0].trim()) out.push({ start: m.index + lead, text: m[0].trim() }); }
+  return out;
+}
+// which part of the line (segment) and which sentence in it was tapped
+function tapPos(L, e) {
+  const sp = e && e.target && e.target.closest ? e.target.closest("[data-k]") : null;
+  if (!sp || !L.el.contains(sp)) return null;
+  const k = +sp.dataset.k, seg = L.segs[k]; if (!seg) return null;
+  let off = 0;
+  try {
+    if (document.caretRangeFromPoint) { const r = document.caretRangeFromPoint(e.clientX, e.clientY); if (r && sp.contains(r.startContainer)) off = r.startOffset; }
+    else if (document.caretPositionFromPoint) { const p = document.caretPositionFromPoint(e.clientX, e.clientY); if (p && sp.contains(p.offsetNode)) off = p.offset; }
+  } catch (x) {}
+  let ch = 0; for (const x of sentences(seg.text)) if (x.start <= off) ch = x.start;
+  return { k, ch };
+}
+// read one segment starting at character ch: the recording from the matching point (by share of the text), or the browser voice from that sentence
+async function readFrom(s, who, t, ch) {
+  const src = clipFor(s);
+  if (src) { try { const b = await getBuf(src); if (t !== token) return; if (await playClip(src, t, b.duration * ch / Math.max(1, s.text.length))) return; } catch (x) {} }
+  for (const part of chunks(s.text.slice(ch))) { if (t !== token) break; await speak(part, who, t); }
+}
+
+// ---------- state ----------
+let actId = ORDER[0], cur = 0, token = 0, playing = false;
+const lines = () => ACTS[actId].lines;
+const $script = document.getElementById("script"), $acts = document.getElementById("acts"), $menu = document.getElementById("actMenu"), $actBtn = document.getElementById("actBtn");
+
+ORDER.forEach(id => {
+  const A = ACTS[id];
+  const b = document.createElement("button");
+  b.className = "act-tab"; b.type = "button"; b.setAttribute("role", "tab"); b.dataset.act = id;
+  b.innerHTML = `${esc(A.title)}${A.name ? `<small>${esc(A.name)}</small>` : ""}`;
+  b.addEventListener("click", () => { unlock(); chooseAct(id); });
+  $acts.appendChild(b);
+  const o = document.createElement("button"); o.type = "button"; o.setAttribute("role", "menuitem"); o.dataset.act = id;
+  o.innerHTML = `<b>${esc(id)}</b>${esc(A.name || A.title)}<small>${A.lines.length}</small>`;
+  o.addEventListener("click", () => { closeActMenu(); unlock(); chooseAct(id); });
+  $menu.appendChild(o);
+});
+function closeActMenu() { $menu.hidden = true; $actBtn.setAttribute("aria-expanded", "false"); }
+$actBtn.addEventListener("click", e => {
+  e.stopPropagation();
+  const open = $menu.hidden;
+  $menu.hidden = !open; $actBtn.setAttribute("aria-expanded", String(open));
+  if (open) { const curB = $menu.querySelector(`[data-act="${actId}"]`); if (curB) curB.focus(); }
+});
+document.addEventListener("click", e => { if (!$menu.hidden && !$menu.contains(e.target)) closeActMenu(); });
+document.addEventListener("keydown", e => { if (e.key === "Escape" && !$menu.hidden) { closeActMenu(); $actBtn.focus(); } });
+
+function chooseAct(id) {
+  const was = playing;
+  stop();
+  showAct(id, true);
+  if (was) playFrom(0);
+}
+
+function showAct(id, scrollTop) {
+  actId = id; cur = 0;
+  const A = ACTS[id];
+  document.querySelectorAll(".act-tab").forEach(b => b.setAttribute("aria-selected", b.dataset.act === id ? "true" : "false"));
+  document.getElementById("actNum").textContent = id;
+  document.getElementById("actPrev").disabled = !prevAct(); document.getElementById("actNext").disabled = !nextAct();
+  $menu.querySelectorAll("button").forEach(b => b.setAttribute("aria-current", b.dataset.act === id ? "true" : "false"));
+  try { history.replaceState(null, "", "#jednani-" + id); } catch (e) {}
+  $script.innerHTML = "";
+  A.lines.forEach(L => {
+    const li = document.createElement("li");
+    li.className = "line" + (L.kind === "stage" ? " stage" : L.kind === "cue" ? " cue" : L.kind === "tech" ? " stage tech" : "");
+    li.setAttribute("style", style(L.who)); li.tabIndex = 0; li.dataset.who = L.who;
+    const num = `<span class="n">${L.i + 1}</span>`;
+    let body;
+    if (L.kind === "tech") {
+      body = `<p class="text tech-t">🎚 ${esc(L.title)}${L.fx ? " · zvuk" : ""}</p>`;
+    } else if (L.kind === "cue" && L.fx) {
+      body = `<div class="cue-title">🔊 Zvuk ${L.track ? `<span class="track">${esc(L.track)}</span>` : ""}<span>${esc(L.title)}</span><span class="eq"><i></i><i></i><i></i></span>${num}</div>`;
+    } else if (L.kind === "cue") {
+      body = `<div class="cue-title">♪ Hudba ${L.track ? `<span class="track">${esc(L.track)}</span>` : ""}<span>${esc(L.title)}</span><span class="eq"><i></i><i></i><i></i></span>${num}</div>${L.lyrics ? `<p class="lyrics">${esc(L.lyrics)}</p>` : ""}`;
+    } else if (L.kind === "stage") {
+      body = `<p class="text"><span class="dir" data-k="0">${esc(L.segs[0].text)}</span></p>`;
+    } else {
+      const html = L.segs.map((s, k) => `<span class="${s.type === "dir" ? "dir" : "say"}" data-k="${k}">${esc(s.text)}</span>`).join(" ");
+      body = `<div class="who">${esc([L.who, ...(L.with || [])].map(w => ROLES[w].name).join(" + "))}<span class="eq"><i></i><i></i><i></i></span>${num}</div><p class="text">${html}</p>`;
+    }
+    li.innerHTML = `${avatar(L.who)}<div class="body">${body}</div>`;
+    li.addEventListener("click", e => lineTap(L, e));
+    li.addEventListener("keydown", e => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); lineTap(L); } });
+    L.el = li;
+    $script.appendChild(li);
+  });
+  applyLearn();
+  if (A.meta && A.meta.length) {
+    const info = document.createElement("li"); info.className = "act-info";
+    info.innerHTML = `<div class="ai-t">${esc(A.title)}${A.name ? " · " + esc(A.name) : ""}</div><dl>${A.meta.map(([k, v]) => `<dt>${esc(k)}</dt><dd>${esc(v)}</dd>`).join("")}</dl>`;
+    $script.insertBefore(info, $script.firstChild);
+  }
+  const nx = nextAct();
+  const end = document.createElement("li"); end.className = "act-end";
+  end.textContent = nx ? `Konec ${A.title.toLowerCase()} · pokračuje ${ACTS[nx].title}${ACTS[nx].name ? " · " + ACTS[nx].name : ""}` : "Konec hry";
+  $script.appendChild(end);
+  if (nx) {
+    const more = document.createElement("li"); more.className = "act-next";
+    more.innerHTML = `<span class="arrow" aria-hidden="true">↓</span><b>${esc(ACTS[nx].title)}${ACTS[nx].name ? " · " + esc(ACTS[nx].name) : ""}</b><span>Posuň dál a začne další jednání</span><span class="sentinel"></span>`;
+    more.addEventListener("click", () => { unlock(); chooseAct(nx); });
+    $script.appendChild(more);
+    userScrolled = false;
+    nextObs.observe(more.querySelector(".sentinel"));
+  }
+  setActive(-1);
+  if (scrollTop) {
+    const y = $script.getBoundingClientRect().top + scrollY - 16 - (parseFloat(getComputedStyle(document.documentElement).paddingTop) || 0);
+    scrollTo({ top: Math.max(0, y), behavior: scrollTop === "instant" || matchMedia("(prefers-reduced-motion: reduce)").matches ? "auto" : "smooth" });
+  }
+}
+// scrolling past the end of an act carries on into the next one
+let userScrolled = false;
+["wheel", "touchmove", "keydown"].forEach(ev => addEventListener(ev, () => { userScrolled = true; }, { passive: true }));
+const nextObs = new IntersectionObserver(es => {
+  es.forEach(e => {
+    if (!e.isIntersecting || !userScrolled || playing) return;
+    const nx = nextAct(); if (!nx) return;
+    nextObs.disconnect();
+    showAct(nx, "instant");
+  });
+}, { rootMargin: "0px 0px -90px 0px" });
+const nextAct = () => ORDER[ORDER.indexOf(actId) + 1] || null;
+const prevAct = () => ORDER[ORDER.indexOf(actId) - 1] || null;
+
+// ---------- voices ----------
+try {   // like the „video background play fix“ add-ons: the page always considers itself visible
+  Object.defineProperty(document, "hidden", { get: () => false, configurable: true });
+  Object.defineProperty(document, "visibilityState", { get: () => "visible", configurable: true });
+  document.addEventListener("visibilitychange", e => { e.stopImmediatePropagation(); if (playing && !holding && wl === null && opts.car) wakeLock(true); }, true);
+} catch (e) {}
+const synth = window.speechSynthesis;
+const hasTTS = !!synth && "SpeechSynthesisUtterance" in window;
+let voices = [];
+const cfg = {};
+Object.keys(ROLES).forEach(k => cfg[k] = { uri: null, pitch: 1, rate: 1 });
+function load(key) { try { return JSON.parse(localStorage.getItem(key) || "null"); } catch (e) { return null; } }
+const saved = load("jj-cast-2") || load("jj-cast");
+function save() { try { localStorage.setItem("jj-cast-2", JSON.stringify(cfg)); } catch (e) {} }
+const MALE = /jakub|anton[ií]n|male|muž|\bman\b/i;
+const FEMALE = /zuzana|iveta|vlasta|female|žena|google/i;
+const isCs = v => /^cs/i.test(v.lang);
+function set(role, v, pitch, rate) { cfg[role] = { uri: v ? v.voiceURI : null, pitch, rate }; }
+function autoAssign() {
+  const cs = voices.filter(isCs);
+  const M = cs.filter(v => MALE.test(v.name) && !FEMALE.test(v.name));
+  const F = cs.filter(v => !M.includes(v));
+  const any = cs[0] || null, f0 = F[0] || any;
+  set("jitrnicka", f0, 1.25, 1.0);
+  set("saman", F[1] || f0, F[1] ? 0.9 : 0.8, 0.85);
+  set("vypravec", F[2] || f0, 0.95, 1.12);
+  if (M.length) {
+    const m0 = M[0], m1 = M[1] || m0;
+    set("jelitko", m0, 1.1, 0.88); set("karel", m1, M[1] ? 0.9 : 0.6, 0.95);
+    set("pastika", M[2] || m1, M[2] ? 1.2 : 1.45, 1.1); set("duch", m0, 0.3, 0.72);
+    if (!F.length) set("vypravec", m1, 1.05, 1.12);
+  } else {
+    set("jelitko", any, 0.5, 0.88); set("karel", any, 0.2, 0.95); set("pastika", any, 0.75, 1.12); set("duch", any, 0.05, 0.7);
+  }
+  Object.keys(parsed.extraRoles).forEach((id, n) => set(id, (n % 2 ? M[0] : F[0]) || any, [0.7, 1.15, 0.9, 1.35][n % 4], 1));
+}
+// browser fallback follows the role's Google voice: gender picks the browser voice, character sets pitch and tempo
+const CHAR_TUNE = {
+  "jasný": [1.1, 1.05], "pevný": [0.92, 0.98], "mladistvý": [1.25, 1.05], "svěží": [1.12, 1.05], "pohodový": [1.0, 0.95],
+  "zářivý": [1.15, 1.05], "hladký": [1.0, 0.98], "zřetelný": [1.0, 1.0], "veselý": [1.2, 1.08], "jemný": [1.05, 0.92],
+  "zralý": [0.85, 0.9], "průbojný": [1.05, 1.08], "laskavý": [1.0, 0.92], "vřelý": [0.95, 0.95], "věcný": [0.95, 1.05],
+  "temperamentní": [1.3, 1.12], "zastřený": [0.85, 0.92], "chraplavý": [0.7, 0.95], "vypravěčský": [0.92, 1.0],
+  "rozhodný": [0.85, 1.0], "vyrovnaný": [0.95, 1.0], "přátelský": [1.05, 1.0], "ležérní": [1.0, 0.95], "živý": [1.15, 1.1], "učený": [0.9, 0.95]
+};
+const ROLE_GENDER = r => (ROLES[r] && ROLES[r].gender) || "x";
+function effectiveVoice(r) {
+  const w = typeof savedW === "function" ? savedW(r) : "";
+  if (w && w !== "auto") return w.split("|")[0];
+  const rec = typeof recorded === "function" ? recorded(r) : "";
+  return rec ? rec.split("|")[0] : null;
+}
+function deriveFallback(force) {
+  const cs = voices.filter(isCs);
+  const M = cs.filter(v => MALE.test(v.name) && !FEMALE.test(v.name)), F = cs.filter(v => !M.includes(v));
+  const any = cs[0] || voices[0] || null;
+  let mi = 0, fi = 0;
+  Object.keys(ROLES).forEach(r => {
+    if (cfg[r] && cfg[r].manual && !force) return;
+    const gv = effectiveVoice(r), g = gv && vGender(gv) ? vGender(gv) : (ROLE_GENDER(r) === "m" ? "m" : "f");
+    const [p, rate] = gv && GV[gv] ? CHAR_TUNE[GV[gv][1]] || [1, 1] : [1, 1];
+    let v, pitch = p;
+    if (g === "m" && M.length) v = M[mi++ % M.length];
+    else if (g === "m") { v = F[0] || any; pitch = Math.max(0.05, p * 0.55); }   // only female voices: fake a man by lowering pitch
+    else v = F.length ? F[fi++ % F.length] : any;
+    cfg[r] = { uri: v ? v.voiceURI : null, pitch: +pitch.toFixed(2), rate: +rate.toFixed(2), manual: false };
+  });
+}
+function autoAssign() { deriveFallback(true); }
+const voiceFor = who => voices.find(v => v.voiceURI === (cfg[who] || {}).uri) || voices.find(isCs) || null;
+
+// ---------- recorded clips ----------
+let manifest = {};
+const studioRoles = new Set();
+function computeStudio() {
+  studioRoles.clear();
+  ORDER.forEach(id => ACTS[id].lines.forEach(L => L.segs.forEach(s => { if (s.key && manifest[s.key]) studioRoles.add(s.type === "say" ? L.who : "vypravec"); })));
+  document.getElementById("studio-wrap").hidden = !studioRoles.size;
+}
+fetch("manifest.json", { cache: "no-store" }).then(r => r.ok ? r.json() : {}).then(m => { manifest = m || {}; computeStudio(); buildCast(); }).catch(() => {});
+const keyRole = {};
+ORDER.forEach(id => ACTS[id].lines.forEach(L => L.segs.forEach(s => { if (s.key) keyRole[s.key] = s.type === "say" ? L.who : "vypravec"; (s.also || []).forEach(a => keyRole[a.key] = a.who); })));
+const clipFor = s => {
+  if (!opts.studio || !s.key) return null;
+  const r = keyRole[s.key];
+  if (typeof effective === "function") { const w = effective(r), a = w && w !== recorded(r) ? altClips(r, w) : null; if (a && a[s.key]) return a[s.key]; }
+  return manifest[s.key] || null;   // a new voice still being recorded: keep playing the current one
+};
+
+// ---------- Google voices: catalog, casting editor, generation status ----------
+const TRIGGER_ID = "trig_01VkEX2i98PD4y16kU8vfyL6";
+const capUse = n => (window.claude && typeof window.claude.use === "function") ? window.claude.use(n).catch(() => null) : Promise.resolve(null);
+const GV = {
+  Zephyr: ["f", "jasný"], Kore: ["f", "pevný"], Leda: ["f", "mladistvý"], Aoede: ["f", "svěží"], Callirrhoe: ["f", "pohodový"],
+  Autonoe: ["f", "zářivý"], Despina: ["f", "hladký"], Erinome: ["f", "zřetelný"], Laomedeia: ["f", "veselý"], Achernar: ["f", "jemný"],
+  Gacrux: ["f", "zralý"], Pulcherrima: ["f", "průbojný"], Vindemiatrix: ["f", "laskavý"], Sulafat: ["f", "vřelý"],
+  Puck: ["m", "veselý"], Charon: ["m", "věcný"], Fenrir: ["f", "temperamentní, vysoký"], Orus: ["m", "pevný"], Enceladus: ["m", "zastřený"],
+  Iapetus: ["m", "zřetelný"], Umbriel: ["m", "pohodový"], Algieba: ["m", "hladký"], Algenib: ["m", "chraplavý"], Rasalgethi: ["m", "vypravěčský"],
+  Alnilam: ["m", "rozhodný"], Schedar: ["m", "vyrovnaný"], Achird: ["m", "přátelský"], Zubenelgenubi: ["m", "ležérní"], Sadachbia: ["m", "živý"],
+  Sadaltager: ["m", "učený"]
+};
+const GMODELS = [
+  { id: "gemini-3.8-flash-tts", short: "3.8", label: "3.8 Flash · nejlepší zdarma" },
+  { id: "gemini-3.1-flash-tts-preview", short: "3.1", label: "3.1 Flash" },
+  { id: "gemini-2.5-flash-preview-tts", short: "2.5", label: "2.5 Flash" },
+  { id: "gemini-3.8-flash-lite-tts", short: "3.8 Lite", label: "3.8 Flash Lite · rychlý, dobrý" },
+  { id: "gemini-2.5-pro-preview-tts", short: "2.5 Pro", label: "2.5 Pro · jen s placeným klíčem" },
+  { id: "fish:s2.1-pro-free", short: "Fish", label: "Fish Audio · zdarma", fish: true }
+];
+// Fish Audio voices from its Czech library (no clones of real people): id → [gender, name, character]
+const FV = {"3487e66c084540ed8374b4c2e8960841": ["m", "SirYakari", "mladý mužský"], "51a3d06e013347acae401ae662949699": ["m", "Czech Youtuber", "přátelský mužský"], "2e8f93e5c5e94708a756f29791153693": ["m", "Klidný", "klidný mužský"], "c70c6c20aee74d8c98b01dab6743e02e": ["m", "Czech voice", "rozvážný mužský"], "e0ba396c08aa43dabc5459450d0806e1": ["f", "Kačena", "klidný ženský"], "b6acd0763a7d4bc09c94bf05055be228": ["f", "Czech", "jasný ženský"], "6589c5aa8ac14200a0181424396882b2": ["f", "INISS 3", "profesionální ženský"]};
+const vGender = v => (GV[v] || FV[v] || [])[0] || null;
+const vChar = v => GV[v] ? GV[v][1] : FV[v] ? FV[v][2] : "";
+const mShort = id => (GMODELS.find(m => m.id === id) || { short: id || "?" }).short;
+const vName = v => FV[v] ? FV[v][1] : v;
+const autoLabel = rec => { const [v, m] = rec.split("|"); return `${vName(v)} ${mShort(m)}${GV[v] ? (GV[v][0] === "f" ? " ženský " : " mužský ") + GV[v][1] : FV[v] ? " " + FV[v][2] : ""}`; };
+const vLabel = (v, m) => FV[v] ? `${FV[v][1]} · Fish · ${FV[v][2]}` : `${v} · ${mShort(m)} · ${GV[v] ? GV[v][1] + (GV[v][0] === "f" ? " ženský" : " mužský") : ""}`;
+// ---- "Zadání": how the character should speak; a voice = Voice|model|styleId ----
+const STYLE_DEFAULT = {
+  karel: "Sedlák kolem padesátky, unavený životem a svou ezoterickou ženou. Mluví ztěžka, rezignovaně, s povzdechy a suchou ironií; pivo a zabíjačka ho rozjasní.",
+  klara: "Karlova žena, ezoterička, přecitlivělá. Mluví měkce, procítěně, trochu nervózně, se zasněnými až patetickými pauzami; snadno se rozpláče.",
+  lastovicka: "Veterinář a řezník, cynik. Mluví unaveně, kousavě a věcně; lékařské výrazy pronáší s ironickou důležitostí, zabíjačka ho baví.",
+  jitrnicka: "Mladá prasnička, snílek. Mluví zvědavě a nadšeně, s otevřeným údivem; velký svět jí zní jako pohádka.",
+  jelitko: "Prase, lenoch. Mluví líně, rozvláčně a ospale; ožije jen při řeči o jídle.",
+  pastika: "Africké prase z cirkusu, zimomřivý světák. Mluví sebevědomě a světácky, ale pořád je mu zima; zzzima protahuje a drkotá zuby.",
+  saman: "Africký kouzelník. Mluví pomalu, slavnostně a tajemně. Kostrbatou češtinu čte přesně tak, jak je napsaná, nic neopravuje.",
+  komediant: "Okázalá cirkusačka z Francie, česky mluví se silným francouzským přízvukem (francouzské r, přízvuk na poslední slabice, nosovky). Divadelně, rychle, jako handlířka.",
+  barbina: "Bublinková, přeslazená mladá fitness holka, zbožňuje roztomilá zvířátka, kabelky a nákupy. Mluví nadšeně, sladce, trochu přehnaně.",
+  metalak: "Rocker z kapely Vepřoni. Mluví ležérně, drsně a kámošsky, se slangem.",
+  podnikatel: "Zbohatlík, který míří do politiky. Mluví sebejistě, nahlas a rychle, jako na prodejní prezentaci.",
+  duch: "Vznešený duch slona ze savany. Mluví velmi pomalu, hluboce a vznešeně."
+};
+const styleTexts = {};   // styleId → text
+const styleLabels = {};  // styleId → short name shown in the voice list
+const sidOf = t => { t = (t || "").trim(); if (!t) return ""; let h = 0x811c9dc5; for (const b of new TextEncoder().encode(t)) { h ^= b; h = Math.imul(h, 0x01000193) >>> 0; } return h.toString(16).padStart(8, "0"); };
+const regStyle = t => { const id = sidOf(t); if (id) styleTexts[id] = t.trim(); return id; };
+Object.values(STYLE_DEFAULT).forEach(regStyle);
+const cSid = w => (w || "").split("|")[2] || "";
+const cVM = w => (w || "").split("|").slice(0, 2).join("|");
+const mkC = (vm, id) => id ? `${vm}|${id}` : vm;
+const DEFAULT_SIDS = new Set(Object.values(STYLE_DEFAULT).map(sidOf));
+const zShort = id => { const t = (styleTexts[id] || "").trim(); return styleLabels[id] ? `${styleLabels[id]}: ${t}` : t; };
+const cLabel = w => { const [v, m, id] = (w || "").split("|"); return vLabel(v, m) + (id ? ` · „${zShort(id)}“` : " · bez zadání"); };
+const draftStyle = {};   // role → edited text (not yet applied)
+const voiceOrder = Object.keys(GV).sort((a, b) => (GV[a][0] + a).localeCompare(GV[b][0] + b));
+
+let samples = {}, vstate = null, gstat = null, savedCast = null, canEdit = false, dbRef = null;
+const draft = {};
+fetch("samples.json", { cache: "no-store" }).then(r => r.ok ? r.json() : {}).then(j => { samples = j || {}; }).catch(() => {});
+fetch("styles.json", { cache: "no-store" }).then(r => r.ok ? r.json() : {}).then(j => { Object.values(j || {}).forEach(e => { const id = regStyle(typeof e === "string" ? e : e.text); if (e && e.label) styleLabels[id] = e.label; }); buildCast(); }).catch(() => {});
+let alts = {};       // other voices already fully recorded per character: role → {"Voice|model": {key: src}}
+fetch("alts.json", { cache: "no-store" }).then(r => r.ok ? r.json() : {}).then(j => { alts = j || {}; buildCast(); }).catch(() => {});
+let rsamples = {};   // per character: their own lines in a shortlist of voices
+fetch("samples_roles.json", { cache: "no-store" }).then(r => r.ok ? r.json() : {}).then(j => { rsamples = j || {}; buildCast(); }).catch(() => {});
+fetch("voices_state.json", { cache: "no-store" }).then(r => r.ok ? r.json() : null).then(j => { if (j && !gstat) { vstate = j; buildCast(); } }).catch(() => {});
+
+const roleKeys = {};
+ORDER.forEach(id => ACTS[id].lines.forEach(L => L.segs.forEach(s => {
+  if (!s.key || (s.type === "say" && ROLES[L.who].fx)) return;
+  const w = s.type === "say" ? L.who : "vypravec"; (roleKeys[w] = roleKeys[w] || new Set()).add(s.key);
+  (s.also || []).forEach(a => (roleKeys[a.who] = roleKeys[a.who] || new Set()).add(a.key));
+})));
+const st = () => (gstat && gstat.roles ? gstat : vstate) || { roles: {}, capacity: {}, keys: 0, dailyPerKey: 10, rpmPerKey: 5 };
+const recorded = r => { const x = st().roles[r]; if (x && x.styleText) regStyle(x.styleText); return x && x.voice ? mkC(`${x.voice}|${x.model}`, x.style || "") : ""; };
+const recAuto = r => { const x = savedCast && savedCast.roles && savedCast.roles[r]; return x ? !!x.auto : true; };
+const savedW = r => {
+  const x = savedCast && savedCast.roles ? savedCast.roles[r] : undefined;
+  if (x === null) return "";
+  if (x === undefined) return "auto";
+  if (x.styleText) regStyle(x.styleText);
+  return x.auto ? "auto" : mkC(`${x.voice}|${x.model}`, x.style || "");
+};
+let localPref = {}; try { localPref = JSON.parse(localStorage.getItem("jj-pref-1") || "{}") || {}; } catch (e) { localPref = {}; }
+let prefAt = {}; try { prefAt = JSON.parse(localStorage.getItem("jj-pref-at") || "{}") || {}; } catch (e) { prefAt = {}; }
+const savePref = () => { try { localStorage.setItem("jj-pref-1", JSON.stringify(localPref)); localStorage.setItem("jj-pref-at", JSON.stringify(prefAt)); } catch (e) {} };
+// the author can make the saved defaults win even over voices people picked earlier (casting/current.forced[role] = time)
+const prefLive = r => { const f = savedCast && savedCast.forced && savedCast.forced[r]; return r in localPref && !(f && (!prefAt[r] || prefAt[r] < f)); };
+const baseW = r => prefLive(r) ? localPref[r] : savedW(r);
+const wanted = r => r in draft ? draft[r] : baseW(r);
+const isChanged = r => (r in draft && draft[r] !== baseW(r)) || r in draftCfg;
+// the voice the game really plays for this character in this browser (green in the voice list)
+const playable = (r, w) => !!w && w !== "auto" && (w === recorded(r) || !!altClips(r, w));
+const effective = r => { const p = prefLive(r) ? localPref[r] : ""; if (playable(r, p)) return p; const sv = savedW(r); if (playable(r, sv)) return sv; return recorded(r); };
+// saved but not yet recorded: the old recording must not play any more → robotic browser voice until the new one lands
+const altClips = (r, w) => { const a = alts[r] && alts[r][w]; return a && [...(roleKeys[r] || [])].every(k => a[k]) ? a : null; };
+const pendingRole = r => { const w = savedW(r), rec = recorded(r); if (!w) return !!rec; if (w === "auto") return !rec || !recAuto(r); return w !== rec && !altClips(r, w); };
+const doneCombos = r => { const rec = recorded(r), out = []; if (rec && GV[rec.split("|")[0]] && liveCount(r) >= totalCount(r)) out.push(rec); Object.keys(alts[r] || {}).forEach(w => { if (!out.includes(w) && altClips(r, w)) out.push(w); }); return out; };
+const liveCount = r => [...(roleKeys[r] || [])].filter(k => manifest[k]).length;
+const totalCount = r => (roleKeys[r] || new Set()).size;
+
+function jobs() {
+  const out = [];
+  Object.keys(roleKeys).forEach(r => {
+    const w = wanted(r); if (!w) return;
+    if (w === "auto") {
+      const rec = recorded(r), keep = rec && recAuto(r);
+      const n = keep ? totalCount(r) - liveCount(r) : totalCount(r);
+      const [voice, model] = keep ? rec.split("|") : ["auto", "gemini-3.8-flash-tts"];
+      if (n > 0) out.push({ role: r, voice, model, n, change: !keep, auto: true });
+      return;
+    }
+    const [voice, model, sid] = w.split("|");
+    if (w !== recorded(r) && altClips(r, w)) return;
+    const n = w !== recorded(r) ? totalCount(r) : totalCount(r) - liveCount(r);
+    if (n > 0) out.push({ role: r, voice, model, sid: sid || "", n, change: w !== recorded(r) });
+  });
+  return out;
+}
+function eta(js) {
+  const S = st(), keys = Math.max(1, S.keys || 1), cap = S.capacity || {}, daily = S.dailyPerKey || 10, rpm = S.rpmPerKey || 5;
+  const byModel = {}; js.forEach(j => byModel[j.model] = (byModel[j.model] || 0) + j.n);
+  let today = 0, later = 0, minutes = 0, days = 0, paid = false;
+  for (const [m, n] of Object.entries(byModel)) {
+    if ((S.paidOnly || []).includes(m)) { paid = true; later += n; continue; }
+    const B = m.startsWith("fish:") ? 1 : (S.batch || 6);   // lines per request (several lines are read in one request)
+    const c = Math.max(0, (cap[m] ?? keys * daily) * B), t = Math.min(n, c);
+    today += t; later += n - t;
+    minutes = Math.max(minutes, t / B * 0.25 + 1);
+    if (n > c) days = Math.max(days, Math.ceil((n - c) / (keys * daily * B)));
+  }
+  const total = today + later;
+  let text;
+  if (!total) text = "Není co nahrávat.";
+  else if (paid && !today) text = "Vybraný model 2.5 Pro potřebuje Google klíč se zapnutým placením.";
+  else if (!later) text = `≈ ${Math.max(1, Math.ceil(minutes + 0.5))} min (${total} replik, ${keys} ${keys === 1 ? "klíč" : keys < 5 ? "klíče" : "klíčů"})`;
+  else if (!today) text = `${later} replik${days <= 1 ? " zítra po 9:00" : ` během ${days} dní`} – dnešní limit je vyčerpaný${paid ? " (2.5 Pro jen s placeným klíčem)" : ""}. Víc klíčů = rychleji.`;
+  else text = `Dnes ${today} replik (≈ ${Math.max(1, Math.ceil(minutes + 0.5))} min), zbývajících ${later} ${days <= 1 ? "zítra po 9:00" : `během ${days} dní`}${paid ? " (2.5 Pro jen s placeným klíčem)" : ""}. Víc klíčů = rychleji.`;
+  return { total, today, later, minutes, text };
+}
+
+// a short name for each zadání: the label from styles.json, else two words of how the character speaks; unique within the list
+function zAuto(t) {
+  const m = (t || "").match(/Mluví\s+([^]*)/i), src = m ? m[1] : (t || "");
+  const w = src.replace(/[,;.:–\-()„“"]/g, " ").split(/\s+/).filter(x => x.length > 2 && !/^(ale|jen|trochu|velmi|než|jako|jeho|její|při|pro)$/i.test(x));
+  return w.slice(0, 2).join(" ").toLowerCase() || "vlastní zadání";
+}
+function zLabels(who, list) {
+  const out = {}, used = {};
+  [...new Set(list.map(cSid).filter(Boolean))].forEach(z => {
+    let l = styleLabels[z] || zAuto(styleTexts[z]);
+    used[l] = (used[l] || 0) + 1; if (used[l] > 1) l += " " + used[l];
+    out[z] = l;
+  });
+  return out;
+}
+// one entry of samples_roles.json → which exact voice it is (voice, model, zadání)
+function sampOf(k, e) {
+  const p = k.split("|"), last = p[p.length - 1], hex = p.length > 1 && /^[0-9a-f]{8}$/.test(last);
+  const m = (e && e.model) || (p.length === 3 ? p[1] : p.length === 2 && !hex ? p[1] : "gemini-3.8-flash-tts");
+  return { v: p[0], m, z: hex ? last : ((e && e.style) || "") };
+}
+// the sample of exactly this voice (voice + model + zadání) – never a stand-in from another version or zadání
+function exactSample(r, w) {
+  if (!w || w === "auto") return null;
+  const own = w === recorded(r) ? k => manifest[k] : (altClips(r, w) ? k => altClips(r, w)[k] : null);
+  if (own) { const k = sampleKey(r), src = k && own(k); if (src) return { src, own: true }; }
+  const [v, m] = w.split("|"), z = cSid(w), R0 = rsamples[r] || {};
+  for (const k of Object.keys(R0)) { const x = sampOf(k, R0[k]); if (x.v === v && x.m === m && x.z === z) return R0[k]; }
+  const sm = samples[v];
+  if (!z && sm && sm.model === m) return sm;
+  return null;
+}
+let reqs = {};   // sample requests from the page: id → {role, voice, model, style, state}
+const reqId = (r, w, kind) => sidOf(`${kind === "voice" ? "voice|" : ""}${r}|${w}`);
+const reqOf = (r, w, kind) => reqs[reqId(r, w, kind)] || null;
+const reqErr = {};
+async function requestSample(r, w, kind) {
+  kind = kind || "sample";
+  if (!w || w === "auto" || w.startsWith("tts:")) return;
+  if (!dbRef) { reqErr[r] = "Stránka teď nemá spojení s databází – otevři ji v claude.ai."; buildCast(); return; }
+  const [v, m, z] = w.split("|"), id = reqId(r, w, kind);
+  if (reqs[id] && reqs[id].state !== "done") return;
+  delete reqErr[r];
+  reqs = Object.assign({}, reqs, { [id]: { type: kind, role: r, voice: v, model: m, state: "queued" } }); buildCast();
+  try {
+    let by = ""; try { by = userRef ? await userRef.id() : ""; } catch (e) {}
+    await dbRef.collection("requests").doc(id).set({ by, type: kind, role: r, voice: v, model: m, style: z || "", styleText: z ? (styleTexts[z] || "") : "", state: "queued", at: new Date().toISOString() });
+  } catch (err) {
+    const c = err && err.code; const n = Object.assign({}, reqs); delete n[id]; reqs = n;
+    reqErr[r] = c === "not_granted" || c === "permission_denied" ? "O nahrání tu může požádat jen ten, kdo má právo stránku používat (ne jen prohlížet). Napiš autorovi." : `Požadavek se nepodařilo uložit (${c || "chyba"}).`;
+    buildCast();
+  }
+}
+function sampleNote(r, kind, w) {   // say exactly what the sample is: version and zadání
+  const el = document.getElementById(`sn-${r}`); if (!el) return;
+  if (!kind) { el.textContent = ""; return; }
+  const z = cSid(w), zt = z ? `se zadáním „${zShort(z)}“` : "bez zadání";
+  el.textContent = kind === "own" ? `Ukázka: přímo z nahrávky ve hře · ${zt}.`
+    : kind === "exact" ? `Ukázka: přesně tenhle hlas · ${vName(w.split("|")[0])} · ${mShort(w.split("|")[1])} · ${zt}.`
+    : kind === "tts" ? "Ukázka: hlas prohlížeče." : "";
+}
+function playSample(r, w0) {
+  let w = w0;
+  unlock(); stop(); sampleNote(r);
+  if (!w) { const c = draftCfg[r] || cfg[r]; sampleNote(r, "tts"); if (c) speakWith(ROLES[r].sample, c, token); else speak(ROLES[r].sample, r, token); return; }
+  if (w === "auto") { w = recorded(r); if (!w) return; }
+  const e = exactSample(r, w);
+  if (!e) return;   // no exact sample yet: play nothing rather than something else
+  const t = token; spinning[r] = w; spin(r);
+  const done = () => { if (spinning[r] === w) { delete spinning[r]; spin(r); } };
+  streamClip(e.src, t, e.start, e.dur, done).then(ok => { if (!ok && t === token) getBuf(e.src).catch(() => {}).then(() => { done(); if (t === token) playClip(e.src, token, e.start, e.dur); }); });
+}
+// play a clip (or a part of a sprite) straight from the network: starts as soon as enough has arrived
+function streamClip(src, t, at, dur, started) {
+  return new Promise(res => {
+    let a, finished = false, timer = null;
+    const end = ok => { if (finished) return; finished = true; clearTimeout(timer); if (a) { a.pause(); a.removeAttribute("src"); a.load(); } playingSrcs.delete(h); res(ok); };
+    const h = { stop() { end(true); }, onended: null };
+    const seg = /^(.*)#([\d.]+)\+([\d.]+)$/.exec(src); if (seg) { src = seg[1]; at = +seg[2]; dur = +seg[3]; }
+    try { a = new Audio(); } catch (e) { return res(false); }
+    a.preload = "auto";
+    playingSrcs.set(h, () => end(true));
+    a.addEventListener("error", () => { started(); end(false); });
+    a.addEventListener("playing", () => { if (t !== token) return end(true); started(); if (dur != null) { clearTimeout(timer); timer = setTimeout(() => end(true), dur * 1000 + 120); } }, { once: true });
+    a.addEventListener("ended", () => end(true));
+    a.addEventListener("loadedmetadata", () => { if (at) { try { a.currentTime = at; } catch (e) {} } a.play().catch(() => { started(); end(false); }); }, { once: true });
+    a.src = src;
+  });
+}
+const spinning = {};
+function spin(r) { document.querySelectorAll(`#cast .role[data-r="${r}"] .pills.voi button`).forEach(b => b.classList.toggle("loading", spinning[r] === b.dataset.val)); }
+// the line of the play that holds the sample sentence (or the role's longest line)
+const _sk = {};
+function sampleKey(r) {
+  if (r in _sk) return _sk[r];
+  const n = t => (t || "").toLowerCase().replace(/[^a-záčďéěíňóřšťúůýž ]/g, "").replace(/\s+/g, " ").trim();
+  const want = n(ROLES[r].sample).slice(0, 25); let hit = null, longest = null;
+  for (const id of ORDER) for (const L of ACTS[id].lines) for (const sg of L.segs) {
+    const who = sg.type === "say" ? L.who : "vypravec";
+    if (who !== r || !sg.key) continue;
+    if (!hit && want && n(sg.text).includes(want)) hit = sg.key;
+    if (!longest || sg.text.length > longest[1]) longest = [sg.key, sg.text.length];
+  }
+  return (_sk[r] = hit || (longest && longest[0]) || null);
+}
+const draftCfg = {};
+const genderUI = {};   // which gender list is shown per character (view only, not a change)
+const tierUI = {};     // "hq" = Google, "lq" = Fish + browser (view only)
+const catUI = {}, modelUI = {}, savedNote = {}, zEdit = {}; let castFocus = "";   // which pill row is open per character (view only)
+const shortName = v => v.name.replace(/^(Microsoft|Google|Apple)\s+/i, "").split(/[\s(-]/)[0] || v.name;
+function browserOptions() {
+  const cs = voices.filter(isCs);
+  const M = cs.filter(v => MALE.test(v.name) && !FEMALE.test(v.name)), F = cs.filter(v => !M.includes(v));
+  const list = [];
+  F.forEach(v => list.push([`tts:${v.voiceURI}`, `Prohlížeč · ženský · ${shortName(v)}`]));
+  M.forEach(v => list.push([`tts:${v.voiceURI}`, `Prohlížeč · mužský · ${shortName(v)}`]));
+  if (!M.length && F.length) list.push(["tts:m", "Prohlížeč · mužský (snížený ženský hlas)"]);
+  if (!cs.length) list.push(["tts:", "Prohlížeč · výchozí hlas"]);
+  return list;
+}
+const browserVal = who => { const c = draftCfg[who] || cfg[who] || {}; return c.synth === "m" ? "tts:m" : `tts:${c.uri || ""}`; };
+function cfgForBrowser(val) {
+  const cs = voices.filter(isCs), F = cs.filter(v => !(MALE.test(v.name) && !FEMALE.test(v.name)));
+  if (val === "tts:m") return { uri: (F[0] || cs[0] || {}).voiceURI || null, pitch: 0.55, rate: 0.95, manual: true, synth: "m" };
+  const v = voices.find(x => `tts:${x.voiceURI}` === val);
+  const male = v && MALE.test(v.name) && !FEMALE.test(v.name);
+  return { uri: v ? v.voiceURI : null, pitch: male ? 1 : 1.1, rate: 1, manual: true };
+}
+function speakWith(text, c, t) {
+  return new Promise(res => {
+    if (!hasTTS) return res();
+    const v = voices.find(x => x.voiceURI === c.uri) || voices.find(isCs) || null;
+    const u = new SpeechSynthesisUtterance(text);
+    u.lang = v ? v.lang : "cs-CZ"; if (v) u.voice = v; u.pitch = c.pitch; u.rate = c.rate;
+    u.onend = u.onerror = () => res(); keep.push(u); synth.speak(u);
+  });
+}
+
+// the zadání shown for a role: an edited draft, else the style of the voice it will use
+function zadaniBase(who) { const w = wanted(who); return w === "auto" ? (recorded(who) || "") : (w || ""); }
+function zadaniText(who) { return who in draftStyle ? draftStyle[who] : (styleTexts[cSid(zadaniBase(who))] || ""); }
+function zadaniSid(who) { return sidOf(zadaniText(who)); }
+function setZadani(who, t) {
+  t = (t || "").trim(); const id = regStyle(t), base = zadaniBase(who);
+  if (!base) return;
+  draftStyle[who] = t;
+  draft[who] = mkC(cVM(base), id);
+  if (draft[who] === savedW(who)) delete draft[who];
+  if (!(who in draft) && sidOf(t) === cSid(zadaniBase(who))) delete draftStyle[who];
+}
+function buildCast() {
+  const $cast = document.getElementById("cast"), $chips = document.getElementById("chips");
+  if (!$cast) return;
+  if (voices.length) { deriveFallback(false); save(); }
+  const ae = document.activeElement, keepId = ae && ae.id && ae.id.startsWith("z-") ? ae.id : "", sel = keepId ? [ae.selectionStart, ae.selectionEnd] : null;
+  $cast.innerHTML = ""; $chips.innerHTML = "";
+  const bopts = browserOptions();
+  const genderOf = who => {
+    if (genderUI[who]) return genderUI[who];
+    const w = wanted(who), v = w && w !== "auto" ? w.split("|")[0] : (recorded(who) || "").split("|")[0];
+    if (!w) { const c = draftCfg[who] || cfg[who] || {}; const bv = voices.find(x => x.voiceURI === c.uri); if (c.synth === "m" || (bv && MALE.test(bv.name) && !FEMALE.test(bv.name))) return "m"; }
+    const rg = ROLE_GENDER(who); if (rg === "m" || rg === "f") return rg;   // list the voices of the character's own gender
+    return (v && vGender(v)) || "f";
+  };
+  const tierOf = who => {
+    if (tierUI[who]) return tierUI[who];
+    const w = wanted(who);
+    return !w || (w !== "auto" && w.split("|")[1].startsWith("fish:")) ? "lq" : "hq";
+  };
+  // three rows of pills: category (Nahrané · S ukázkou · Ostatní) → model → voice
+  const catalog = (who, g) => {
+    const zc = zadaniSid(who), seen = new Set();
+    const done = doneCombos(who).filter(c => GV[c.split("|")[0]] || FV[c.split("|")[0]]); done.forEach(c => seen.add(c));
+    const samp = [], add = c => { if (!seen.has(c)) { seen.add(c); samp.push(c); } };
+    const R0 = rsamples[who] || {};
+    Object.keys(R0).forEach(k => { const x = sampOf(k, R0[k]); if ((GV[x.v] || FV[x.v]) && vGender(x.v) === g && GMODELS.some(m => m.id === x.m) && (!x.z || styleTexts[x.z])) add(mkC(`${x.v}|${x.m}`, x.z)); });
+    if (!zc) Object.keys(samples).forEach(v => { const sm = samples[v]; if (sm && sm.model && (GV[v] || FV[v]) && vGender(v) === g && GMODELS.some(m => m.id === sm.model)) add(`${v}|${sm.model}`); });
+    const rank = c => { const z = cSid(c); return z === zc ? 0 : z ? 1 : 2; };
+    const mo = c => GMODELS.findIndex(m => m.id === c.split("|")[1]);
+    samp.sort((x, y) => rank(x) - rank(y) || mo(x) - mo(y) || x.localeCompare(y));
+    const other = [];
+    GMODELS.forEach(m => (m.fish ? Object.keys(FV).filter(v => FV[v][0] === g).map(v => `${v}|${m.id}`) : voiceOrder.filter(v => GV[v][0] === g).map(v => mkC(`${v}|${m.id}`, zc))).forEach(c => { if (!seen.has(c)) other.push(c); }));
+    const bopts = browserOptions(), isM = ([val, label]) => val === "tts:m" || /mužský/.test(label);
+    const bo = bopts.filter(o => g === "m" ? isM(o) : !isM(o));
+    (bo.length ? bo : bopts).forEach(([val, label]) => other.push(val));
+    return { done, samp, other, blabel: Object.fromEntries(bopts) };
+  };
+  const modelOf = c => c === "auto" ? "auto" : c.startsWith("tts:") ? "tts" : c.split("|")[1];
+  const modelName = id => id === "auto" ? "Auto" : id === "tts" ? "Prohlížeč" : mShort(id);
+  const modelsIn = list => { const ids = [...new Set(list.map(modelOf))]; const ord = ["auto", ...GMODELS.map(m => m.id), "tts"]; return ids.sort((a, b) => ord.indexOf(a) - ord.indexOf(b)); };
+  const words = r => ORDER.reduce((n, id) => n + ACTS[id].lines.reduce((m, L) => m + L.segs.filter(s => s.type === "say" && L.who === r).reduce((k, s) => k + s.text.split(" ").length, 0), 0), 0);
+  const order = Object.keys(ROLES).filter(r => roleKeys[r]).sort((a, b) => (a === "vypravec") - (b === "vypravec") || words(b) - words(a));
+  const js = jobs();
+  order.forEach(who => {
+    const R = ROLES[who];
+    const chip = document.createElement("button"); chip.type = "button"; chip.className = "chip"; chip.setAttribute("style", style(who)); chip.textContent = R.name;
+    chip.setAttribute("aria-pressed", String(castFocus === who));
+    chip.addEventListener("click", e => { e.preventDefault(); e.stopPropagation(); castFocus = who; document.getElementById("castbox").open = true; buildCast(); });
+    $chips.appendChild(chip);
+    const w = wanted(who), rec = recorded(who), live = liveCount(who), tot = totalCount(who);
+    const changed = isChanged(who), pend = pendingRole(who);
+    const need = (js.find(j => j.role === who) || { n: 0 }).n;
+    const badge = changed
+      ? `<span class="badge warn">změna · ${!w ? "hlas prohlížeče" : w === "auto" && need ? "Claude vybere hlas" : need ? "nový hlas · vygenerování potrvá 1–2 dny" : "bez nahrávání, už je nahraný"}</span>`
+      : !w ? `<span class="badge">hlas prohlížeče</span>`
+      : pend ? `<span class="badge warn">čeká na nahrání · zatím dosavadní hlas</span>`
+      : live < tot ? `<span class="badge warn">nahráno ${live}/${tot}</span>` : `<span class="badge ok">nahráno ${live}/${tot}</span>`;
+    const c = draftCfg[who] || cfg[who] || { pitch: 1, rate: 1 };
+    const el = document.createElement("div");
+    el.className = "role" + (changed ? " changed" : ""); el.setAttribute("style", style(who)); el.dataset.r = who;
+    if (castFocus && castFocus !== who) el.hidden = true;
+    const g = genderOf(who), C = catalog(who, g), bv = browserVal(who);
+    const cur = !w ? bv : w === "auto" ? recorded(who) : w, eff = effective(who), CATS = ["done", "samp", "other"], CATN = { done: "Nahrané", samp: "Ukázky dalších hlasů", other: "Ostatní" };
+    const inCat = k => C[k];
+    const cat = catUI[who] || (w === "auto" || C.done.includes(cur) ? "done" : C.samp.includes(cur) ? "samp" : "other");
+    const mods = modelsIn(inCat(cat));
+    const mod = mods.includes(modelUI[who]) ? modelUI[who] : inCat(cat).includes(cur) ? modelOf(cur) : mods.includes("gemini-3.8-flash-tts") ? "gemini-3.8-flash-tts" : (mods[0] || "");
+    const flat = cat === "done";   // Nahrané: every finished voice as one row; the others: model first, then its voices
+    const inMod = flat ? inCat(cat).filter(c => c !== "auto") : inCat(cat).filter(c => modelOf(c) === mod);
+    const zl = zLabels(who, inMod);
+    const pillHtml = c => {
+      const sel = c === cur, v = c.split("|")[0];
+      const cls = [c === eff ? "cur" : "", spinning[who] === c ? "loading" : ""].filter(Boolean).join(" ");
+      if (c.startsWith("tts:")) return `<button type="button" class="${cls}" data-val="${esc(c)}" aria-pressed="${sel}"><span class="pl1">${esc((C.blabel[c] || c).replace(/^Prohlížeč · /, ""))}</span><span class="pd">hlas prohlížeče</span></button>`;
+      const a = alts[who] && alts[who][c], n = a ? [...(roleKeys[who] || [])].filter(k => a[k]).length : 0;
+      const rq = reqOf(who, c), z = cSid(c);
+      const desc = GV[v] ? GV[v][1] : FV[v] ? `${FV[v][2].replace(/\s*(mužský|ženský)$/, "")} · Fish` : "";
+      return `<button type="button" class="${cls}" data-val="${esc(c)}" aria-pressed="${sel}" title="${esc(cLabel(c))}${c === eff ? " · aktuální ve hře" : ""}"><span class="pl1">${esc(vName(v))}${flat ? " " + esc(mShort(c.split("|")[1])) : ""}<span class="tag">${n && n < tot ? ` · ${n}/${tot}` : ""}${rq && rq.state !== "done" && !exactSample(who, c) ? " · ⏳" : ""}</span></span>${z && (flat || cat === "samp" || z !== zadaniSid(who)) ? `<span class="pz">✎ ${esc(zl[z] || "")}</span>` : ""}<span class="pd">${esc(desc)}${c === eff ? " · aktuální ve hře" : ""}</span></button>`;
+    };
+    const target = w === "auto" ? recorded(who) : w;
+    const ex = target ? exactSample(who, target) : null, hasS = !w || !!ex;
+    const rq = target ? reqOf(who, target) : null;
+    // what can be done with the selected voice: finished → Zvolit, has a sample → Vygenerovat hlas, else → Vygenerovat ukázku
+    const kind = !w || cur.startsWith("tts:") || C.done.includes(cur) ? "done" : ex ? "samp" : "other";
+    const rqV = kind === "samp" ? reqOf(who, cur, "voice") : null;
+    const isEff = kind === "done" && cur === eff && !(who in draftCfg);
+    const action = kind === "done" ? `<button class="btn-save" type="button" data-act="pick" ${isEff ? "disabled" : ""}>${isEff ? "✓ Aktuální ve hře" : "Zvolit pro hru"}</button>`
+      : kind === "samp" ? (rqV && rqV.state !== "done" ? "" : `<button class="btn-save" type="button" data-act="voice">Vygenerovat hlas</button>`)
+      : (rq && rq.state !== "done" ? "" : `<button class="btn-save" type="button" data-act="sample">Vygenerovat ukázku</button>`);
+    const snote = reqErr[who] ? esc(reqErr[who])
+      : kind === "samp" && rqV ? (rqV.state === "done" ? "<strong>Hlas je nahraný</strong> – obnov stránku." : "<strong>⏳ Hlas se nahrává</strong> – celý potrvá asi 1–2 dny podle volných limitů.")
+      : kind === "other" ? (rq && rq.state === "done" ? "<strong>Ukázka je hotová</strong> – obnov stránku." : rq ? "<strong>⏳ Ukázka se generuje</strong> – bude asi za hodinu až dvě." : "Ukázka zatím není.")
+      : "";
+    el.innerHTML = `
+      <div class="role-head">${avatar(who)}<div class="rh"><div class="role-name">${esc(R.name)}</div><div class="role-desc">${esc(R.desc)} · ${tot} replik</div></div></div>
+      <div class="toggles">
+        <div class="gender" role="group" aria-label="Pohlaví hlasu"><button type="button" data-g="m" aria-pressed="${g === "m"}">Mužský</button><button type="button" data-g="f" aria-pressed="${g === "f"}">Ženský</button></div>
+      </div>
+      <div class="vpick">
+        <div class="pills cat" role="group" aria-label="Skupina hlasů">${CATS.map(k => `<button type="button" data-cat="${k}" aria-pressed="${k === cat}">${CATN[k]}<span class="n">${C[k].length}</span></button>`).join("")}</div>
+        ${flat ? "" : `<div class="pills mod" role="group" aria-label="Model">${mods.length ? mods.map(id => `<button type="button" data-mod="${id}" aria-pressed="${id === mod}">${esc(modelName(id))}</button>`).join("") : `<span class="empty">${cat === "samp" ? "Žádný hlas s ukázkou – vyber v Ostatních." : "Nic."}</span>`}</div>`}
+        ${inMod.length ? `<div class="pills voi" role="group" aria-label="Hlas">${inMod.map(c => pillHtml(c)).join("")}</div>` : ""}
+      </div>
+      ${!w ? `<div class="fbp">
+        <label for="p-${who}"><span class="slider"><span>Výška</span><span id="pv-${who}">${(+c.pitch).toFixed(2)}</span></span><input type="range" id="p-${who}" min="0" max="2" step="0.05" value="${c.pitch}"></label>
+        <label for="r-${who}"><span class="slider"><span>Tempo</span><span id="rv-${who}">${(+c.rate).toFixed(2)}</span></span><input type="range" id="r-${who}" min="0.5" max="1.5" step="0.05" value="${c.rate}"></label>
+      </div>` : ""}
+      ${w && (zadaniText(who) || kind === "samp") && !(w.split("|")[1] || "").startsWith("fish:") ? `<label class="zad" for="z-${who}">Zadání · jak má mluvit${zadaniSid(who) ? ` · ${esc(zLabels(who, [mkC("x|y", zadaniSid(who))])[zadaniSid(who)] || "")}` : " (teď bez zadání)"}
+        <textarea id="z-${who}" rows="3" placeholder="např. klidně, pomalu, unaveně…">${esc(who in zEdit ? zEdit[who] : (zadaniText(who) || STYLE_DEFAULT[who] || ""))}</textarea>
+      </label>
+      <div class="zad-row">${STYLE_DEFAULT[who] && zadaniText(who) !== STYLE_DEFAULT[who] ? `<button type="button" class="z-fill">Vložit návrh</button>` : ""}${zadaniText(who) ? `<button type="button" class="z-clear">Bez zadání</button>` : ""}</div>` : ""}
+      ${snote ? `<div class="snote">${snote}</div>` : ""}
+      <div class="role-btns">${action}${changed ? `<button class="btn-undo" type="button">↺ Vrátit zpět</button>` : ""}</div>
+      ${savedNote[who] ? `<div class="saved-note">${esc(savedNote[who])}</div>` : ""}`;
+    const zt = el.querySelector(`#z-${who}`);
+    const applyZ = t => { setZadani(who, t); playSample(who, wanted(who)); buildCast(); };
+    if (zt) { zt.addEventListener("input", e => { zEdit[who] = e.target.value; }); zt.addEventListener("change", e => { delete zEdit[who]; applyZ(e.target.value); }); }
+    const zf = el.querySelector(".z-fill"); if (zf) zf.addEventListener("click", () => applyZ(STYLE_DEFAULT[who]));
+    const zx = el.querySelector(".z-clear"); if (zx) zx.addEventListener("click", () => applyZ(""));
+    el.querySelectorAll(".gender button[data-g]").forEach(b => b.addEventListener("click", () => { genderUI[who] = b.dataset.g; buildCast(); }));
+    const pick = v => {
+      delete draftStyle[who]; delete savedNote[who];
+      if (v.startsWith("tts:")) { draft[who] = ""; draftCfg[who] = cfgForBrowser(v); }
+      else { draft[who] = v; delete draftCfg[who]; }
+      if (draft[who] === baseW(who) && !(who in draftCfg)) delete draft[who];
+      playSample(who, wanted(who)); buildCast();
+    };
+    el.querySelectorAll(".pills.cat button").forEach(b => b.addEventListener("click", () => { catUI[who] = b.dataset.cat; delete modelUI[who]; buildCast(); }));
+    el.querySelectorAll(".pills.mod button").forEach(b => b.addEventListener("click", () => { modelUI[who] = b.dataset.mod; if (b.dataset.mod === "auto") return pick("auto"); buildCast(); }));
+    el.querySelectorAll(".pills.voi button").forEach(b => b.addEventListener("click", () => pick(b.dataset.val)));
+    const tweak = (k, id, val) => { draftCfg[who] = Object.assign({}, draftCfg[who] || cfg[who], { [k]: val, manual: true }); el.querySelector(id).textContent = val.toFixed(2); if (!(who in draft)) draft[who] = ""; };
+    const p = el.querySelector(`#p-${who}`), r = el.querySelector(`#r-${who}`);
+    if (p) { p.addEventListener("input", e => tweak("pitch", `#pv-${who}`, +e.target.value)); p.addEventListener("change", () => buildCast()); }
+    if (r) { r.addEventListener("input", e => tweak("rate", `#rv-${who}`, +e.target.value)); r.addEventListener("change", () => buildCast()); }
+    const act = el.querySelector(".btn-save[data-act=sample], .btn-save[data-act=voice]");
+    if (act) act.addEventListener("click", () => requestSample(who, cur, act.dataset.act));
+    const pk = el.querySelector(".btn-save[data-act=pick]");
+    if (pk) pk.addEventListener("click", () => {
+      const nw = wanted(who);
+      localPref[who] = nw; prefAt[who] = new Date().toISOString(); savePref();
+      if (draftCfg[who]) { cfg[who] = Object.assign({}, draftCfg[who], { manual: true }); delete draftCfg[who]; save(); }
+      delete draft[who]; delete draftStyle[who];
+      savedNote[who] = "Zvoleno v tomhle prohlížeči.";
+      buildCast();
+    });
+    const undo = el.querySelector(".btn-undo");
+    if (undo) undo.addEventListener("click", () => { delete catUI[who]; delete modelUI[who]; delete draft[who]; delete draftCfg[who]; delete draftStyle[who]; playSample(who, wanted(who)); buildCast(); });
+    $cast.appendChild(el);
+  });
+  if (keepId) { const z = document.getElementById(keepId); if (z) { z.focus(); try { z.setSelectionRange(sel[0], sel[1]); } catch (e) {} } }
+  renderGen();
+  // one voice opened from its chip: only that card; the rest (and the panels below) come back with „Všechny hlasy“ or the ▾ arrow
+  let only = document.getElementById("castOnly");
+  if (castFocus) {
+    if (!only) { only = document.createElement("div"); only.id = "castOnly"; only.className = "cast-only"; $cast.before(only); }
+    only.innerHTML = `<button type="button" class="btn-undo">Zobrazit všechny hlasy</button>`;
+    only.querySelector("button").addEventListener("click", () => { castFocus = ""; buildCast(); });
+  } else if (only) only.remove();
+  document.getElementById("gen").hidden = !!castFocus;
+  document.querySelector("#castbox .fx-box").hidden = !!castFocus;
+}
+document.querySelector("#castbox > summary").addEventListener("click", () => { if (castFocus) { castFocus = ""; setTimeout(() => { document.getElementById("castbox").open = true; buildCast(); }); } });
+
+function renderGen() {   // only the queue (incl. requests from the page) and when it should be done
+  const $g = document.getElementById("gen"); if (!$g) return;
+  $g.innerHTML = (queueHtml(gstat || {}) || `<div class="queue"><div class="gen-t">Fronta nahrávání</div><p class="gnone">Fronta je prázdná.</p></div>`) + defaultsHtml();
+  $g.querySelectorAll(":scope > .queue").forEach(q => {   // each part folds; folded by default, remembered while the page is open
+    const h = q.querySelector(".gen-t"); if (!h) return;
+    const key = h.textContent, d = document.createElement("details"), sm = document.createElement("summary");
+    d.className = q.className + " sub"; sm.className = "gen-t"; sm.textContent = key; h.remove();
+    d.open = !!subOpen[key] || (key.startsWith("Výchozí") && !!defAsk); d.appendChild(sm);
+    while (q.firstChild) d.appendChild(q.firstChild);
+    q.replaceWith(d); d.addEventListener("toggle", () => { subOpen[key] = d.open; });
+  });
+  $g.querySelectorAll(".btn-def").forEach(b => b.addEventListener("click", () => { defAsk = b.dataset.scope; defNote = ""; renderGen(); }));
+  const y = document.getElementById("defYes"); if (y) y.addEventListener("click", () => applyDefaults(defAsk));
+  const n = document.getElementById("defNo"); if (n) n.addEventListener("click", () => { defAsk = ""; renderGen(); });
+}
+// author only: offer the voices chosen in this browser as the defaults (confirmed by the author in the chat with Claude)
+let defNote = "", userRef = null; const subOpen = {};
+function myDefaults() {
+  const out = {};
+  Object.keys(roleKeys).forEach(r => { const e = effective(r); if (e && e !== savedW(r) && !(savedW(r) === "auto" && e === recorded(r))) out[r] = e; });
+  return out;
+}
+let defAsk = "";   // scope waiting for the in-page confirmation
+function defaultsHtml() {
+  if (!dbRef) return "";
+  const d = myDefaults(), rs = Object.keys(d);
+  const ask = defAsk ? `<div class="defask"><p><strong>Vážně chceš změnit hlasy pro všechny členy souboru?</strong> Pro sebe už je máš změněné.
+      ${defAsk === "hard" ? " Natvrdo = přepíše i hlasy, které si ostatní sami zvolili." : " Pro nové uživatele = jen pro ty, kdo si hlas sami nezvolili."}</p>
+      <div class="role-btns"><button class="btn-save" type="button" id="defYes">Ano, změnit pro všechny</button><button class="btn-undo" type="button" id="defNo">Zrušit</button></div></div>` : "";
+  return `<div class="queue"><div class="gen-t">Výchozí hlasy souboru</div>
+    ${rs.length ? `<p class="gmsg">Tvoje volby, které se liší od výchozích:</p><ul class="glist">${rs.map(r => `<li><span class="dot" style="${style(r)}"></span>${esc(ROLES[r].name)}: ${esc(cLabel(d[r]))}</li>`).join("")}</ul>
+    ${ask || `<div class="role-btns"><button class="btn-save btn-def" type="button" data-scope="new">Výchozí pro nové uživatele</button><button class="btn-undo btn-def" type="button" data-scope="hard">Výchozí natvrdo</button></div>`}`
+    : `<p class="gnone">Tvoje hlasy jsou stejné jako výchozí.</p>`}
+    ${defNote ? `<p class="gmsg">${esc(defNote)}</p>` : ""}</div>`;
+}
+async function applyDefaults(scope) {
+  defAsk = "";
+  if (!dbRef) { defNote = "Stránka teď nemá spojení s databází."; renderGen(); return; }
+  const d = myDefaults(), now = new Date().toISOString(), base = savedCast || {};
+  const roles = Object.assign({}, base.roles || {}), forced = Object.assign({}, base.forced || {});
+  Object.entries(d).forEach(([r, w]) => {
+    const [v, m, z] = w.split("|");
+    roles[r] = w.startsWith("tts:") ? null : Object.assign({ voice: v, model: m, auto: false }, z ? { style: z, styleText: styleTexts[z] || "" } : {});
+    if (scope === "hard") forced[r] = now;
+  });
+  let by = ""; try { by = userRef ? await userRef.id() : ""; } catch (e) {}
+  try {
+    await dbRef.doc("casting/current").set(Object.assign({}, base, { roles, forced, savedAt: now, by, scope }));
+    await dbRef.collection("castlog").doc(now.replace(/[:.]/g, "-")).set({ at: now, by, scope, changed: Object.keys(d), roles });
+    defNote = scope === "hard" ? "Hotovo – změněno natvrdo pro všechny." : "Hotovo – výchozí pro nové uživatele.";
+  } catch (err) { defNote = (err && (err.code === "not_granted" || err.code === "permission_denied")) ? "Výchozí hlasy může měnit jen ten, kdo má právo stránku používat (ne jen prohlížet)." : `Nepodařilo se uložit (${err && err.code || "chyba"}).`; }
+  renderGen(); buildCast();
+}
+// what is waiting to be recorded, when it should be ready, and how many requests each Google version still has today
+function queueHtml(g) {
+  const q = Array.isArray(g.queue) ? g.queue : [], ms = Array.isArray(g.models) ? g.models : [];
+  const rq = Object.values(reqs).filter(x => x && x.type !== "defaults" && x.state !== "done" && ROLES[x.role]);
+  const rqHtml = rq.length ? `<div class="q-cap-t">Požadavky ze stránky (${rq.length})</div><ul class="glist">${rq.map(x => `<li><span class="dot" style="${style(x.role)}"></span>${esc(ROLES[x.role].name)} · ${x.type === "voice" ? "celý hlas (1–2 dny)" : "ukázka (hodina až dvě)"}: ${esc(cLabel(mkC(`${x.voice}|${x.model}`, x.style || "")))}</li>`).join("")}</ul>` : "";
+  if (!q.length) return rqHtml ? `<div class="queue"><div class="gen-t">Fronta nahrávání</div>${rqHtml}</div>` : "";
+  const when = g.queueUpdatedAt ? new Date(g.queueUpdatedAt).toLocaleString("cs-CZ", { day: "numeric", month: "numeric", hour: "2-digit", minute: "2-digit" }) : "";
+  const rows = q.map(it => { const pct = it.total ? Math.round(100 * it.done / it.total) : 0, ok = it.done >= it.total;
+    return `<li class="q-item${ok ? " ok" : ""}"><div class="gst-row"><span>${esc(it.label)}</span><strong>${ok ? "hotovo ✓" : esc(it.eta || "")}</strong></div>
+      <div class="gbar"><span style="width:${pct}%"></span></div><div class="gmsg">${it.done} / ${it.total} ${esc(it.unit || "")}${ok ? "" : ` · zbývá asi ${it.req} požadavků na ${esc(mShort(it.model))}`}</div></li>`; }).join("");
+  const caps = ms.map(m => `<li><strong>${esc(m.label)}</strong> ${m.free} <span>z ${m.daily}</span></li>`).join("");
+  return `<div class="queue"><div class="gen-t">Fronta nahrávání</div>${rows ? `<ol class="q-list">${rows}</ol>` : `<p class="gnone">Fronta je prázdná.</p>`}
+    ${rqHtml}<p class="gmsg">Odhady podle toho, kolik požadavků u Googlu opravdu prochází (limity se obnovují v 9:00).${when ? ` Aktualizováno ${esc(when)}.` : ""}</p></div>`;
+}
+let note = "";
+function setNote(t) { note = t; const n = document.getElementById("gnote"); if (n) n.textContent = t; }
+
+function confirmGenerate() {
+  const js = jobs(), e = eta(js);
+  const names = [...new Set(js.map(j => ROLES[j.role].name))];
+  const dlg = document.getElementById("gdlg");
+  dlg.querySelector(".dlg-body").innerHTML = js.length
+    ? `<p><strong>Nový hlas</strong> (${esc(names.join(", "))}) – jeho vygenerování bude trvat 1–2 dny.</p>
+       <p>Do té doby ${names.length === 1 ? "bude postava mluvit" : "budou postavy mluvit"} <strong>dosavadním hlasem</strong>, a kde ještě žádný nahraný není, robotickým hlasem prohlížeče. Nové hlasy naskočí samy, až bude nahrávání hotové.</p>`
+    : `<p>Uloží se výběr hlasů. Nic se nebude nahrávat – vybrané hlasy už jsou nahrané.</p>`;
+  dlg.hidden = false;
+  dlg.querySelector(".dlg-ok").textContent = js.length ? "Spustit nahrávání" : "Uložit";
+  dlg.querySelector(".dlg-ok").focus();
+}
+document.getElementById("gdlg").addEventListener("click", e => {
+  const dlg = document.getElementById("gdlg");
+  if (e.target.classList.contains("dlg-ok")) { dlg.hidden = true; saveAndGenerate(); }
+  else if (e.target.classList.contains("dlg-cancel") || e.target === dlg) dlg.hidden = true;
+});
+document.addEventListener("keydown", e => { if (e.key === "Escape") document.getElementById("gdlg").hidden = true; });
+
+async function saveAndGenerate() {
+  const b = document.getElementById("genBtn"); if (b) b.disabled = true;
+  if (!dbRef) { setNote("Stránka teď nemá spojení s databází. Otevři ji v claude.ai a zkus to znovu, nebo napiš Claudovi do chatu „generuj“."); if (b) b.disabled = false; return; }
+  const roles = {};
+  Object.keys(roleKeys).forEach(r => {
+    const w = wanted(r);
+    if (!w) roles[r] = null;
+    else if (w === "auto") { const rec = recorded(r); roles[r] = rec && recAuto(r) ? Object.assign({ voice: rec.split("|")[0], model: rec.split("|")[1], auto: true }, cSid(rec) ? { style: cSid(rec), styleText: styleTexts[cSid(rec)] } : {}) : { auto: true }; }
+    else roles[r] = Object.assign({ voice: w.split("|")[0], model: w.split("|")[1], auto: false }, cSid(w) ? { style: cSid(w), styleText: styleTexts[cSid(w)] } : {});
+  });
+  const js = jobs(), e = eta(js), req = Date.now().toString(36);
+  try {
+    await dbRef.doc("casting/current").set({ roles, savedAt: new Date().toISOString(), requestId: req });
+    await dbRef.doc("status/gen").set(Object.assign({}, gstat || {}, { state: "queued", requestId: req, total: e.total, done: 0, message: "Uloženo, budím Clauda…", etaMinutes: e.minutes || null, updatedAt: new Date().toISOString() }));
+  } catch (err) { setNote(`Uložení se nepovedlo (${err && err.code || "chyba"}). Zkus to prosím znovu.`); if (b) b.disabled = false; return; }
+  Object.entries(draftCfg).forEach(([r, c]) => { cfg[r] = Object.assign({}, c, { manual: true }); delete draftCfg[r]; });
+  save();
+  Object.keys(draft).forEach(k => delete draft[k]);
+  const summary = js.map(j => `${ROLES[j.role].name}=${j.voice}/${mShort(j.model)} (${j.n})`).join(", ") || "jen uložení";
+  const mcp = await capUse("mcp");
+  if (!mcp) { setNote("Uloženo. Generování teď spustíš tak, že Claudovi do chatu napíšeš „generuj“."); return; }
+  try {
+    await mcp.callTool("Claude Code Remote", "fire_trigger", { trigger_id: TRIGGER_ID, text: `Hlasy uloženy na stránce (requestId ${req}): ${summary}. Odhad: ${e.text}` });
+    setNote("Claude dostal pokyn a za chvilku začne nahrávat. Průběh se ukáže tady.");
+  } catch (err) {
+    const c = err && err.code;
+    if (c === "approval_required" || c === "not_in_manifest") setNote("Uloženo. Ke spuštění potřebuju tvoje povolení pro „Claude Code Remote“ – klikni znovu a povol ho, nebo napiš Claudovi do chatu „generuj“.");
+    else if (c === "server_not_connected" || c === "needs_reauth") setNote("Uloženo. Spojení „Claude Code Remote“ není připojené – napiš Claudovi do chatu „generuj“.");
+    else setNote(`Uloženo, ale Clauda se nepodařilo probudit (${c || "chyba"}). Napiš mu do chatu „generuj“.`);
+    if (b) b.disabled = false;
+  }
+}
+
+(async () => {
+  const user = await capUse("user"); userRef = user;
+  canEdit = user ? await user.canEdit().catch(() => false) : false;
+  const db = await capUse("db");
+  if (db) {
+    dbRef = db;
+    db.doc("status/gen").onSnapshot(s => { gstat = s.exists ? s.data() : null; buildCast(); }, () => {});
+    db.doc("casting/current").onSnapshot(s => { savedCast = s.exists ? s.data() : null; buildCast(); }, () => {});
+    db.collection("requests").onSnapshot(q => { const n = {}; q.docs.forEach(d => { n[d.id] = d.data(); }); reqs = n; buildCast(); }, () => {});
+  }
+  renderGen();
+})();
+
+function showNotice() {
+  const n = document.getElementById("notice");
+  n.hidden = hasTTS;
+  if (!hasTTS) n.innerHTML = "<strong>Tenhle prohlížeč neumí předčítat.</strong> Nahrané hlasy hrají, repliky bez nahrávky ne.";
+}
+let assigned = false;
+function loadVoices() {
+  if (!hasTTS) return;
+  const list = synth.getVoices();
+  if (!list.length) return;
+  voices = list.slice().sort((a, b) => a.name.localeCompare(b.name));
+  if (!assigned) {
+    assigned = true; autoAssign();
+    if (saved) Object.keys(cfg).forEach(k => { const s = saved[k]; if (s && s.manual && voices.some(v => v.voiceURI === s.uri)) cfg[k] = { uri: s.uri, pitch: +s.pitch, rate: +s.rate, manual: true }; });
+    save();
+  }
+  buildCast(); showNotice();
+}
+
+// ---------- audio ----------
+let ac = null, noiseBuf = null;
+function audio() {
+  if (!ac) { try { ac = new (window.AudioContext || window.webkitAudioContext)(); } catch (e) { return null; } }
+  if (ac.state === "suspended") ac.resume();
+  if (!ac.master) { ac.master = ac.createGain(); routeOut(); }
+  if (!ac.fxBus) { const c = ac.createDynamicsCompressor(); c.threshold.value = -14; c.ratio.value = 4; const g = ac.createGain(); g.gain.value = 0.9; c.connect(g); g.connect(ac.master); ac.fxBus = c; }
+  return ac;
+}
+// „Do auta“: everything plays through one <audio> element fed by the mix. A playing, audible media element is what the phone
+// treats as real media: it takes audio focus (Spotify pauses), keeps playing with the screen locked, gets the steering-wheel /
+// Bluetooth play-pause via Media Session. A very quiet 25 Hz tone keeps it „audible“ during pauses (inaudible in practice).
+let carEl = null, carDest = null, carHum = null;
+function routeOut() {
+  if (!ac || !ac.master) return;
+  try { ac.master.disconnect(); } catch (e) {}
+  if (opts.car && ac.createMediaStreamDestination) {
+    try {
+      if (!carDest) {
+        carDest = ac.createMediaStreamDestination();
+        const o = ac.createOscillator(), g = ac.createGain(); o.frequency.value = 25; g.gain.value = 0.004; o.connect(g); g.connect(carDest); o.start(); carHum = g;
+        carEl = new Audio(); carEl.srcObject = carDest.stream; carEl.setAttribute("playsinline", "");
+      }
+      ac.master.connect(carDest);
+      return;
+    } catch (e) {}
+  }
+  ac.master.connect(ac.destination);
+  if (carEl) carEl.pause();
+}
+const carOn = () => !!(opts.car && carEl && carDest);
+const OUT = () => ac.fxBus;
+const rnd = (a, b) => a + Math.random() * (b - a);
+function noise() {
+  if (noiseBuf) return noiseBuf;
+  noiseBuf = ac.createBuffer(1, ac.sampleRate * 3, ac.sampleRate);
+  const d = noiseBuf.getChannelData(0); for (let i = 0; i < d.length; i++) d[i] = Math.random() * 2 - 1;
+  return noiseBuf;
+}
+function env(g, t0, peak, a, d) { g.gain.setValueAtTime(0.0001, t0); g.gain.exponentialRampToValueAtTime(peak, t0 + a); g.gain.exponentialRampToValueAtTime(0.0001, t0 + a + d); }
+function noiseSrc(t0, dur) { const s = ac.createBufferSource(); s.buffer = noise(); s.loopStart = 0; s.start(t0, rnd(0, 2)); s.stop(t0 + dur + 0.05); return s; }
+function filt(type, f, q) { const b = ac.createBiquadFilter(); b.type = type; b.frequency.value = f; b.Q.value = q; return b; }
+
+// prasečí chrochtání: chraplavý tón s rychlou amplitudovou modulací přes nosní formant
+function grunt(t0, dur, f, vol = 0.6) {
+  const o = ac.createOscillator(); o.type = "sawtooth";
+  o.frequency.setValueAtTime(f * 1.3, t0); o.frequency.exponentialRampToValueAtTime(f * 0.75, t0 + dur);
+  const lfo = ac.createOscillator(); lfo.frequency.value = rnd(22, 32);
+  const lg = ac.createGain(); lg.gain.value = 0.5;
+  const am = ac.createGain(); am.gain.value = 0.5;
+  const lp = filt("lowpass", 700, 6), bp = filt("bandpass", 420, 2.5);
+  const n = noiseSrc(t0, dur), ng = ac.createGain(); ng.gain.value = 0.25; const nb = filt("bandpass", 500, 1.5);
+  const g = ac.createGain(); env(g, t0, vol, 0.03, dur);
+  lfo.connect(lg); lg.connect(am.gain); o.connect(lp); lp.connect(bp); bp.connect(am); n.connect(nb); nb.connect(ng); ng.connect(am); am.connect(g); g.connect(OUT());
+  o.start(t0); lfo.start(t0); o.stop(t0 + dur + 0.05); lfo.stop(t0 + dur + 0.05);
+}
+// krátké "chro" (oink)
+function oink(t0, f = 260) {
+  const o = ac.createOscillator(); o.type = "sawtooth";
+  o.frequency.setValueAtTime(f * 1.4, t0); o.frequency.exponentialRampToValueAtTime(f * 0.8, t0 + 0.14);
+  const bp = filt("bandpass", 900, 4), bp2 = filt("bandpass", 2200, 6);
+  const g = ac.createGain(); env(g, t0, 0.5, 0.01, 0.16); const g2 = ac.createGain(); g2.gain.value = 0.35;
+  o.connect(bp); o.connect(bp2); bp2.connect(g2); bp.connect(g); g2.connect(g); g.connect(OUT());
+  o.start(t0); o.stop(t0 + 0.25);
+}
+// kvičení: vysoký pronikavý tón s vibratem a formanty, sílí a láme se
+function squeal(t0, dur, peak = 1900, vol = 0.45) {
+  const mk = det => {
+    const o = ac.createOscillator(); o.type = "sawtooth"; o.detune.value = det;
+    o.frequency.setValueAtTime(peak * 0.45, t0);
+    o.frequency.exponentialRampToValueAtTime(peak, t0 + Math.min(0.25, dur * 0.3));
+    o.frequency.setValueAtTime(peak, t0 + dur * 0.7);
+    o.frequency.exponentialRampToValueAtTime(peak * 0.6, t0 + dur);
+    return o;
+  };
+  const o1 = mk(0), o2 = mk(18);
+  const vib = ac.createOscillator(); vib.frequency.value = rnd(7, 11); const vg = ac.createGain(); vg.gain.value = peak * 0.05;
+  vib.connect(vg); vg.connect(o1.frequency); vg.connect(o2.frequency);
+  const f1 = filt("bandpass", peak * 1.1, 3), f2 = filt("bandpass", peak * 2.2, 5), hp = filt("highpass", 500, 0.7);
+  const g = ac.createGain();
+  g.gain.setValueAtTime(0.0001, t0); g.gain.exponentialRampToValueAtTime(vol, t0 + 0.06);
+  g.gain.setValueAtTime(vol, t0 + dur * 0.8); g.gain.exponentialRampToValueAtTime(0.0001, t0 + dur);
+  const mix = ac.createGain(); mix.gain.value = 0.6;
+  [o1, o2].forEach(o => { o.connect(f1); o.connect(f2); });
+  f1.connect(mix); f2.connect(mix); mix.connect(hp); hp.connect(g);
+  const n = noiseSrc(t0, dur), nb = filt("bandpass", peak * 1.5, 2), ng = ac.createGain(); ng.gain.value = 0.18; n.connect(nb); nb.connect(ng); ng.connect(g);
+  g.connect(OUT());
+  [o1, o2, vib].forEach(o => { o.start(t0); o.stop(t0 + dur + 0.05); });
+}
+// mlasknutí: vlhké cvaknutí
+function smack(t0, vol = 0.7) {
+  const n = noiseSrc(t0, 0.06), b = filt("bandpass", rnd(1200, 2600), 4), g = ac.createGain(); env(g, t0, vol, 0.002, 0.045);
+  const o = ac.createOscillator(); o.type = "sine"; o.frequency.setValueAtTime(rnd(300, 500), t0); o.frequency.exponentialRampToValueAtTime(120, t0 + 0.05);
+  const og = ac.createGain(); env(og, t0, vol * 0.5, 0.002, 0.05);
+  n.connect(b); b.connect(g); g.connect(OUT()); o.connect(og); og.connect(OUT()); o.start(t0); o.stop(t0 + 0.08);
+}
+function rustle(t0, dur, vol = 0.12) { const n = noiseSrc(t0, dur), hp = filt("highpass", 1800, 0.7), g = ac.createGain(); env(g, t0, vol, 0.05, dur); n.connect(hp); hp.connect(g); g.connect(OUT()); }
+function burst(t0, f, q, vol, dur) { const n = noiseSrc(t0, dur), b = filt("bandpass", f, q), g = ac.createGain(); g.gain.setValueAtTime(vol, t0); g.gain.exponentialRampToValueAtTime(0.0001, t0 + dur); n.connect(b); b.connect(g); g.connect(OUT()); }
+function thump(t0, f = 60, vol = 0.9, dur = 0.28) {
+  const o = ac.createOscillator(); o.type = "sine"; o.frequency.setValueAtTime(f * 2.2, t0); o.frequency.exponentialRampToValueAtTime(f, t0 + 0.06);
+  const g = ac.createGain(); env(g, t0, vol, 0.004, dur); o.connect(g); g.connect(OUT()); o.start(t0); o.stop(t0 + dur + 0.05);
+  burst(t0, 180, 0.8, vol * 0.4, 0.12);
+}
+function whoosh(t0, dur, vol = 0.35) {
+  const n = noiseSrc(t0, dur), b = filt("bandpass", 300, 1.2);
+  b.frequency.setValueAtTime(300, t0); b.frequency.exponentialRampToValueAtTime(2500, t0 + dur * 0.6); b.frequency.exponentialRampToValueAtTime(500, t0 + dur);
+  const g = ac.createGain(); g.gain.setValueAtTime(0.0001, t0); g.gain.exponentialRampToValueAtTime(vol, t0 + dur * 0.4); g.gain.exponentialRampToValueAtTime(0.0001, t0 + dur);
+  n.connect(b); b.connect(g); g.connect(OUT());
+}
+function chime(t0, f, vol = 0.18) {
+  [1, 2.76, 5.4].forEach((h, i) => { const o = ac.createOscillator(); o.type = "sine"; o.frequency.value = f * h; const g = ac.createGain(); env(g, t0, vol / (i + 1), 0.005, 1.4 / (i + 1)); o.connect(g); g.connect(OUT()); o.start(t0); o.stop(t0 + 1.5); });
+}
+
+const FX_LIB = {
+  grunt:   { label: "Chrochtání", play: t => { grunt(t, 0.32, 92); grunt(t + 0.4, 0.45, 78); return 1000; } },
+  oink:    { label: "Krátké chro", play: t => { oink(t); oink(t + 0.22, 230); return 500; } },
+  smack:   { label: "Mlaskání", play: t => { for (let i = 0, x = 0; i < 7; i++) { x += rnd(0.11, 0.22); smack(t + x, rnd(0.4, 0.8)); } grunt(t + 0.5, 0.25, 110, 0.3); return 1500; } },
+  munch:   { label: "Baštění", play: t => { for (let i = 0; i < 6; i++) grunt(t + i * 0.32, rnd(0.16, 0.26), rnd(85, 110), 0.45); for (let i = 0, x = 0; i < 10; i++) { x += rnd(0.12, 0.25); smack(t + x, rnd(0.3, 0.6)); } rustle(t, 2); return 2300; } },
+  squeal:  { label: "Kvičení", play: t => { squeal(t, 0.45, 1700); squeal(t + 0.55, 0.6, 2000); return 1200; } },
+  panic:   { label: "Kvičení o život", play: t => { squeal(t, 0.35, 1800, 0.4); squeal(t + 0.42, 0.4, 2100, 0.45); squeal(t + 0.9, 1.3, 2300, 0.55); grunt(t + 2.3, 0.2, 140, 0.4); squeal(t + 2.55, 0.9, 2000, 0.5); return 3600; } },
+  yawn:    { label: "Zívnutí", play: t => { grunt(t, 0.8, 68, 0.5); return 1000; } },
+  poke:    { label: "Šťouchnutí", play: t => { rustle(t, 0.3); grunt(t + 0.1, 0.15, 125, 0.5); return 600; } },
+  chatter: { label: "Drkotání zubů", play: t => { for (let i = 0; i < 16; i++) burst(t + i * 0.055 + rnd(0, 0.01), 3200, 6, 0.5, 0.03); return 1000; } },
+  bucket:  { label: "Kýbl", play: t => { rustle(t, 0.5); burst(t + 0.35, 2600, 9, 0.9, 0.4); burst(t + 0.42, 1700, 9, 0.9, 0.4); thump(t + 0.74, 90, 0.5, 0.2); burst(t + 0.75, 2300, 9, 0.9, 0.35); return 1300; } },
+  smoke:   { label: "Dým", play: t => { whoosh(t, 1.4); return 1500; } },
+  fly:     { label: "Přílet", play: t => { whoosh(t, 0.8, 0.25); chime(t + 0.6, 1568, 0.08); return 1000; } },
+  stomp:   { label: "Dupání stáda", play: t => { for (let i = 0, x = 0; i < 12; i++) { x += rnd(0.08, 0.2); thump(t + x, rnd(45, 70), rnd(0.5, 0.9)); } for (let i = 0; i < 4; i++) grunt(t + rnd(0.2, 1.6), 0.25, rnd(80, 120), 0.35); return 2000; } },
+  drum:    { label: "Bubnování", play: t => { [0, .25, .5, .62, .75, 1, 1.25, 1.37, 1.5].forEach((x, i) => { thump(t + x, i % 4 === 0 ? 75 : 110, 0.8, 0.18); burst(t + x, 2500, 1, 0.25, 0.04); }); return 1800; } },
+  clap:    { label: "Tleskání", play: t => { for (let i = 0; i < 8; i++) for (let k = 0; k < 3; k++) burst(t + i * 0.3 + k * 0.012 + rnd(0, 0.02), rnd(900, 1500), 1.2, 0.6, 0.06); return 2400; } },
+  sniff:   { label: "Čuchání", play: t => { [0, 0.3, 0.55].forEach(x => { const n = noiseSrc(t + x, 0.22), h = filt("bandpass", 2800, 1.5), g = ac.createGain(); g.gain.setValueAtTime(0.0001, t + x); g.gain.exponentialRampToValueAtTime(0.25, t + x + 0.15); g.gain.exponentialRampToValueAtTime(0.0001, t + x + 0.22); n.connect(h); h.connect(g); g.connect(OUT()); }); return 900; } },
+  magic:   { label: "Kouzlo", play: t => { [1047, 1319, 1568, 2093, 2637, 3136].forEach((f, i) => chime(t + i * 0.09 + rnd(0, 0.03), f)); whoosh(t, 1.2, 0.15); return 1600; } },
+  creak:   { label: "Vrzání dveří", play: t => { const o = ac.createOscillator(); o.type = "sawtooth"; o.frequency.setValueAtTime(18, t); o.frequency.linearRampToValueAtTime(40, t + 0.5); o.frequency.linearRampToValueAtTime(25, t + 1.1); const b = filt("bandpass", 900, 12), b2 = filt("bandpass", 1900, 14); const g = ac.createGain(); env(g, t, 0.7, 0.05, 1.1); o.connect(b); o.connect(b2); b.connect(g); b2.connect(g); g.connect(OUT()); o.start(t); o.stop(t + 1.25); return 1300; } },
+  piglet:  { label: "Selátko", play: t => { squeal(t, 0.28, 2500, 0.28); oink(t + 0.35, 380); return 800; } },
+  thud:    { label: "Žuchnutí", play: t => { thump(t, 48, 1, 0.45); rustle(t, 0.3, 0.1); return 700; } },
+  pour:    { label: "Nalévání", play: t => { for (let i = 0; i < 22; i++) { const x = t + i * 0.05 + rnd(0, 0.02); const o = ac.createOscillator(); o.type = "sine"; const f = 300 + i * 22 + rnd(-30, 30); o.frequency.setValueAtTime(f, x); o.frequency.exponentialRampToValueAtTime(f * 1.6, x + 0.04); const g = ac.createGain(); env(g, x, 0.12, 0.005, 0.045); o.connect(g); g.connect(OUT()); o.start(x); o.stop(x + 0.06); } burst(t, 2000, 0.8, 0.08, 1.2); return 1300; } },
+  kiss:    { label: "Pusa", play: t => { burst(t, 3200, 4, 0.7, 0.05); const o = ac.createOscillator(); o.type = "sine"; o.frequency.setValueAtTime(1400, t + 0.02); o.frequency.exponentialRampToValueAtTime(2200, t + 0.1); const g = ac.createGain(); env(g, t + 0.02, 0.12, 0.01, 0.09); o.connect(g); g.connect(OUT()); o.start(t); o.stop(t + 0.15); return 500; } },
+  farm:    { label: "Farma", play: t => { for (let i = 0; i < 5; i++) grunt(t + rnd(0, 2.6), rnd(0.2, 0.4), rnd(75, 120), 0.4); for (let i = 0; i < 4; i++) { const x = t + rnd(0.2, 2.8); oink(x, rnd(240, 320)); } for (let i = 0; i < 3; i++) { const x = t + rnd(0, 2.5); [0, 0.09, 0.18].forEach(d => { const o = ac.createOscillator(); o.type = "square"; o.frequency.setValueAtTime(rnd(700, 900), x + d); o.frequency.exponentialRampToValueAtTime(rnd(500, 600), x + d + 0.07); const b = filt("bandpass", 1400, 3), g = ac.createGain(); env(g, x + d, 0.12, 0.005, 0.07); o.connect(b); b.connect(g); g.connect(OUT()); o.start(x + d); o.stop(x + d + 0.1); }); } rustle(t, 3, 0.06); return 3200; } },
+  phone:   { label: "Zvonění mobilu", play: t => { for (let r = 0; r < 2; r++) for (let i = 0; i < 8; i++) { const x = t + r * 1.1 + i * 0.07; [1320, 1760].forEach(f => { const o = ac.createOscillator(); o.type = "sine"; o.frequency.value = f * (i % 2 ? 1.12 : 1); const g = ac.createGain(); env(g, x, 0.18, 0.005, 0.06); o.connect(g); g.connect(OUT()); o.start(x); o.stop(x + 0.08); }); } return 2300; } },
+  knife:   { label: "Broušení nože", play: t => { [0, 0.45, 0.9].forEach(x => { const n = noiseSrc(t + x, 0.35), b = filt("bandpass", 3000, 8); b.frequency.setValueAtTime(2500, t + x); b.frequency.linearRampToValueAtTime(5500, t + x + 0.3); const g = ac.createGain(); env(g, t + x, 0.5, 0.03, 0.3); n.connect(b); b.connect(g); g.connect(OUT()); }); return 1400; } }
+};
+// real recordings (fx.json → audio/fx/*.mp3); the synthesized FX_LIB stays as a fallback until they load
+let FX_FILES = {}; const fxBufs = {};
+fetch("fx.json", { cache: "no-store" }).then(r => r.ok ? r.json() : {}).then(m => { FX_FILES = m || {}; if (ac) loadFx(); }).catch(() => {});
+function loadFx() {
+  if (!ac) return;
+  Object.entries(FX_FILES).forEach(([k, list]) => {
+    if (fxBufs[k]) return; fxBufs[k] = [];
+    list.forEach(e => { const src = typeof e === "string" ? e : e.src; getBuf(src).then(b => fxBufs[k].push({ b, at: e.start != null ? e.start : null, dur: e.dur || b.duration })).catch(() => {}); });
+  });
+}
+function playFx(name, force) {
+  if (!opts.fx && !force) return 0;
+  const a = audio(); if (!a) return 0;
+  loadFx();
+  const real = fxBufs[name];
+  if (real && real.length) {
+    const e = real[Math.floor(Math.random() * real.length)];
+    const s = a.createBufferSource(); s.buffer = e.b; s.connect(OUT());
+    if (e.at != null) s.start(a.currentTime + 0.05, e.at, e.dur); else s.start(a.currentTime + 0.05);
+    return Math.round(e.dur * 1000) + 100;
+  }
+  if (!FX_LIB[name]) return 0;
+  return FX_LIB[name].play(a.currentTime + 0.05);
+}
+const bufs = {};
+function getBuf(src) {
+  const seg = /^(.*)#([\d.]+)\+([\d.]+)$/.exec(src);   // "file.mp3#start+dur": one clip packed in a bigger file
+  if (seg && !bufs[src]) {
+    bufs[src] = getBuf(seg[1]).then(b => {
+      const sr = b.sampleRate, s0 = Math.floor(+seg[2] * sr), n = Math.max(1, Math.min(b.length - s0, Math.ceil(+seg[3] * sr)));
+      const o = audio().createBuffer(b.numberOfChannels, n, sr);
+      for (let c = 0; c < b.numberOfChannels; c++) o.copyToChannel(b.getChannelData(c).subarray(s0, s0 + n), c);
+      return o;
+    });
+    bufs[src].catch(() => { delete bufs[src]; });
+  }
+  if (!bufs[src]) {
+    bufs[src] = fetch(src).then(r => { if (!r.ok) throw new Error(r.status); return r.arrayBuffer(); })
+      .then(ab => new Promise((res, rej) => audio().decodeAudioData(ab, res, rej)));
+    bufs[src].catch(() => { delete bufs[src]; });
+  }
+  return bufs[src];
+}
+const playingSrcs = new Map(); // source → resolve
+let curSrc = null, curDone = null;
+async function playClip(src, t, at, dur) {
+  try {
+    const a = audio(); if (!a) return false;
+    const buf = await getBuf(src);
+    if (t !== token) return true;
+    return await new Promise(res => {
+      const s = a.createBufferSource(); s.buffer = buf; s.connect(a.master || a.destination);
+      if (followSpan) follow = { span: followSpan, t0: performance.now() - (at || 0) * 1000, dur: buf.duration * 1000 };
+      playingSrcs.set(s, () => res(true));
+      s.onended = () => { playingSrcs.delete(s); res(true); };
+      if (at != null) s.start(0, at, dur); else s.start();
+    });
+  } catch (e) { return false; }
+}
+function prefetch(id) { if (!id) return; ACTS[id].lines.forEach(L => L.segs.forEach(s => { const src = clipFor(s); if (src) getBuf(src).catch(() => {}); })); }
+
+// ---------- engine ----------
+const keep = [];
+const wait = ms => new Promise(r => setTimeout(r, ms));
+function unlock() {
+  audio(); loadFx();
+  if (hasTTS && !unlock.done) { unlock.done = true; try { const u = new SpeechSynthesisUtterance(" "); u.volume = 0; synth.speak(u); } catch (e) {} }
+}
+const chunks = text => (text.match(/[^.!?…:]+(?:[.!?…:]+|$)/g) || [text]).map(s => s.trim()).filter(Boolean);
+function speak(text, who, t) {
+  return new Promise(res => {
+    if (!hasTTS || t !== token) return res();
+    const c = cfg[who] || { pitch: 1, rate: 1 }, v = voiceFor(who);
+    const u = new SpeechSynthesisUtterance(text);
+    u.lang = v ? v.lang : "cs-CZ"; if (v) u.voice = v;
+    u.pitch = c.pitch; u.rate = c.rate;
+    let done = false;
+    const fin = () => { if (done) return; done = true; clearTimeout(guard); res(); };
+    const guard = setTimeout(fin, text.length * 110 / c.rate + 4000);
+    u.onend = fin; u.onerror = fin;
+    keep.push(u); if (keep.length > 30) keep.shift();
+    synth.speak(u);
+  });
+}
+// the bar shows only who speaks; sounds and music in two words („zvuk – dvorek“, „hudba – šaman“), stage directions nothing
+const CUE_WORDS = [["šaman", "šaman"], ["paštik", "Paštika"], ["jelít", "Jelítko"], ["karel", "Karel"], ["ezo", "ezo"], ["metal", "metal"], ["mobil", "mobil"], ["zvonění", "mobil"], ["dvor", "dvorek"], ["farm", "farma"], ["cirkus", "cirkus"], ["veterin", "veterina"], ["drama", "drama"], ["děkova", "děkovačka"], ["chlív", "chlívek"], ["afrik", "Afrika"], ["ztiš", "ztišit"]];
+function cueShort(L) {
+  const t = (L.title || "").toLowerCase(), w = CUE_WORDS.find(([k]) => t.includes(k));
+  return `${L.fx ? "zvuk" : "hudba"} – ${w ? w[1] : (t.replace(/[^a-záčďéěíňóřšťúůýž ]/g, " ").trim().split(/\s+/)[0] || "")}`;
+}
+const label = L => L.kind === "cue" ? cueShort(L) : L.kind === "tech" || L.kind === "stage" ? "" : [L.who, ...(L.with || [])].map(w => ROLES[w].name).join(" + ");
+// car display (Bluetooth / AVRCP): line 1 = the sentence being said, line 2 = who + position, line 3 = the act
+let metaText = "";
+const PROD_TITLE = "Jitrnička a Jelítko";
+function carSentence(sp, f) {
+  const mine = sp.classList.contains("yourturn");
+  let txt;
+  if (mine && opts.hideMine) txt = "Tvoje replika";
+  else {
+    const parts = chunks(sp.textContent || ""); let acc = 0, total = parts.reduce((n, x) => n + x.length, 0) || 1;
+    txt = parts.find(x => (acc += x.length) / total >= f - 0.001) || parts[parts.length - 1] || "";
+    if (mine) txt = "Ty: " + txt;
+  }
+  if (txt !== metaText) { metaText = txt; setMeta(); }
+}
+function setMeta() {
+  if (!MS || !("MediaMetadata" in window)) return;
+  try {
+    const L = ACTS[actId] && lines()[cur], A = ACTS[actId] || {};
+    const who = L ? label(L) : "", pos = `J${actId}/${cur + 1}`;
+    const title = (playing && metaText) || document.getElementById("now").textContent || PROD_TITLE;
+    MS.metadata = new MediaMetadata({ title: title.length > 90 ? title.slice(0, 88) + "…" : title, artist: [who, pos].filter(Boolean).join(" · "), album: `${A.title || ""}${A.name ? " · " + A.name : ""}` || PROD_TITLE });
+  } catch (e) {}
+}
+// follow the voice inside a long line: keep the sentence being read on screen, not just the start of the line
+let follow = null, followSpan = null;
+setInterval(() => {
+  if (!follow || !playing || holding || !follow.span || !follow.span.isConnected) return;
+  const sp = follow.span;
+  if (!sp.classList.contains("speaking") && !sp.classList.contains("yourturn")) { follow = null; return; }
+  const f = Math.min(1, Math.max(0, (performance.now() - follow.t0) / Math.max(1, follow.dur)));
+  carSentence(sp, f);
+  const r = sp.getBoundingClientRect(), y = r.top + f * r.height, bottom = innerHeight - 190;
+  if (y > bottom || y < 70) window.scrollBy({ top: y - innerHeight * 0.33, behavior: matchMedia("(prefers-reduced-motion: reduce)").matches ? "auto" : "smooth" });
+}, 400);
+function setActive(i, scroll = true) {
+  metaText = "";
+  const LS = lines(), A = ACTS[actId];
+  LS.forEach(L => L.el.classList.toggle("active", L.i === i));
+  const L = LS[i];
+  if (L && scroll) {
+    const r = L.el.getBoundingClientRect();
+    const beh = matchMedia("(prefers-reduced-motion: reduce)").matches ? "auto" : "smooth";
+    if (r.height > innerHeight - 260) { if (r.top < 60 || r.top > innerHeight * 0.4) window.scrollBy({ top: r.top - 80, behavior: beh }); }   // a long line: show its beginning
+    else if (r.top < 60 || r.bottom > innerHeight - 150) L.el.scrollIntoView({ behavior: beh, block: "center" });
+  }
+  const shown = L || LS[cur];
+  document.getElementById("now").textContent = L ? label(L) : (playing ? "…" : `${A.title}${A.name ? " · " + A.name : ""}`);
+  document.getElementById("pos").textContent = `J${actId}/${(L ? i : cur) + 1}`;
+  try { mediaSync(); } catch (e) {}   // keep the phone's media notification in step
+  const total = ORDER.reduce((n, id) => n + ACTS[id].lines.length, 0);
+  const before = ORDER.slice(0, ORDER.indexOf(actId)).reduce((n, id) => n + ACTS[id].lines.length, 0);
+  document.getElementById("prog").style.width = `${((before + (L ? i + 1 : cur)) / total) * 100}%`;
+  void shown;
+}
+
+async function playFrom(i, from) {
+  stop(true);
+  const t = ++token;
+  playing = true; renderBtn();
+  prefetch(actId); prefetch(nextAct());
+  for (;;) {
+    const LS = lines();
+    for (let n = i; n < LS.length; n++) {
+      if (t !== token) return;
+      cur = n; setActive(n);
+      const L = LS[n];
+      let mySpan = null;
+      for (let k = 0; k < L.segs.length; k++) {
+        if (t !== token) return;
+        const s = L.segs[k];
+        const skip = from && n === i ? (k < from.k ? -1 : k === from.k ? from.ch : 0) : 0;   // continue from a tapped sentence
+        if (skip < 0) continue;
+        const span = L.el.querySelector(`[data-k="${k}"]`);
+        const mine = opts.learn && (L.who === opts.learn || (L.with || []).includes(opts.learn));
+        if (s.type === "say" && ROLES[L.who].fx) {
+          span && span.classList.add("speaking"); followSpan = span;
+          await wait(playFx(ROLES[L.who].fx) || 800);
+          span && span.classList.remove("speaking");
+        } else if (s.type === "say" && mine) {
+          await yourTurn(s, L.who, span, t); mySpan = span;
+        } else if (s.type === "say" && skip > 0) {
+          span && span.classList.add("speaking"); followSpan = span;
+          await readFrom(s, L.who, t, skip);
+          span && span.classList.remove("speaking");
+        } else if (s.type === "say") {
+          span && span.classList.add("speaking"); followSpan = span;
+          const src = clipFor(s);
+          const others = (s.also || []).map(a => clipFor(a)).filter(Boolean);
+          if (src && others.length) await Promise.all([playClip(src, t), ...others.map(o => playClip(o, t))]);
+          else if (!(src && await playClip(src, t))) for (const part of chunks(s.text)) { if (t !== token) break; await speak(part, L.who, t); }
+          span && span.classList.remove("speaking");
+        } else if (s.type === "dir") {
+          const myDir = mine || myStage(L, s);   // learning: the learner's own stage directions are not read, the others are
+          if (opts.readDirs && !myDir && skip > 0) {
+            span && span.classList.add("speaking"); followSpan = span;
+            await readFrom(s, "vypravec", t, skip);
+            span && span.classList.remove("speaking");
+          } else if (opts.readDirs && !myDir) {
+            span && span.classList.add("speaking"); followSpan = span;
+            const src = clipFor(s);
+            if (!(src && await playClip(src, t))) for (const part of chunks(s.text)) { if (t !== token) break; await speak(part, "vypravec", t); }
+            span && span.classList.remove("speaking");
+          }
+          if (t !== token) return;
+          if (myDir && span) span.classList.add("done");   // hidden learner's direction: show once passed
+          if (s.fx && (mine || myStage(L, s))) await yourSound(s.fx, span, t);   // learning: the sound is yours to make
+          else await wait(Math.max(s.fx ? playFx(s.fx) : 0, opts.readDirs && !myDir ? 200 : 450));
+        } else if (s.type === "cue" && (L.kind === "tech" || L.fx)) {
+          if (L.fx) await wait(playFx(L.fx) || 800);
+        } else if (s.type === "cue") {
+          if (opts.stopAtMusic) {
+            playing = false; renderBtn();
+            cur = n + 1;
+            document.getElementById("now").textContent = `${label(L)} · pak stiskni ▶`;
+            return;
+          }
+          if (opts.readDirs) { const src = clipFor(s); if (!(src && await playClip(src, t))) await speak(s.text, "vypravec", t); }
+          await wait(800);
+        }
+      }
+      if (t !== token) return;
+      if (mySpan && (holdOn || opts.learnStop)) await waitHold(mySpan, t);   // learning: wait at the end of my whole line
+      if (t !== token) return;
+      if (opts.learn && opts.hideMine && (mySpan || L.el.classList.contains("mine-stage"))) revealLine(L);   // whole line done: show it for a moment
+      await wait(350);
+    }
+    if (t !== token) return;
+    if (opts.loopAct) { await wait(1500); if (t !== token) return; showAct(actId, true); i = 0; continue; }   // „Jednání pořád dokola“
+    const nx = nextAct();
+    if (!nx) { playing = false; cur = 0; renderBtn(); document.getElementById("now").textContent = "Konec hry"; return; }
+    await wait(1200);
+    if (t !== token) return;
+    showAct(nx, true);
+    prefetch(nextAct());
+    i = 0;
+  }
+}
+function stop(silent) {
+  token++;
+  if (hasTTS) synth.cancel();
+  playingSrcs.forEach((done, src) => { try { src.onended = null; src.stop(); } catch (e) {} done(); }); playingSrcs.clear();
+  document.querySelectorAll(".speaking").forEach(s => s.classList.remove("speaking"));
+  if (!silent) { playing = false; renderBtn(); }
+}
+
+// past the end of an act (cur === length) counts as the start of the next one
+function normCur() { if (cur >= lines().length && nextAct()) { showAct(nextAct(), true); } else if (cur >= lines().length) cur = 0; }
+function step(d) {
+  if (!opts.silent) unlock();
+  const was = playing;
+  if (was) stop(true);
+  let n = cur + d;
+  if (n < 0) { const p = prevAct(); if (p) { showAct(p, false); n = lines().length - 1; } else n = 0; }
+  else if (n >= lines().length) { const x = nextAct(); if (x) { showAct(x, true); n = 0; } else n = lines().length - 1; }
+  cur = n;
+  if (was && !opts.silent) playFrom(n); else { playing = false; renderBtn(); setActive(n); }
+}
+
+const ICON_PLAY = `<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M7 4.5v15l13-7.5z" fill="currentColor"/></svg>`;
+const ICON_PAUSE = `<svg viewBox="0 0 24 24" aria-hidden="true"><rect x="6" y="4.5" width="4.2" height="15" rx="1" fill="currentColor"/><rect x="13.8" y="4.5" width="4.2" height="15" rx="1" fill="currentColor"/></svg>`;
+const $play = document.getElementById("play");
+const MS = "mediaSession" in navigator ? navigator.mediaSession : null;
+let silentEl = null, wl = null;
+async function wakeLock(on) {   // keep the screen on while it plays (a glance while driving shows the current text)
+  try {
+    if (on && !wl && navigator.wakeLock) { wl = await navigator.wakeLock.request("screen"); wl.addEventListener("release", () => { wl = null; }); }
+    else if (!on && wl) { const w = wl; wl = null; await w.release(); }
+  } catch (e) { wl = null; }
+}
+function silentWav() {   // 1 s of silence, 8 kHz mono 8-bit
+  const n = 8000, b = new Uint8Array(44 + n), v = new DataView(b.buffer), w = (o, t) => [...t].forEach((c, k) => b[o + k] = c.charCodeAt(0));
+  w(0, "RIFF"); v.setUint32(4, 36 + n, true); w(8, "WAVEfmt "); v.setUint32(16, 16, true); v.setUint16(20, 1, true); v.setUint16(22, 1, true);
+  v.setUint32(24, 8000, true); v.setUint32(28, 8000, true); v.setUint16(32, 1, true); v.setUint16(34, 8, true); w(36, "data"); v.setUint32(40, n, true); b.fill(128, 44);
+  return URL.createObjectURL(new Blob([b], { type: "audio/wav" }));
+}
+function mediaSync() {
+  if (!MS) return;
+  const on = playing && !holding;
+  try {
+    if (carOn()) {
+      if (silentEl) silentEl.pause();
+      if (on) { if (ac && ac.state === "suspended") ac.resume(); carEl.play().catch(() => { opts.car = false; routeOut(); }); } else carEl.pause();
+      wakeLock(on);
+    } else if (on) { if (!silentEl) { silentEl = new Audio(silentWav()); silentEl.loop = true; } silentEl.play().catch(() => {}); } else if (silentEl) silentEl.pause();
+    MS.playbackState = on ? "playing" : "paused";
+    setMeta();
+  } catch (e) {}
+}
+if (MS) {
+  const act = (a, f) => { try { MS.setActionHandler(a, f); } catch (e) {} };
+  act("play", () => { if (!playing || holding) $play.click(); });
+  act("pause", () => { if (playing && !holding) $play.click(); });
+  act("stop", () => { if (playing) $play.click(); });
+  act("nexttrack", () => step(1));
+  act("previoustrack", () => step(-1));
+}
+function renderBtn() {
+  $play.innerHTML = playing && !holding ? ICON_PAUSE : ICON_PLAY;
+  mediaSync();
+  $play.setAttribute("aria-label", holding ? "Pokračovat" : playing ? "Pozastavit" : "Přehrát");
+  document.body.classList.toggle("paused", !playing || holding);
+}
+function applySilent() {
+  if (opts.silent && playing) stop();
+  document.body.classList.toggle("silent", opts.silent);
+  $play.disabled = opts.silent;
+  $play.setAttribute("aria-label", opts.silent ? "Tichý režim – přehrávání vypnuté" : (playing ? "Pozastavit" : "Přehrát"));
+  if (opts.silent) document.getElementById("now").textContent = "Tichý režim · čtení";
+  else setActive(-1, false);
+}
+$play.addEventListener("click", () => {
+  if (opts.silent) return;
+  unlock();
+  if (holding) { releaseHold(); return; }
+  if (playing) { stop(); document.getElementById("now").textContent = "Pozastaveno"; }
+  else { normCur(); playFrom(cur); }
+});
+document.getElementById("prev").addEventListener("click", () => step(-1));
+document.getElementById("next").addEventListener("click", () => step(1));
+document.getElementById("actPrev").addEventListener("click", () => { const p = prevAct(); if (p) { unlock(); chooseAct(p); } });
+document.getElementById("actNext").addEventListener("click", () => { const x = nextAct(); if (x) { unlock(); chooseAct(x); } });
+document.getElementById("setBtn").addEventListener("click", () => {   // pause and jump to the options (Učím se roli…)
+  if (playing || holding) { stop(); document.getElementById("now").textContent = "Pozastaveno"; }
+  const ob = document.getElementById("optsBox"); if (ob) ob.open = true;
+  const o = document.getElementById("optsBox"); if (o) window.scrollTo({ top: Math.max(0, o.getBoundingClientRect().top + window.scrollY - 16), behavior: "smooth" });
+});
+
+// ---------- sound previews ----------
+(() => {
+  const used = {};
+  ORDER.forEach(id => ACTS[id].lines.forEach(L => L.segs.forEach(s => { if (s.fx) used[s.fx] = (used[s.fx] || 0) + 1; })));
+  const $f = document.getElementById("fxlist");
+  Object.entries(FX_LIB).forEach(([k, F]) => {
+    const b = document.createElement("button"); b.type = "button"; b.className = "fx-btn";
+    b.innerHTML = `${esc(F.label)}${used[k] ? `<small>${used[k]}× ve hře</small>` : ""}`;
+    b.addEventListener("click", () => { unlock(); playFx(k, true); });
+    $f.appendChild(b);
+  });
+})();
+
+// ---------- boot ----------
+function fromHash() { const m = /^#jednani-(\w+)$/.exec(location.hash); return m && ACTS[m[1]] ? m[1] : null; }
+renderBtn();
+buildCast(); showNotice();
+showAct(fromHash() || ORDER[0], false);
+applySilent();
+addEventListener("hashchange", () => { const h = fromHash(); if (h && h !== actId) { stop(); showAct(h, true); } });
+if (hasTTS) {
+  loadVoices();
+  if (synth.addEventListener) synth.addEventListener("voiceschanged", loadVoices); else synth.onvoiceschanged = loadVoices;
+  let tries = 0; const poll = setInterval(() => { if (voices.length || ++tries > 20) clearInterval(poll); loadVoices(); }, 250);
+}
+})();
+</script>
+</body></html>
