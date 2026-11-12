@@ -2099,11 +2099,11 @@ function audio() {
 // audio focus (Spotify pauses), the lock-screen / Bluetooth controls and the car display only to media that is playing and
 // audible – a fully silent loop or a MediaStream-fed element does not count. The voices themselves still play through Web Audio.
 let carEl = null;
-function humWav() {   // 2 s, 8 kHz mono 16-bit, 18 Hz sine at −40 dB (inaudible in practice, but not digital silence)
-  const sr = 8000, n = sr * 2, b = new Uint8Array(44 + n * 2), v = new DataView(b.buffer), w = (o, t) => [...t].forEach((c, k) => b[o + k] = c.charCodeAt(0));
+function humWav() {   // 30 s (Firefox ignores media shorter than 3 s), 8 kHz mono 16-bit, 18 Hz sine at about −55 dB: inaudible, but above Firefox's −72 dB „audible“ threshold
+  const sr = 8000, n = sr * 30, b = new Uint8Array(44 + n * 2), v = new DataView(b.buffer), w = (o, t) => [...t].forEach((c, k) => b[o + k] = c.charCodeAt(0));
   w(0, "RIFF"); v.setUint32(4, 36 + n * 2, true); w(8, "WAVEfmt "); v.setUint32(16, 16, true); v.setUint16(20, 1, true); v.setUint16(22, 1, true);
   v.setUint32(24, sr, true); v.setUint32(28, sr * 2, true); v.setUint16(32, 2, true); v.setUint16(34, 16, true); w(36, "data"); v.setUint32(40, n * 2, true);
-  for (let k = 0; k < n; k++) v.setInt16(44 + k * 2, Math.round(Math.sin(2 * Math.PI * 18 * k / sr) * 330), true);
+  for (let k = 0; k < n; k++) v.setInt16(44 + k * 2, Math.round(Math.sin(2 * Math.PI * 18 * k / sr) * 60), true);
   return URL.createObjectURL(new Blob([b], { type: "audio/wav" }));
 }
 function routeOut() {
