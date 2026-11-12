@@ -2095,28 +2095,23 @@ function audio() {
   if (!ac.fxBus) { const c = ac.createDynamicsCompressor(); c.threshold.value = -14; c.ratio.value = 4; const g = ac.createGain(); g.gain.value = 0.9; c.connect(g); g.connect(ac.master); ac.fxBus = c; }
   return ac;
 }
-// „Do auta“: everything plays through one <audio> element fed by the mix. A playing, audible media element is what the phone
-// treats as real media: it takes audio focus (Spotify pauses), keeps playing with the screen locked, gets the steering-wheel /
-// Bluetooth play-pause via Media Session. A very quiet 25 Hz tone keeps it „audible“ during pauses (inaudible in practice).
-let carEl = null, carDest = null, carHum = null;
-function routeOut() {
-  if (!ac || !ac.master) return;
-  try { ac.master.disconnect(); } catch (e) {}
-  if (opts.car && ac.createMediaStreamDestination) {
-    try {
-      if (!carDest) {
-        carDest = ac.createMediaStreamDestination();
-        const o = ac.createOscillator(), g = ac.createGain(); o.frequency.value = 25; g.gain.value = 0.004; o.connect(g); g.connect(carDest); o.start(); carHum = g;
-        carEl = new Audio(); carEl.srcObject = carDest.stream; carEl.setAttribute("playsinline", "");
-      }
-      ac.master.connect(carDest);
-      return;
-    } catch (e) {}
-  }
-  ac.master.connect(ac.destination);
-  if (carEl) carEl.pause();
+// „Do auta“: a normal (non-stream) <audio> element loops a barely-there 18 Hz tone while the play runs. Firefox on Android hands
+// audio focus (Spotify pauses), the lock-screen / Bluetooth controls and the car display only to media that is playing and
+// audible – a fully silent loop or a MediaStream-fed element does not count. The voices themselves still play through Web Audio.
+let carEl = null;
+function humWav() {   // 2 s, 8 kHz mono 16-bit, 18 Hz sine at −40 dB (inaudible in practice, but not digital silence)
+  const sr = 8000, n = sr * 2, b = new Uint8Array(44 + n * 2), v = new DataView(b.buffer), w = (o, t) => [...t].forEach((c, k) => b[o + k] = c.charCodeAt(0));
+  w(0, "RIFF"); v.setUint32(4, 36 + n * 2, true); w(8, "WAVEfmt "); v.setUint32(16, 16, true); v.setUint16(20, 1, true); v.setUint16(22, 1, true);
+  v.setUint32(24, sr, true); v.setUint32(28, sr * 2, true); v.setUint16(32, 2, true); v.setUint16(34, 16, true); w(36, "data"); v.setUint32(40, n * 2, true);
+  for (let k = 0; k < n; k++) v.setInt16(44 + k * 2, Math.round(Math.sin(2 * Math.PI * 18 * k / sr) * 330), true);
+  return URL.createObjectURL(new Blob([b], { type: "audio/wav" }));
 }
-const carOn = () => !!(opts.car && carEl && carDest);
+function routeOut() {
+  if (ac && ac.master) { try { ac.master.disconnect(); } catch (e) {} ac.master.connect(ac.destination); }
+  if (opts.car && !carEl) { carEl = new Audio(humWav()); carEl.loop = true; carEl.setAttribute("playsinline", ""); }
+  if (!opts.car && carEl) carEl.pause();
+}
+const carOn = () => !!(opts.car && carEl);
 const OUT = () => ac.fxBus;
 const rnd = (a, b) => a + Math.random() * (b - a);
 function noise() {
@@ -2498,7 +2493,7 @@ function mediaSync() {
   try {
     if (carOn()) {
       if (silentEl) silentEl.pause();
-      if (on) { if (ac && ac.state === "suspended") ac.resume(); carEl.play().catch(() => { opts.car = false; routeOut(); }); } else carEl.pause();
+      if (on) { if (ac && ac.state === "suspended") ac.resume(); carEl.play().catch(() => {}); } else carEl.pause();
       wakeLock(on);
     } else if (on) { if (!silentEl) { silentEl = new Audio(silentWav()); silentEl.loop = true; } silentEl.play().catch(() => {}); } else if (silentEl) silentEl.pause();
     MS.playbackState = on ? "playing" : "paused";
