@@ -374,7 +374,7 @@ details.sub[open] > summary ~ * { margin-top: 8px; }
     <div class="carbox" id="carbox">
       <b>Displej v autě</b>
       <label for="opt-carmode">Co ukazovat <select id="opt-carmode"><option value="piece">čtený text po kouscích</option><option value="line">začátek repliky</option><option value="who">jen postavu a pozici</option></select></label>
-      <label for="opt-carlen" class="learn-x"><span>Délka textu (kolik znaků se vejde na displej)</span><input type="range" id="opt-carlen" min="15" max="100" step="5" value="30"><output id="carlenVal">30</output></label>
+      <label for="opt-carlen" class="learn-x"><span>Délka textu (kolik znaků se vejde na displej)</span><input type="range" id="opt-carlen" min="12" max="100" step="1" value="22"><output id="carlenVal">22</output></label>
       <label for="opt-carlead" class="learn-x"><span>Posílat text s předstihem (když se displej opožďuje)</span><input type="range" id="opt-carlead" min="0" max="5" step="0.5" value="0"><output id="carleadVal">0 s</output></label>
       <label for="opt-carswap"><input type="checkbox" id="opt-carswap"> Prohodit řádky (text na druhý řádek, postava na první)</label>
     </div>
@@ -1201,7 +1201,7 @@ const $lstop = document.getElementById("opt-learnstop"); $lstop.checked = !!opts
 $lstop.addEventListener("change", () => { opts.learnStop = $lstop.checked; saveOpts(); });
 {   // car display settings: fallbacks for cars that behave differently than expected
   const box = document.getElementById("carbox"), md = document.getElementById("opt-carmode"), ln = document.getElementById("opt-carlen"), ld = document.getElementById("opt-carlead"), sw = document.getElementById("opt-carswap");
-  const show = () => { box.hidden = !opts.car; md.value = opts.carMode || "piece"; ln.value = opts.carLen || 30; document.getElementById("carlenVal").textContent = ln.value; ld.value = opts.carLead || 0; document.getElementById("carleadVal").textContent = String(+ld.value).replace(".", ",") + " s"; sw.checked = !!opts.carSwap; };
+  const show = () => { box.hidden = !opts.car; md.value = opts.carMode || "piece"; ln.value = opts.carLen || 22; document.getElementById("carlenVal").textContent = ln.value; ld.value = opts.carLead || 0; document.getElementById("carleadVal").textContent = String(+ld.value).replace(".", ",") + " s"; sw.checked = !!opts.carSwap; };
   const upd = () => { opts.carMode = md.value; opts.carLen = +ln.value; opts.carLead = +ld.value; opts.carSwap = sw.checked; saveOpts(); show(); metaKey = null; setMeta(); };
   [md, sw].forEach(e => e.addEventListener("change", upd)); [ln, ld].forEach(e => e.addEventListener("input", upd));
   document.getElementById("opt-car").addEventListener("change", () => setTimeout(show)); show();
@@ -2343,7 +2343,7 @@ const label = L => L.kind === "cue" ? cueShort(L) : L.kind === "tech" || L.kind 
 let metaText = "", metaKey = null, metaMine = false;
 const PROD_TITLE = "Jitrnička a Jelítko";
 function carSentence(sp, f, dur) {
-  const mine = sp.classList.contains("yourturn"), mode = opts.carMode || "piece", max = opts.carLen || 30;
+  const mine = sp.classList.contains("yourturn"), mode = opts.carMode || "piece", max = opts.carLen || 22;
   let txt = "";
   if (mode === "who") txt = "";
   else if (mine && opts.hideMine) txt = "Tvoje replika";
