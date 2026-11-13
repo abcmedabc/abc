@@ -1702,7 +1702,7 @@ function streamClip(src, t, at, dur, started) {
     a.preload = "auto";
     playingSrcs.set(h, () => end(true));
     a.addEventListener("error", () => { started(); end(false); });
-    a.addEventListener("playing", () => { if (t !== token) return end(true); started(); if (dur != null) { clearTimeout(timer); timer = setTimeout(() => end(true), dur * 1000 + 120); } }, { once: true });
+    a.addEventListener("playing", () => { if (t !== token) return end(true); started(a); if (dur != null) { clearTimeout(timer); timer = setTimeout(() => end(true), dur * 1000 + 120); } }, { once: true });
     a.addEventListener("ended", () => end(true));
     a.addEventListener("loadedmetadata", () => { if (at) { try { a.currentTime = at; } catch (e) {} } a.play().catch(() => { started(); end(false); }); }, { once: true });
     a.src = src;
@@ -2098,7 +2098,7 @@ function audio() {
 // „Do auta“: a normal (non-stream) <audio> element loops a barely-there 18 Hz tone while the play runs. Firefox on Android hands
 // audio focus (Spotify pauses), the lock-screen / Bluetooth controls and the car display only to media that is playing and
 // audible – a fully silent loop or a MediaStream-fed element does not count. The voices themselves still play through Web Audio.
-let carEl = null;
+let carEl = null, carWant = false;
 function humWav() {   // 30 s (Firefox ignores media shorter than 3 s), 8 kHz mono 16-bit, 18 Hz sine at about −55 dB: inaudible, but above Firefox's −72 dB „audible“ threshold
   const sr = 8000, n = sr * 30, b = new Uint8Array(44 + n * 2), v = new DataView(b.buffer), w = (o, t) => [...t].forEach((c, k) => b[o + k] = c.charCodeAt(0));
   w(0, "RIFF"); v.setUint32(4, 36 + n * 2, true); w(8, "WAVEfmt "); v.setUint32(16, 16, true); v.setUint16(20, 1, true); v.setUint16(22, 1, true);
@@ -2108,7 +2108,12 @@ function humWav() {   // 30 s (Firefox ignores media shorter than 3 s), 8 kHz mo
 }
 function routeOut() {
   if (ac && ac.master) { try { ac.master.disconnect(); } catch (e) {} ac.master.connect(ac.destination); }
-  if (opts.car && !carEl) { carEl = new Audio(humWav()); carEl.loop = true; carEl.setAttribute("playsinline", ""); }
+  if (opts.car && !carEl) {
+    carEl = new Audio(humWav()); carEl.loop = true; carEl.setAttribute("playsinline", "");
+    // the system paused us (phone call, another player took over, headset button without a handler): stop the play too
+    carEl.addEventListener("pause", () => { if (carWant && playing && !holding) { carWant = false; $play.click(); } });
+    carEl.addEventListener("play", () => { if (!carWant && (!playing || holding)) { carWant = true; $play.click(); } });
+  }
   if (!opts.car && carEl) carEl.pause();
 }
 const carOn = () => !!(opts.car && carEl);
@@ -2269,6 +2274,11 @@ let curSrc = null, curDone = null;
 async function playClip(src, t, at, dur) {
   try {
     const a = audio(); if (!a) return false;
+    if (carOn() && !src.includes("#")) {   // „Do auta“: a real media element, like a video site – that is what Firefox controls
+      const sp = followSpan;
+      const ok = await streamClip(src, t, at, undefined, el => { if (el && sp && isFinite(el.duration)) follow = { span: sp, t0: performance.now() - (at || 0) * 1000, dur: el.duration * 1000 }; });
+      if (ok || t !== token) return true;
+    }
     const buf = await getBuf(src);
     if (t !== token) return true;
     return await new Promise(res => {
@@ -2314,14 +2324,18 @@ function cueShort(L) {
 const label = L => L.kind === "cue" ? cueShort(L) : L.kind === "tech" || L.kind === "stage" ? "" : [L.who, ...(L.with || [])].map(w => ROLES[w].name).join(" + ");
 // car display (Bluetooth / AVRCP): line 1 = the sentence being said, line 2 = who + position, line 3 = the act
 let metaText = "";
+const CAR_CHARS = 30;
 const PROD_TITLE = "Jitrnička a Jelítko";
 function carSentence(sp, f) {
   const mine = sp.classList.contains("yourturn");
   let txt;
   if (mine && opts.hideMine) txt = "Tvoje replika";
   else {
-    const parts = chunks(sp.textContent || ""); let acc = 0, total = parts.reduce((n, x) => n + x.length, 0) || 1;
-    txt = parts.find(x => (acc += x.length) / total >= f - 0.001) || parts[parts.length - 1] || "";
+    const parts = []; let cur = "";   // pieces of at most CAR_CHARS characters, cut at word boundaries (car displays cut long titles)
+    for (const w of (sp.textContent || "").trim().split(/\s+/)) { if (cur && (cur + " " + w).length > CAR_CHARS - (mine ? 4 : 0)) { parts.push(cur); cur = w; } else cur = cur ? cur + " " + w : w; }
+    if (cur) parts.push(cur);
+    let acc = 0; const total = parts.reduce((n, x) => n + x.length, 0) || 1;
+    txt = parts.find(x => (acc += x.length) / total > f + 0.02) || parts[parts.length - 1] || "";
     if (mine) txt = "Ty: " + txt;
   }
   if (txt !== metaText) { metaText = txt; setMeta(); }
@@ -2493,7 +2507,8 @@ function mediaSync() {
   try {
     if (carOn()) {
       if (silentEl) silentEl.pause();
-      if (on) { if (ac && ac.state === "suspended") ac.resume(); carEl.play().catch(() => {}); } else carEl.pause();
+      carWant = on;
+      if (on) { if (ac && ac.state === "suspended") ac.resume(); if (carEl.paused) carEl.play().catch(() => {}); } else if (!carEl.paused) carEl.pause();
       wakeLock(on);
     } else if (on) { if (!silentEl) { silentEl = new Audio(silentWav()); silentEl.loop = true; } silentEl.play().catch(() => {}); } else if (silentEl) silentEl.pause();
     MS.playbackState = on ? "playing" : "paused";
