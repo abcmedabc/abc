@@ -129,6 +129,9 @@ h1 .a { color: var(--jitrnicka); } h1 .b { color: var(--jelitko); }
 .learn-l select { font: 600 15px var(--display); padding: 8px 10px; min-height: 40px; border-radius: 10px; border: 1.5px solid var(--line); background: var(--bg); color: var(--ink); max-width: 100%; }
 .learn-h { display: inline-flex; align-items: center; gap: 8px; font-size: 15px; color: var(--muted); cursor: pointer; }
 .learn-h input { width: 18px; height: 18px; accent-color: var(--ink); }
+.carbox { flex-basis: 100%; display: flex; flex-wrap: wrap; gap: 8px 18px; padding: 10px 12px; border: 1px solid var(--line, currentColor); border-radius: 10px; min-width: 0; box-sizing: border-box; }
+.carbox b { flex-basis: 100%; color: var(--ink); }
+.carbox select { font: inherit; max-width: 100%; }
 .learn-x { display: flex; flex-wrap: wrap; flex-basis: 100%; min-width: 0; max-width: 100%; box-sizing: border-box; align-items: center; gap: 6px 10px; font-size: 15px; color: var(--muted); }
 .learn-x span { flex-basis: 100%; }
 .learn-x input { flex: 1 1 0; width: 0; min-width: 0; max-width: 260px; margin: 0; accent-color: var(--ink); }
@@ -368,6 +371,13 @@ details.sub[open] > summary ~ * { margin-top: 8px; }
     <label for="opt-stop"><input type="checkbox" id="opt-stop"> Zastavit u hudby</label>
     <label for="opt-fx"><input type="checkbox" id="opt-fx"> Zvuky · chrochtání, zívání…</label>
     <label for="opt-car"><input type="checkbox" id="opt-car"> Do auta · hraje na pozadí i se zamčeným telefonem, play/pauza z volantu, ztlumí Spotify, displej nezhasíná</label>
+    <div class="carbox" id="carbox">
+      <b>Displej v autě</b>
+      <label for="opt-carmode">Co ukazovat <select id="opt-carmode"><option value="piece">čtený text po kouscích</option><option value="line">začátek repliky</option><option value="who">jen postavu a pozici</option></select></label>
+      <label for="opt-carlen" class="learn-x"><span>Délka textu (kolik znaků se vejde na displej)</span><input type="range" id="opt-carlen" min="15" max="100" step="5" value="30"><output id="carlenVal">30</output></label>
+      <label for="opt-carlead" class="learn-x"><span>Posílat text s předstihem (když se displej opožďuje)</span><input type="range" id="opt-carlead" min="0" max="5" step="0.5" value="0"><output id="carleadVal">0 s</output></label>
+      <label for="opt-carswap"><input type="checkbox" id="opt-carswap"> Prohodit řádky (text na druhý řádek, postava na první)</label>
+    </div>
     <label for="opt-silent"><input type="checkbox" id="opt-silent"> Tichý režim · jen čtení scénáře</label>
     <label for="opt-studio" id="studio-wrap" hidden><input type="checkbox" id="opt-studio" checked> Nahrané hlasy Google</label>
   </div>
@@ -1189,6 +1199,13 @@ $learn.addEventListener("change", () => { opts.learn = $learn.value; saveOpts();
 $hide.addEventListener("change", () => { opts.hideMine = $hide.checked; saveOpts(); applyLearn(); });
 const $lstop = document.getElementById("opt-learnstop"); $lstop.checked = !!opts.learnStop;
 $lstop.addEventListener("change", () => { opts.learnStop = $lstop.checked; saveOpts(); });
+{   // car display settings: fallbacks for cars that behave differently than expected
+  const box = document.getElementById("carbox"), md = document.getElementById("opt-carmode"), ln = document.getElementById("opt-carlen"), ld = document.getElementById("opt-carlead"), sw = document.getElementById("opt-carswap");
+  const show = () => { box.hidden = !opts.car; md.value = opts.carMode || "piece"; ln.value = opts.carLen || 30; document.getElementById("carlenVal").textContent = ln.value; ld.value = opts.carLead || 0; document.getElementById("carleadVal").textContent = String(+ld.value).replace(".", ",") + " s"; sw.checked = !!opts.carSwap; };
+  const upd = () => { opts.carMode = md.value; opts.carLen = +ln.value; opts.carLead = +ld.value; opts.carSwap = sw.checked; saveOpts(); show(); metaKey = null; setMeta(); };
+  [md, sw].forEach(e => e.addEventListener("change", upd)); [ln, ld].forEach(e => e.addEventListener("input", upd));
+  document.getElementById("opt-car").addEventListener("change", () => setTimeout(show)); show();
+}
 const $loop = document.getElementById("opt-loop"); $loop.checked = !!opts.loopAct;   // keep replaying the current act until another one is chosen
 $loop.addEventListener("change", () => { opts.loopAct = $loop.checked; saveOpts(); });
 const $extra = document.getElementById("opt-extra"), $extraVal = document.getElementById("extraVal");   // extra time for my silent line, in %
@@ -2323,30 +2340,38 @@ function cueShort(L) {
 }
 const label = L => L.kind === "cue" ? cueShort(L) : L.kind === "tech" || L.kind === "stage" ? "" : [L.who, ...(L.with || [])].map(w => ROLES[w].name).join(" + ");
 // car display (Bluetooth / AVRCP): line 1 = the sentence being said, line 2 = who + position, line 3 = the act
-let metaText = "";
-const CAR_CHARS = 30;
+let metaText = "", metaKey = null, metaMine = false;
 const PROD_TITLE = "Jitrnička a Jelítko";
-function carSentence(sp, f) {
-  const mine = sp.classList.contains("yourturn");
-  let txt;
-  if (mine && opts.hideMine) txt = "Tvoje replika";
+function carSentence(sp, f, dur) {
+  const mine = sp.classList.contains("yourturn"), mode = opts.carMode || "piece", max = opts.carLen || 30;
+  let txt = "";
+  if (mode === "who") txt = "";
+  else if (mine && opts.hideMine) txt = "Tvoje replika";
   else {
-    const parts = []; let cur = "";   // pieces of at most CAR_CHARS characters, cut at word boundaries (car displays cut long titles)
-    for (const w of (sp.textContent || "").trim().split(/\s+/)) { if (cur && (cur + " " + w).length > CAR_CHARS - (mine ? 4 : 0)) { parts.push(cur); cur = w; } else cur = cur ? cur + " " + w : w; }
-    if (cur) parts.push(cur);
-    let acc = 0; const total = parts.reduce((n, x) => n + x.length, 0) || 1;
-    txt = parts.find(x => (acc += x.length) / total > f + 0.02) || parts[parts.length - 1] || "";
-    if (mine) txt = "Ty: " + txt;
+    const all = (sp.textContent || "").trim().replace(/\s+/g, " ");
+    if (mode === "line") txt = all.length > max ? all.slice(0, max - 1).replace(/\s+\S*$/, "") + "…" : all;
+    else {
+      const parts = []; let cur = "";   // pieces of at most `max` characters, cut at word boundaries (car displays cut long titles)
+      for (const w of all.split(" ")) { if (cur && (cur + " " + w).length > max) { parts.push(cur); cur = w; } else cur = cur ? cur + " " + w : w; }
+      if (cur) parts.push(cur);
+      const ff = Math.min(1, f + (opts.carLead || 0) * 1000 / Math.max(1, dur || 1));   // send the text ahead if the car display lags
+      let acc = 0; const total = parts.reduce((n, x) => n + x.length, 0) || 1;
+      txt = parts.find(x => (acc += x.length) / total > ff + 0.02) || parts[parts.length - 1] || "";
+    }
   }
-  if (txt !== metaText) { metaText = txt; setMeta(); }
+  const key = (mine ? "*" : "") + txt;
+  if (key !== metaKey) { metaKey = key; metaText = txt; metaMine = mine; setMeta(); }
 }
 function setMeta() {
   if (!MS || !("MediaMetadata" in window)) return;
   try {
     const L = ACTS[actId] && lines()[cur], A = ACTS[actId] || {};
-    const who = L ? label(L) : "", pos = `J${actId}/${cur + 1}`;
-    const title = (playing && metaText) || document.getElementById("now").textContent || PROD_TITLE;
-    MS.metadata = new MediaMetadata({ title: title.length > 90 ? title.slice(0, 88) + "…" : title, artist: [who, pos].filter(Boolean).join(" · "), album: `${A.title || ""}${A.name ? " · " + A.name : ""}` || PROD_TITLE });
+    const who = L ? label(L) : "", pos = `J${actId}/${cur + 1}`, live = playing && metaKey != null;
+    const whoLine = [live && metaMine ? "▶ TY" : who, pos].filter(Boolean).join(" · ");
+    let title = (live && metaText) || (live && (opts.carMode === "who") && (metaMine ? "▶ TY" : who)) || document.getElementById("now").textContent || PROD_TITLE;
+    let artist = title === who || title === "▶ TY" ? `${pos} · ${A.title || ""}` : whoLine;
+    if (opts.carSwap) [title, artist] = [artist, title];
+    MS.metadata = new MediaMetadata({ title: title.length > 120 ? title.slice(0, 118) + "…" : title, artist, album: `${A.title || ""}${A.name ? " · " + A.name : ""}` || PROD_TITLE });
   } catch (e) {}
 }
 // follow the voice inside a long line: keep the sentence being read on screen, not just the start of the line
@@ -2356,12 +2381,12 @@ setInterval(() => {
   const sp = follow.span;
   if (!sp.classList.contains("speaking") && !sp.classList.contains("yourturn")) { follow = null; return; }
   const f = Math.min(1, Math.max(0, (performance.now() - follow.t0) / Math.max(1, follow.dur)));
-  carSentence(sp, f);
+  carSentence(sp, f, follow.dur);
   const r = sp.getBoundingClientRect(), y = r.top + f * r.height, bottom = innerHeight - 190;
   if (y > bottom || y < 70) window.scrollBy({ top: y - innerHeight * 0.33, behavior: matchMedia("(prefers-reduced-motion: reduce)").matches ? "auto" : "smooth" });
 }, 400);
 function setActive(i, scroll = true) {
-  metaText = "";
+  metaText = ""; metaKey = null; metaMine = false;
   const LS = lines(), A = ACTS[actId];
   LS.forEach(L => L.el.classList.toggle("active", L.i === i));
   const L = LS[i];
