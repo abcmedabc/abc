@@ -2274,6 +2274,31 @@ function playFx(name, force) {
   return FX_LIB[name].play(a.currentTime + 0.05);
 }
 const bufs = {};
+// every clip is downloaded once: kept in the browser's cache storage across visits (file names carry a content hash, so a
+// cached file never goes stale), and in memory as a Blob for the media-element player – no second download per line
+const raws = {}, blobUrls = {};
+let audioCache = null;
+function openCache() {
+  if (audioCache === null) audioCache = (async () => { try { return await caches.open((typeof PID === "string" ? PID : "jj") + "-audio-1"); } catch (e) { return false; } })();
+  return audioCache;
+}
+function loadRaw(src) {
+  if (!raws[src]) {
+    raws[src] = (async () => {
+      const c = await openCache();
+      if (c) { try { const hit = await c.match(src); if (hit) return await hit.blob(); } catch (e) {} }
+      const r = await fetch(src); if (!r.ok) throw new Error(r.status);
+      if (c) { try { await c.put(src, r.clone()); } catch (e) {} }
+      return await r.blob();
+    })();
+    raws[src].catch(() => { delete raws[src]; });
+  }
+  return raws[src];
+}
+async function rawUrl(src) {
+  if (!blobUrls[src]) { const b = await loadRaw(src); blobUrls[src] = URL.createObjectURL(b.type ? b : new Blob([b], { type: "audio/mpeg" })); }
+  return blobUrls[src];
+}
 function getBuf(src) {
   const seg = /^(.*)#([\d.]+)\+([\d.]+)$/.exec(src);   // "file.mp3#start+dur": one clip packed in a bigger file
   if (seg && !bufs[src]) {
@@ -2286,7 +2311,7 @@ function getBuf(src) {
     bufs[src].catch(() => { delete bufs[src]; });
   }
   if (!bufs[src]) {
-    bufs[src] = fetch(src).then(r => { if (!r.ok) throw new Error(r.status); return r.arrayBuffer(); })
+    bufs[src] = loadRaw(src).then(b => b.arrayBuffer())
       .then(ab => new Promise((res, rej) => audio().decodeAudioData(ab, res, rej)));
     bufs[src].catch(() => { delete bufs[src]; });
   }
@@ -2299,7 +2324,9 @@ async function playClip(src, t, at, dur) {
     const a = audio(); if (!a) return false;
     if (carOn() && !src.includes("#")) {   // „Do auta“: a real media element, like a video site – that is what Firefox controls
       const sp = followSpan;
-      const ok = await streamClip(src, t, at, undefined, el => { if (el && sp && isFinite(el.duration)) follow = { span: sp, t0: performance.now() - (at || 0) * 1000, dur: el.duration * 1000 }; });
+      let url = src; try { url = await rawUrl(src); } catch (e) {}
+      if (t !== token) return true;
+      const ok = await streamClip(url, t, at, undefined, el => { if (el && sp && isFinite(el.duration)) follow = { span: sp, t0: performance.now() - (at || 0) * 1000, dur: el.duration * 1000 }; });
       if (ok || t !== token) return true;
     }
     const buf = await getBuf(src);
