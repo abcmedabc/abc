@@ -117,22 +117,24 @@ h1 .a { color: var(--jitrnicka); } h1 .b { color: var(--jelitko); }
 .act-tab[aria-selected="true"] { background: var(--ink); color: var(--surface); border-color: var(--ink); }
 .act-tab[aria-selected="true"] small { color: var(--surface); opacity: .75; }
 
-.opts-box { font-size: 15px; }
+.opts-box { font-size: 14px; min-width: 0; }
 .opts-t { font-family: var(--display); font-weight: 700; color: var(--ink); }
-.opts { display: flex; flex-wrap: wrap; gap: 8px 18px; font-size: 15px; color: var(--muted); }
-.opts label { display: inline-flex; align-items: center; gap: 8px; cursor: pointer; min-height: 32px; }
+.opts { display: flex; flex-wrap: wrap; gap: 8px 18px; font-size: 14px; line-height: 1.35; color: var(--muted); min-width: 0; }
+.opts label { display: inline-flex; align-items: center; gap: 8px; cursor: pointer; min-height: 32px; min-width: 0; max-width: 100%; }
 .opts input { accent-color: var(--ink); width: 18px; height: 18px; }
 
 .learn { display: flex; flex-wrap: wrap; align-items: center; gap: 10px 18px; padding: 12px 14px; border-radius: 12px; background: var(--surface); border: 1.5px solid var(--line); }
 .learn.on { border-color: var(--c); background: var(--tint); }
-.learn-l { display: flex; align-items: center; gap: 10px; font-family: var(--display); font-weight: 800; font-size: 16px; flex-wrap: wrap; }
-.learn-l select { font: 600 15px var(--display); padding: 8px 10px; min-height: 40px; border-radius: 10px; border: 1.5px solid var(--line); background: var(--bg); color: var(--ink); max-width: 100%; }
-.learn-h { display: inline-flex; align-items: center; gap: 8px; font-size: 15px; color: var(--muted); cursor: pointer; }
+.learn-l { display: flex; align-items: center; gap: 10px; font-family: var(--display); font-weight: 800; font-size: 16px; flex-wrap: wrap; min-width: 0; max-width: 100%; }
+.learn-l select { min-width: 0; flex: 1 1 200px; box-sizing: border-box; font: 600 15px var(--display); padding: 8px 10px; min-height: 40px; border-radius: 10px; border: 1.5px solid var(--line); background: var(--bg); color: var(--ink); max-width: 100%; }
+.learn-h { display: inline-flex; align-items: center; gap: 8px; font-size: 14px; min-width: 0; max-width: 100%; color: var(--muted); cursor: pointer; }
 .learn-h input { width: 18px; height: 18px; accent-color: var(--ink); }
 .carbox { flex-basis: 100%; display: flex; flex-wrap: wrap; gap: 8px 18px; padding: 10px 12px; border: 1px solid var(--line, currentColor); border-radius: 10px; min-width: 0; box-sizing: border-box; }
 .carbox b { flex-basis: 100%; color: var(--ink); }
-.carbox select { font: inherit; max-width: 100%; }
-.learn-x { display: flex; flex-wrap: wrap; flex-basis: 100%; min-width: 0; max-width: 100%; box-sizing: border-box; align-items: center; gap: 6px 10px; font-size: 15px; color: var(--muted); }
+.carbox label.sel { flex-wrap: wrap; }
+.carbox select { font: inherit; flex: 1 1 180px; min-width: 0; max-width: 100%; }
+.carkey { flex-basis: 100%; font-size: 13px; }
+.learn-x { display: flex; flex-wrap: wrap; flex-basis: 100%; min-width: 0; max-width: 100%; box-sizing: border-box; align-items: center; gap: 6px 10px; font-size: 14px; color: var(--muted); }
 .learn-x span { flex-basis: 100%; }
 .learn-x input { flex: 1 1 0; width: 0; min-width: 0; max-width: 260px; margin: 0; accent-color: var(--ink); }
 .learn-x output { font-weight: 700; color: var(--ink); min-width: 4.5ch; font-variant-numeric: tabular-nums; }
@@ -373,10 +375,12 @@ details.sub[open] > summary ~ * { margin-top: 8px; }
     <label for="opt-car"><input type="checkbox" id="opt-car"> Do auta · hraje na pozadí i se zamčeným telefonem, play/pauza z volantu, ztlumí Spotify, displej nezhasíná</label>
     <div class="carbox" id="carbox">
       <b>Displej v autě</b>
-      <label for="opt-carmode">Co ukazovat <select id="opt-carmode"><option value="piece">čtený text po kouscích</option><option value="line">začátek repliky</option><option value="who">jen postavu a pozici</option></select></label>
-      <label for="opt-carlen" class="learn-x"><span>Délka textu (kolik znaků se vejde na displej)</span><input type="range" id="opt-carlen" min="12" max="100" step="1" value="22"><output id="carlenVal">22</output></label>
+      <label for="opt-carmode" class="sel">Co ukazovat <select id="opt-carmode"><option value="piece">čtený text po kouscích</option><option value="line">začátek repliky</option><option value="who">jen postavu a pozici</option></select></label>
+      <label for="opt-carlen" class="learn-x"><span>Délka textu (kolik znaků se vejde na displej)</span><input type="range" id="opt-carlen" min="12" max="50" step="1" value="25"><output id="carlenVal">25</output></label>
       <label for="opt-carlead" class="learn-x"><span>Posílat text s předstihem (když se displej opožďuje)</span><input type="range" id="opt-carlead" min="0" max="5" step="0.5" value="0"><output id="carleadVal">0 s</output></label>
       <label for="opt-carswap"><input type="checkbox" id="opt-carswap"> Prohodit řádky (text na druhý řádek, postava na první)</label>
+      <label for="opt-cartoggle"><input type="checkbox" id="opt-cartoggle"> Tlačítko ▶ v autě přepíná play i pauzu (pro auta, která pauzu neposílají)</label>
+      <span class="carkey">Poslední tlačítko z auta: <b id="carKey">zatím žádné</b></span>
     </div>
     <label for="opt-silent"><input type="checkbox" id="opt-silent"> Tichý režim · jen čtení scénáře</label>
     <label for="opt-studio" id="studio-wrap" hidden><input type="checkbox" id="opt-studio" checked> Nahrané hlasy Google</label>
@@ -1200,10 +1204,10 @@ $hide.addEventListener("change", () => { opts.hideMine = $hide.checked; saveOpts
 const $lstop = document.getElementById("opt-learnstop"); $lstop.checked = !!opts.learnStop;
 $lstop.addEventListener("change", () => { opts.learnStop = $lstop.checked; saveOpts(); });
 {   // car display settings: fallbacks for cars that behave differently than expected
-  const box = document.getElementById("carbox"), md = document.getElementById("opt-carmode"), ln = document.getElementById("opt-carlen"), ld = document.getElementById("opt-carlead"), sw = document.getElementById("opt-carswap");
-  const show = () => { box.hidden = !opts.car; md.value = opts.carMode || "piece"; ln.value = opts.carLen || 22; document.getElementById("carlenVal").textContent = ln.value; ld.value = opts.carLead || 0; document.getElementById("carleadVal").textContent = String(+ld.value).replace(".", ",") + " s"; sw.checked = !!opts.carSwap; };
-  const upd = () => { opts.carMode = md.value; opts.carLen = +ln.value; opts.carLead = +ld.value; opts.carSwap = sw.checked; saveOpts(); show(); metaKey = null; setMeta(); };
-  [md, sw].forEach(e => e.addEventListener("change", upd)); [ln, ld].forEach(e => e.addEventListener("input", upd));
+  const box = document.getElementById("carbox"), md = document.getElementById("opt-carmode"), ln = document.getElementById("opt-carlen"), ld = document.getElementById("opt-carlead"), sw = document.getElementById("opt-carswap"), tg = document.getElementById("opt-cartoggle");
+  const show = () => { box.hidden = !opts.car; md.value = opts.carMode || "piece"; ln.value = Math.min(50, opts.carLen || 25); document.getElementById("carlenVal").textContent = ln.value; ld.value = opts.carLead || 0; document.getElementById("carleadVal").textContent = String(+ld.value).replace(".", ",") + " s"; sw.checked = !!opts.carSwap; tg.checked = !!opts.carToggle; };
+  const upd = () => { opts.carMode = md.value; opts.carLen = +ln.value; opts.carLead = +ld.value; opts.carSwap = sw.checked; opts.carToggle = tg.checked; saveOpts(); show(); metaKey = null; setMeta(); };
+  [md, sw, tg].forEach(e => e.addEventListener("change", upd)); [ln, ld].forEach(e => e.addEventListener("input", upd));
   document.getElementById("opt-car").addEventListener("change", () => setTimeout(show)); show();
 }
 const $loop = document.getElementById("opt-loop"); $loop.checked = !!opts.loopAct;   // keep replaying the current act until another one is chosen
@@ -2115,7 +2119,8 @@ function audio() {
 // „Do auta“: a normal (non-stream) <audio> element loops a barely-there 18 Hz tone while the play runs. Firefox on Android hands
 // audio focus (Spotify pauses), the lock-screen / Bluetooth controls and the car display only to media that is playing and
 // audible – a fully silent loop or a MediaStream-fed element does not count. The voices themselves still play through Web Audio.
-let carEl = null, carWant = false;
+let carEl = null, carWant = false, carSelfAt = 0;
+function carKey(name) { const el = document.getElementById("carKey"); if (el) el.textContent = name + " · " + new Date().toLocaleTimeString("cs"); }
 function humWav() {   // 30 s (Firefox ignores media shorter than 3 s), 8 kHz mono 16-bit, 18 Hz sine at about −55 dB: inaudible, but above Firefox's −72 dB „audible“ threshold
   const sr = 8000, n = sr * 30, b = new Uint8Array(44 + n * 2), v = new DataView(b.buffer), w = (o, t) => [...t].forEach((c, k) => b[o + k] = c.charCodeAt(0));
   w(0, "RIFF"); v.setUint32(4, 36 + n * 2, true); w(8, "WAVEfmt "); v.setUint32(16, 16, true); v.setUint16(20, 1, true); v.setUint16(22, 1, true);
@@ -2128,8 +2133,9 @@ function routeOut() {
   if (opts.car && !carEl) {
     carEl = new Audio(humWav()); carEl.loop = true; carEl.setAttribute("playsinline", "");
     // the system paused us (phone call, another player took over, headset button without a handler): stop the play too
-    carEl.addEventListener("pause", () => { if (carWant && playing && !holding) { carWant = false; $play.click(); } });
-    carEl.addEventListener("play", () => { if (!carWant && (!playing || holding)) { carWant = true; $play.click(); } });
+    const sys = () => performance.now() - carSelfAt > 1500;   // events within 1.5 s of our own play()/pause() are ours, not the system's
+    carEl.addEventListener("pause", () => { if (sys() && carWant && playing && !holding) { carKey("pauza od systému"); carWant = false; $play.click(); } });
+    carEl.addEventListener("play", () => { if (sys() && !carWant && (!playing || holding)) { carKey("spuštění od systému"); carWant = true; $play.click(); } });
   }
   if (!opts.car && carEl) carEl.pause();
 }
@@ -2343,7 +2349,7 @@ const label = L => L.kind === "cue" ? cueShort(L) : L.kind === "tech" || L.kind 
 let metaText = "", metaKey = null, metaMine = false;
 const PROD_TITLE = "Jitrnička a Jelítko";
 function carSentence(sp, f, dur) {
-  const mine = sp.classList.contains("yourturn"), mode = opts.carMode || "piece", max = opts.carLen || 22;
+  const mine = sp.classList.contains("yourturn"), mode = opts.carMode || "piece", max = opts.carLen || 25;
   let txt = "";
   if (mode === "who") txt = "";
   else if (mine && opts.hideMine) txt = "Tvoje replika";
@@ -2533,7 +2539,7 @@ function mediaSync() {
     if (carOn()) {
       if (silentEl) silentEl.pause();
       carWant = on;
-      if (on) { if (ac && ac.state === "suspended") ac.resume(); if (carEl.paused) carEl.play().catch(() => {}); } else if (!carEl.paused) carEl.pause();
+      if (on) { if (ac && ac.state === "suspended") ac.resume(); if (carEl.paused) { carSelfAt = performance.now(); carEl.play().catch(() => {}); } } else if (!carEl.paused) { carSelfAt = performance.now(); carEl.pause(); }
       wakeLock(on);
     } else if (on) { if (!silentEl) { silentEl = new Audio(silentWav()); silentEl.loop = true; } silentEl.play().catch(() => {}); } else if (silentEl) silentEl.pause();
     MS.playbackState = on ? "playing" : "paused";
@@ -2542,11 +2548,11 @@ function mediaSync() {
 }
 if (MS) {
   const act = (a, f) => { try { MS.setActionHandler(a, f); } catch (e) {} };
-  act("play", () => { if (!playing || holding) $play.click(); });
-  act("pause", () => { if (playing && !holding) $play.click(); });
-  act("stop", () => { if (playing) $play.click(); });
-  act("nexttrack", () => step(1));
-  act("previoustrack", () => step(-1));
+  act("play", () => { carKey("▶ play"); if (!playing || holding || opts.carToggle) $play.click(); });
+  act("pause", () => { carKey("⏸ pauza"); if (playing && !holding) $play.click(); });
+  act("stop", () => { carKey("■ stop"); if (playing && !holding) $play.click(); });
+  act("nexttrack", () => { carKey("⏭ další"); step(1); });
+  act("previoustrack", () => { carKey("⏮ předchozí"); step(-1); });
 }
 function renderBtn() {
   $play.innerHTML = playing && !holding ? ICON_PAUSE : ICON_PLAY;
