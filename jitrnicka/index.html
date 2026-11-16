@@ -327,7 +327,7 @@ button.modebtn { font: 700 15px var(--display); padding: 10px 18px; border-radiu
 .sv-now { display: flex; flex-direction: column; gap: 2px; font: 800 20px var(--display); color: var(--ink); }
 .sv-now small { font: 400 14px var(--body, inherit); color: var(--muted); }
 .sv-now { cursor: pointer; }
-.sv-lyrics { font-size: 17px; line-height: 1.6; display: flex; flex-direction: column; gap: 0; min-height: 30vh; cursor: pointer; }
+.sv-lyrics { font-size: 17px; line-height: 1.6; display: flex; flex-direction: column; gap: 0; min-height: calc(100vh - 230px); cursor: pointer; }   /* room to bring the title to the top */
 .sv-timer { border: 1px solid var(--line, currentColor); border-radius: 12px; padding: 4px 12px; }
 body.songs-on #prev, body.songs-on #next, body.songs-on #pos { display: none; }
 .sv-lyrics .gap { height: 14px; }
@@ -2941,9 +2941,9 @@ function songShow(k) {
   const it = list[songIdx];
   if (actId !== it.act) showAct(it.act, false);
   cur = it.i; setActive(cur, false); songBar(true);
-  document.getElementById("svName").textContent = `${it.L.track} ${it.L.title}`;
+  document.getElementById("svName").textContent = `${it.L.track} ${it.L.title} (${songIdx + 1}/${list.length})`;
   if (!playing) document.getElementById("now").textContent = it.L.title;
-  document.getElementById("svRep").textContent = `${songIdx + 1}. z ${list.length}` + (songRep > 1 ? ` · ${songRep}. opakování` : "");
+  document.getElementById("svRep").textContent = songRep > 1 ? `${songRep}. opakování` : "";
   if (document.getElementById("svLyrics").dataset.k !== it.k) { svLyrics(it.L); document.getElementById("svLyrics").dataset.k = it.k; }
   return it;
 }
@@ -2956,12 +2956,18 @@ async function songLoop(k, from = 0) {
     const it = songShow(k); if (!it) { playing = false; renderBtn(); return; }
     k = songIdx;
     document.getElementById("now").textContent = it.L.title;
+    svTop();
     await playMusic(musicFor(it.L).src, t, null, it.L, from); from = 0;
     if (t !== token) return;
     svFollow(it.L, -1);
     await wait(1500);
     if (t !== token) return;
   }
+}
+function svTop() {   // the song title at the top of the view as soon as the song starts
+  const V = document.getElementById("songView"), H = document.getElementById("svHead");
+  if (V.hidden || !H) return;
+  V.scrollTo({ top: Math.max(0, H.offsetTop - 8), behavior: matchMedia("(prefers-reduced-motion: reduce)").matches ? "auto" : "smooth" });
 }
 function songStep(d) { songRep = 0; if (playing) songLoop(songIdx + d); else songShow(songIdx + d); }
 function songModeSet(on) {
