@@ -309,6 +309,7 @@ li.cue.has-music .cue-title > span:not(.track):not(.eq)::after { content: " ▶"
 #lyPanel ol { margin: 0; padding-left: 22px; display: grid; gap: 2px; }
 #lyPanel li.now { font-weight: 700; color: var(--ink); }
 #lyPanel .row { display: flex; gap: 8px; flex-wrap: wrap; }
+#script li.linked { outline: 3px solid var(--accent); outline-offset: 3px; border-radius: 10px; transition: outline-color 2s; }
 .ly.cur { color: var(--ink); font-weight: 700; background: color-mix(in srgb, var(--song, #5f7a2a) 18%, transparent); border-radius: 4px; }
 .lyrics.timing .ly { text-decoration: underline dotted; cursor: pointer; }
 .lyrics { white-space: pre-line; margin: 6px 0 0; font-size: 15px; color: var(--muted); }
@@ -2701,6 +2702,7 @@ setInterval(() => {
 }, 400);
 function setActive(i, scroll = true) {
   metaText = ""; metaKey = null; metaMine = false;
+  if (ACTS[actId] && i >= 0) { try { history.replaceState(null, "", "#J" + actId + "-" + (i + 1)); } catch (e) {} }
   const LS = lines(), A = ACTS[actId];
   LS.forEach(L => L.el.classList.toggle("active", L.i === i));
   const L = LS[i];
@@ -2934,12 +2936,27 @@ document.getElementById("setBtn").addEventListener("click", () => {   // pause a
 })();
 
 // ---------- boot ----------
-function fromHash() { const m = /^#jednani-(\w+)$/.exec(location.hash); return m && ACTS[m[1]] ? m[1] : null; }
+// links: #jednani-5 (an act), #J5-20 or #J5/20 (act 5, line 20 – the line shown in the status bar)
+function fromHash() {
+  const h = decodeURIComponent(location.hash || "");
+  let m = /^#jednani-(\w+)$/.exec(h);
+  if (m) return ACTS[m[1]] ? { act: m[1], line: 0 } : null;
+  m = /^#[Jj](\w+?)[-/._:](\d+)$/.exec(h) || /^#[Jj](\w+)$/.exec(h);
+  return m && ACTS[m[1]] ? { act: m[1], line: Math.max(0, Math.min(ACTS[m[1]].lines.length, +(m[2] || 1)) - 1) } : null;
+}
+function goHash(scroll, h = fromHash()) {
+  if (!h) return false;
+  if (h.act !== actId) showAct(h.act, scroll);
+  if (h.line) { cur = h.line; setActive(cur, true); const L = lines()[cur]; if (L && L.el) { L.el.classList.add("linked"); setTimeout(() => L.el.classList.remove("linked"), 2500); } }
+  return true;
+}
 renderBtn();
 buildCast(); showNotice();
-showAct(fromHash() || ORDER[0], false);
+const bootHash = fromHash();
+showAct((bootHash || {}).act || ORDER[0], false);
+if (bootHash && bootHash.line) setTimeout(() => goHash(true, bootHash), 300);
 applySilent();
-addEventListener("hashchange", () => { const h = fromHash(); if (h && h !== actId) { stop(); showAct(h, true); } });
+addEventListener("hashchange", () => { const h = fromHash(); if (!h || (h.act === actId && (!h.line || h.line === cur))) return; stop(); goHash(true); });
 if (hasTTS) {
   loadVoices();
   if (synth.addEventListener) synth.addEventListener("voiceschanged", loadVoices); else synth.onvoiceschanged = loadVoices;
