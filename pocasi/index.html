@@ -82,40 +82,54 @@ h2{font-family:var(--display);font-size:1.05rem;font-weight:700;margin:0}
 .chip:disabled{opacity:.45;cursor:not-allowed}
 
 /* Hourly strip */
-.hours{padding:16px 0 12px}
-.hours header{display:flex;justify-content:space-between;align-items:baseline;gap:12px;padding:0 16px 10px;flex-wrap:wrap}
+.hours{padding:14px 0 12px}
 .legend{display:flex;gap:14px;font-size:.8rem;color:var(--muted)}
 .legend i{display:inline-block;width:18px;height:0;border-top:3px solid var(--temp);vertical-align:middle;margin-right:5px}
 .legend i.f{border-top-style:dashed;border-top-width:2px;border-color:var(--muted)}
 .scroll{overflow-x:auto;-webkit-overflow-scrolling:touch}
-.strip{position:relative;--col:58px}
-.days{display:flex;height:26px}
-.days div{flex:none;border-left:1px solid var(--line)}
+.strip{--col:50px}
+.days{display:flex}
+.days div{flex:none;border-left:1px solid var(--line);padding-bottom:4px}
 .days div:first-child{border-left:0}
-.days span{position:sticky;left:16px;display:inline-block;padding:2px 10px 0;font-weight:600;font-size:.85rem}
-.cols{display:flex}
-.col{flex:none;width:var(--col);display:flex;flex-direction:column;align-items:center;gap:4px;padding:6px 0 4px;
-  border-left:1px solid transparent}
-.col.mid{border-left-color:var(--line)}
-.col.nowc{background:var(--rain-soft);border-radius:10px}
-.col .h{font-size:.85rem;color:var(--muted)}
+.days span{position:sticky;left:12px;display:inline-block;padding:0 8px;font-weight:600;font-size:.85rem}
+.body{position:relative}
+.hl{position:absolute;left:0;top:0;bottom:0;width:var(--col);background:var(--rain-soft);border-radius:10px}
+.sep{position:absolute;top:0;bottom:0;width:1px;background:var(--line)}
+.cols{display:flex;position:relative}
+.col{flex:none;width:var(--col);display:flex;flex-direction:column;align-items:center;gap:2px;padding:4px 0}
+.col .h{font-size:.82rem;color:var(--muted)}
 .col.nowc .h{color:var(--ink);font-weight:600}
-.col .ico{width:30px;height:30px}
-.gap{height:92px}
-.col .fl{font-size:.8rem;color:var(--muted);text-align:center;line-height:1.15}
-.col .fl b{display:block;color:var(--ink);font-weight:600;font-size:.95rem}
-.bar{width:26px;height:46px;border-radius:6px;background:var(--rain-soft);display:flex;align-items:flex-end;overflow:hidden;margin-top:4px}
+.col .ico{width:26px;height:26px}
+.bar{width:22px;height:32px;border-radius:5px;background:var(--rain-soft);display:flex;align-items:flex-end;overflow:hidden}
 .col.nowc .bar{background:var(--card)}
-.bar i{display:block;width:100%;background:var(--rain);border-radius:6px 6px 0 0}
-.col .pp{font-weight:600;font-size:.9rem;color:var(--rain)}
+.bar i{display:block;width:100%;background:var(--rain);border-radius:5px 5px 0 0}
+.col .pp{font-weight:600;font-size:.85rem;color:var(--rain)}
 .col .pp.low{color:var(--muted);font-weight:500}
-.col .mm{font-size:.72rem;color:var(--muted);min-height:1em}
-.curve{position:absolute;left:0;top:96px;pointer-events:none}
+.col .mm{font-size:.68rem;color:var(--muted);min-height:1.2em}
+.curve{display:block;position:relative}
 .curve .t{fill:none;stroke:var(--temp);stroke-width:3;stroke-linejoin:round;stroke-linecap:round}
 .curve .f{fill:none;stroke:var(--muted);stroke-width:2;stroke-dasharray:4 5;stroke-linecap:round}
 .curve circle{fill:var(--card);stroke:var(--temp);stroke-width:2}
 .curve text{fill:var(--ink);font:600 14px var(--body);text-anchor:middle;font-variant-numeric:tabular-nums}
-.rowlab{padding:8px 16px 0;font-size:.8rem;color:var(--muted)}
+.curve text.ft{fill:var(--muted);font-weight:500;font-size:12px}
+
+/* Daily */
+.daily{padding:14px 0 12px}
+.daily header,.hours header{display:flex;justify-content:space-between;align-items:baseline;gap:12px;padding:0 16px 8px;flex-wrap:wrap}
+.dl{display:flex}
+.dday{flex:none;min-width:7.4em;padding:0 10px;border-left:1px solid var(--line);text-align:center}
+.dday:first-child{border-left:0}
+.dday .dn{font-weight:600;font-size:.9rem;text-align:left}
+.dday .dn span{color:var(--muted);font-weight:500}
+.halves{display:flex;justify-content:space-around;gap:6px;margin-top:4px}
+.half{display:flex;flex-direction:column;align-items:center;min-width:2.8em}
+.half .ico{width:30px;height:30px}
+.half b{font-family:var(--display);font-size:1.3rem;font-weight:700;line-height:1.2}
+.half.n b{color:var(--muted);font-weight:500}
+.half .pp{font-size:.8rem;font-weight:600;color:var(--rain)}
+.half .pp.low{color:var(--muted);font-weight:500}
+.dday .mm{font-size:.72rem;color:var(--muted);min-height:1.2em;margin-top:2px}
+.rowlab{padding:6px 16px 0;font-size:.8rem;color:var(--muted)}
 
 /* Compare */
 .cmp{padding:16px}
@@ -128,6 +142,7 @@ th{font-weight:500;color:var(--muted);font-size:.78rem;border-top:0;white-space:
 th:first-child,td:first-child{text-align:left}
 tbody tr{cursor:pointer}
 tbody tr.sel td:first-child{color:var(--accent);font-weight:600}
+td small{display:block;color:var(--muted);font-weight:400;font-size:.72rem;white-space:normal;line-height:1.2}
 td.r{color:var(--rain);font-weight:600}
 
 .msg{padding:14px 16px;border-radius:12px;background:var(--card);border:1px solid var(--line)}
@@ -181,10 +196,16 @@ footer a{color:var(--accent)}
   <div class="models" id="models" role="group" aria-label="Předpovědní model"></div>
 
   <section class="card hours">
-    <header><h2>Hodinu po hodině, 48 hodin</h2>
+    <header><h2>Hodinová</h2>
       <div class="legend"><span><i></i>teplota</span><span><i class="f"></i>pocitová</span></div></header>
     <div class="scroll" id="scroll"><div class="strip" id="strip"></div></div>
     <div class="rowlab" id="ppnote">Sloupec ukazuje pravděpodobnost srážek, pod ním úhrn v mm.</div>
+  </section>
+
+  <section class="card daily">
+    <header><h2>Denní</h2><div class="legend"><span>den / noc</span></div></header>
+    <div class="scroll"><div class="dl" id="daily"></div></div>
+    <div class="rowlab" id="dnote"></div>
   </section>
 
   <section class="card cmp">
@@ -197,7 +218,7 @@ footer a{color:var(--accent)}
   </section>
 
   <footer><span id="upd"></span><button type="button" id="refresh">Obnovit</button>
-    <span>Data: <a href="https://open-meteo.com/" target="_blank" rel="noopener">Open-Meteo</a> (DWD, ČHMÚ, ECMWF, NOAA, Météo-France)</span></footer>
+    <span>Data: <a href="https://open-meteo.com/" target="_blank" rel="noopener">Open-Meteo</a> (DWD, ČHMÚ, ECMWF, NOAA, Météo-France, Met Office) a <a href="https://www.yr.no/" target="_blank" rel="noopener">MET Norway</a></span></footer>
 </main>
 
 <script>
@@ -206,12 +227,14 @@ const MODELS = [
   {id:"best_match",           name:"Nejlepší mix",  src:"Open-Meteo vybere podle místa"},
   {id:"icon_seamless",        name:"ICON",          src:"DWD, Německo, až 2 km"},
   {id:"chmi_aladin_seamless", name:"ALADIN",        src:"ČHMÚ, až 1 km"},
+  {id:"metno",                name:"Yr.no",         src:"MET Norway", metno:true},
   {id:"ecmwf_ifs025",         name:"ECMWF IFS",     src:"Evropské centrum"},
+  {id:"ukmo_seamless",        name:"UKMO",          src:"Met Office, Británie"},
   {id:"meteofrance_seamless", name:"AROME/ARPEGE",  src:"Météo-France"},
   {id:"gfs_seamless",         name:"GFS",           src:"NOAA, USA"}
 ];
 const VARS = "temperature_2m,apparent_temperature,precipitation_probability,precipitation,weather_code,wind_speed_10m,wind_gusts_10m,relative_humidity_2m,is_day";
-const HOURS = 48, COL = 58;
+const HOURS = 48, COL = 50, DAYS = 7;
 const DEFAULT_PLACE = {name:"Praha", sub:"Česko", lat:50.088, lon:14.4208};
 const $ = id => document.getElementById(id);
 const store = {
@@ -227,14 +250,14 @@ const deg = v => has(v) ? (Math.round(v) || 0) + "°" : "–";
 const WMO = {0:"Jasno",1:"Skoro jasno",2:"Polojasno",3:"Zataženo",45:"Mlha",48:"Mrznoucí mlha",51:"Slabé mrholení",53:"Mrholení",55:"Silné mrholení",
   56:"Mrznoucí mrholení",57:"Mrznoucí mrholení",61:"Slabý déšť",63:"Déšť",65:"Silný déšť",66:"Mrznoucí déšť",67:"Silný mrznoucí déšť",
   71:"Slabé sněžení",73:"Sněžení",75:"Silné sněžení",77:"Sněhová zrna",80:"Slabé přeháňky",81:"Přeháňky",82:"Silné přeháňky",
-  85:"Sněhové přeháňky",86:"Silné sněhové přeháňky",95:"Bouřka",96:"Bouřka s kroupami",99:"Silná bouřka s kroupami"};
+  68:"Déšť se sněhem",85:"Sněhové přeháňky",86:"Silné sněhové přeháňky",95:"Bouřka",96:"Bouřka s kroupami",99:"Silná bouřka s kroupami"};
 function iconId(code, day){
   if(!has(code)) return "i-cloud";
   if(code <= 1) return day ? "i-sun" : "i-moon";
   if(code === 2) return day ? "i-pday" : "i-pnight";
   if(code === 3) return "i-cloud";
   if(code <= 48) return "i-fog";
-  if(code === 56 || code === 57 || code === 66 || code === 67) return "i-sleet";
+  if(code === 56 || code === 57 || code === 66 || code === 67 || code === 68) return "i-sleet";
   if(code <= 55) return "i-drizzle";
   if(code <= 65) return "i-rain";
   if(code <= 77) return "i-snow";
@@ -252,33 +275,82 @@ async function getJSON(url){
   return j;
 }
 
-async function fetchModel(model, p){
+function nowLocal(offset){ return new Date(Date.now() + offset * 1000).toISOString().slice(0, 13) + ":00"; }
+function finish(slots, offset){
+  const nowStr = nowLocal(offset);
+  const rows = slots.filter(s => s.span === 1 && s.time >= nowStr).slice(0, HOURS);
+  if(!rows.some(r => has(r.t))) throw new Error("Model pro toto místo nemá data");
+  return { rows, slots, offset, today: nowStr.slice(0, 10), ppOwn: slots.some(r => has(r.pp)) };
+}
+
+async function fetchOM(model, p){
   const url = "https://api.open-meteo.com/v1/forecast?latitude=" + p.lat.toFixed(4) + "&longitude=" + p.lon.toFixed(4) +
-    "&hourly=" + VARS + "&models=" + model + "&forecast_days=3&timezone=auto&wind_speed_unit=ms";
+    "&hourly=" + VARS + "&models=" + model + "&forecast_days=" + DAYS + "&timezone=auto&wind_speed_unit=ms";
   const j = await getJSON(url);
   const h = j.hourly || {};
   const col = k => h[k] || h[k + "_" + model] || [];
   const times = h.time || [];
-  const nowStr = new Date(Date.now() + (j.utc_offset_seconds || 0) * 1000).toISOString().slice(0, 13) + ":00";
-  let start = times.findIndex(t => t >= nowStr);
-  if(start < 0) start = 0;
   const c = { t:col("temperature_2m"), f:col("apparent_temperature"), pp:col("precipitation_probability"), mm:col("precipitation"),
     code:col("weather_code"), w:col("wind_speed_10m"), g:col("wind_gusts_10m"), rh:col("relative_humidity_2m"), day:col("is_day") };
-  const rows = [];
-  for(let i = start; i < Math.min(times.length, start + HOURS); i++){
+  const slots = [];
+  for(let i = 0; i < times.length; i++){
+    if(!has(c.t[i])) continue;
     const hr = +times[i].slice(11, 13);
-    rows.push({ time:times[i], hr, t:c.t[i], f:c.f[i], pp:c.pp[i], mm:c.mm[i], code:c.code[i], w:c.w[i], g:c.g[i], rh:c.rh[i],
-      day: has(c.day[i]) ? !!c.day[i] : (hr >= 7 && hr < 19) });
+    slots.push({ time:times[i], hr, span:1, t:c.t[i], tmax:c.t[i], tmin:c.t[i], f:c.f[i], pp:c.pp[i], mm:c.mm[i], code:c.code[i],
+      w:c.w[i], g:c.g[i], rh:c.rh[i], day: has(c.day[i]) ? !!c.day[i] : (hr >= 7 && hr < 19) });
   }
-  if(!rows.some(r => has(r.t))) throw new Error("Model pro toto místo nemá data");
-  return { rows, today: nowStr.slice(0, 10), ppOwn: rows.some(r => has(r.pp)) };
+  return finish(slots, j.utc_offset_seconds || 0);
+}
+
+/* MET Norway (yr.no) */
+function symToCode(s){
+  if(!s) return null;
+  const b = s.replace(/_(day|night|polartwilight)$/, ""), light = b.startsWith("light"), heavy = b.startsWith("heavy"), sh = b.includes("showers");
+  if(b.includes("thunder")) return 95;
+  if(b.includes("sleet")) return 68;
+  if(b.includes("snow")) return sh ? (heavy ? 86 : 85) : (light ? 71 : heavy ? 75 : 73);
+  if(b.includes("rain")) return sh ? (light ? 80 : heavy ? 82 : 81) : (light ? 61 : heavy ? 65 : 63);
+  if(b === "fog") return 45;
+  if(b === "cloudy") return 3;
+  if(b === "partlycloudy") return 2;
+  if(b === "fair") return 1;
+  if(b === "clearsky") return 0;
+  return 3;
+}
+function feels(t, rh, w){
+  if(!has(t) || !has(rh) || !has(w)) return null;
+  const e = rh / 100 * 6.105 * Math.exp(17.27 * t / (237.7 + t));
+  return t + 0.33 * e - 0.7 * w - 4;
+}
+async function fetchMetno(p, offsetP){
+  const [j, offset] = await Promise.all([
+    getJSON("https://api.met.no/weatherapi/locationforecast/2.0/complete?lat=" + p.lat.toFixed(4) + "&lon=" + p.lon.toFixed(4)), offsetP]);
+  const slots = [];
+  for(const e of (j.properties && j.properties.timeseries) || []){
+    const d = e.data || {}, i = (d.instant && d.instant.details) || {};
+    const n = d.next_1_hours || d.next_6_hours; if(!n || !has(i.air_temperature)) continue;
+    const span = d.next_1_hours ? 1 : 6, nd = n.details || {}, sym = n.summary && n.summary.symbol_code;
+    const time = new Date(Date.parse(e.time) + offset * 1000).toISOString().slice(0, 16), hr = +time.slice(11, 13);
+    slots.push({ time, hr, span, t:i.air_temperature,
+      tmax: has(nd.air_temperature_max) ? Math.max(nd.air_temperature_max, i.air_temperature) : i.air_temperature,
+      tmin: has(nd.air_temperature_min) ? Math.min(nd.air_temperature_min, i.air_temperature) : i.air_temperature,
+      f: has(i.apparent_air_temperature) ? i.apparent_air_temperature : feels(i.air_temperature, i.relative_humidity, i.wind_speed),
+      pp: nd.probability_of_precipitation, mm: nd.precipitation_amount, code: symToCode(sym),
+      w:i.wind_speed, g:i.wind_speed_of_gust, rh:i.relative_humidity,
+      day: sym && /_night$/.test(sym) ? false : sym && /_day$/.test(sym) ? true : (hr >= 7 && hr < 19) });
+  }
+  return finish(slots, offset);
 }
 
 async function load(){
   const p = state.place || DEFAULT_PLACE;
   const token = ++state.token;
   state.data = {}; state.loading = true; render();
-  await Promise.all(MODELS.map(m => fetchModel(m.id, p)
+  const jobs = {};
+  for(const m of MODELS) if(!m.metno) jobs[m.id] = fetchOM(m.id, p);
+  const offsetP = jobs.best_match.then(d => d.offset).catch(() => -new Date().getTimezoneOffset() * 60);
+  for(const m of MODELS) if(m.metno) jobs[m.id] = fetchMetno(p, offsetP);
+  await Promise.all(MODELS.map(m => jobs[m.id]
     .then(d => { if(token === state.token){ state.data[m.id] = d; render(); } })
     .catch(e => { if(token === state.token){ state.data[m.id] = {error: e.message || "Chyba"}; render(); } })));
   if(token !== state.token) return;
@@ -286,14 +358,60 @@ async function load(){
   state.updated = new Date();
   // Models without their own probability borrow it from the mix.
   const bm = state.data.best_match;
-  if(bm && bm.rows) for(const m of MODELS){
-    const d = state.data[m.id];
-    if(d && d.rows && !d.ppOwn){
-      const byTime = Object.fromEntries(bm.rows.map(r => [r.time, r.pp]));
-      d.rows.forEach(r => { r.pp = byTime[r.time]; });
+  if(bm && bm.rows && bm.ppOwn){
+    const idx = new Map(bm.slots.map((s, i) => [s.time, i]));
+    for(const m of MODELS){
+      const d = state.data[m.id];
+      if(!d || !d.rows || d.ppOwn) continue;
+      d.slots.forEach(s => {
+        const i = idx.get(s.time); if(i === undefined) return;
+        const v = bm.slots.slice(i, i + s.span).map(x => x.pp).filter(has);
+        if(v.length) s.pp = Math.max(...v);
+      });
+      d.ppBorrowed = true;
     }
   }
   render();
+}
+
+/* Half-day aggregation: day 6-18, night 18-6 */
+function sev(c){
+  if(!has(c)) return 0;
+  if(c >= 95) return 6;
+  if((c >= 71 && c <= 77) || c === 85 || c === 86) return 5;
+  if(c === 56 || c === 57 || (c >= 66 && c <= 68)) return 4;
+  if((c >= 61 && c <= 65) || (c >= 80 && c <= 82)) return 3;
+  if(c >= 51 && c <= 55) return 2;
+  return 0;
+}
+function halfCode(ss, wet){
+  const codes = ss.map(s => s.code).filter(has);
+  if(!codes.length) return null;
+  if(wet){ const w = codes.filter(c => sev(c) > 0); if(w.length) return w.reduce((a, c) => sev(c) > sev(a) || (sev(c) === sev(a) && c > a) ? c : a); }
+  const cnt = {}; let best = null;
+  codes.forEach(c => { const k = sev(c) > 0 ? 3 : c; cnt[k] = (cnt[k] || 0) + 1; });
+  for(const k in cnt) if(best === null || cnt[k] > cnt[best] || (cnt[k] === cnt[best] && +k > +best)) best = k;
+  return +best;
+}
+function daily(d){
+  const map = new Map();
+  for(const s of d.slots){
+    let date = s.time.slice(0, 10), part = s.hr >= 6 && s.hr < 18 ? "d" : "n";
+    if(s.hr < 6) date = new Date(Date.parse(date + "T00:00Z") - 864e5).toISOString().slice(0, 10);
+    if(date < d.today) continue;
+    if(!map.has(date)) map.set(date, {date, d:[], n:[]});
+    map.get(date)[part].push(s);
+  }
+  const agg = (ss, isDay) => {
+    if(ss.reduce((a, s) => a + s.span, 0) < 6) return null;
+    const pps = ss.map(s => s.pp).filter(has), mm = ss.reduce((a, s) => a + (has(s.mm) ? s.mm : 0), 0);
+    const pp = pps.length ? Math.max(...pps) : null;
+    return { temp: isDay ? Math.max(...ss.map(s => s.tmax)) : Math.min(...ss.map(s => s.tmin)), pp, mm,
+      code: halfCode(ss, mm >= 0.3 || (pp !== null && pp >= 50)) };
+  };
+  return [...map.values()].sort((a, b) => a.date < b.date ? -1 : 1)
+    .map(x => ({date:x.date, day:agg(x.d, true), night:agg(x.n, false)}))
+    .filter(x => x.day || x.night).slice(0, DAYS);
 }
 
 function current(){
@@ -354,50 +472,64 @@ function renderModels(){
 function renderStrip(){
   const d = current(), el = $("strip");
   if(!d){ el.innerHTML = `<div class="rowlab">${state.loading ? "Načítám…" : "Žádná data."}</div>`; return; }
-  const rows = d.rows, W = rows.length * COL, H = 92;
-  // day segments
+  const rows = d.rows, W = rows.length * COL, H = 86;
   const segs = [];
   rows.forEach(r => { const k = r.time.slice(0, 10); const s = segs[segs.length - 1]; if(s && s.k === k) s.n++; else segs.push({k, n:1}); });
   const days = segs.map(s => `<div style="width:${s.n * COL}px"><span>${dayName(s.k, d.today)}</span></div>`).join("");
-  // curve
   const vals = rows.flatMap(r => [r.t, r.f]).filter(has);
   const lo = Math.min(...vals), hi = Math.max(...vals), span = Math.max(hi - lo, 4);
-  const y = v => 26 + (1 - (v - lo) / span) * (H - 26 - 10);
+  const y = v => 24 + (1 - (v - lo) / span) * (H - 24 - 20);
   const x = i => i * COL + COL / 2;
   const path = key => { let s = "", pen = false; rows.forEach((r, i) => { if(has(r[key])){ s += (pen ? "L" : "M") + x(i) + " " + y(r[key]).toFixed(1); pen = true; } else pen = false; }); return s; };
   let marks = "";
   rows.forEach((r, i) => { if(!has(r.t)) return;
-    const top = Math.min(y(r.t), has(r.f) ? y(r.f) : 999);
-    marks += `<circle cx="${x(i)}" cy="${y(r.t).toFixed(1)}" r="3.5"/><text x="${x(i)}" y="${(top - 9).toFixed(1)}">${deg(r.t)}</text>`; });
+    const yt = y(r.t), yf = has(r.f) ? y(r.f) : yt;
+    marks += `<circle cx="${x(i)}" cy="${yt.toFixed(1)}" r="3.5"/><text x="${x(i)}" y="${(Math.min(yt, yf) - 8).toFixed(1)}">${deg(r.t)}</text>`;
+    if(has(r.f)) marks += `<text class="ft" x="${x(i)}" y="${(Math.max(yt, yf) + 16).toFixed(1)}">${deg(r.f)}</text>`; });
   const curve = `<svg class="curve" width="${W}" height="${H}" viewBox="0 0 ${W} ${H}" role="img" aria-label="Křivka teploty a pocitové teploty"><path class="f" d="${path("f")}"/><path class="t" d="${path("t")}"/>${marks}</svg>`;
-  const cols = rows.map((r, i) => {
-    const pp = has(r.pp) ? Math.round(r.pp) : null;
+  let top = "", bot = "", seps = "";
+  rows.forEach((r, i) => {
+    const pp = has(r.pp) ? Math.round(r.pp) : null, cls = i === 0 ? " nowc" : "";
     const mm = has(r.mm) && r.mm >= 0.05 ? (r.mm < 10 ? r.mm.toFixed(1).replace(".", ",") : Math.round(r.mm)) + " mm" : "";
-    return `<div class="col${i === 0 ? " nowc" : ""}${r.hr === 0 && i > 0 ? " mid" : ""}">
-      <span class="h num">${i === 0 ? "Teď" : r.hr + ":00"}</span>${icon(r.code, r.day)}
-      <div class="gap"></div>
-      <span class="fl">pocit<b class="num">${deg(r.f)}</b></span>
-      <div class="bar" title="Pravděpodobnost srážek"><i style="height:${pp || 0}%"></i></div>
-      <span class="pp num${pp !== null && pp < 20 ? " low" : ""}">${pp === null ? "–" : pp + " %"}</span>
-      <span class="mm num">${mm}</span></div>`;
-  }).join("");
+    if(r.hr === 0 && i > 0) seps += `<i class="sep" style="left:${i * COL}px"></i>`;
+    top += `<div class="col${cls}"><span class="h num">${i === 0 ? "Teď" : r.hr + ":00"}</span>${icon(r.code, r.day)}</div>`;
+    bot += `<div class="col${cls}"><div class="bar" title="Pravděpodobnost srážek"><i style="height:${pp || 0}%"></i></div>
+      <span class="pp num${pp !== null && pp < 20 ? " low" : ""}">${pp === null ? "–" : pp + " %"}</span><span class="mm num">${mm}</span></div>`;
+  });
   const keep = $("scroll").scrollLeft;
   el.style.width = W + "px";
-  el.innerHTML = `<div class="days">${days}</div><div class="cols">${cols}</div>${curve}`;
+  el.innerHTML = `<div class="days">${days}</div><div class="body"><i class="hl"></i>${seps}<div class="cols">${top}</div>${curve}<div class="cols">${bot}</div></div>`;
   $("scroll").scrollLeft = state.resetScroll ? 0 : keep; state.resetScroll = false;
-  $("ppnote").textContent = d.ppOwn === false && state.model !== "best_match"
-    ? "Tento model pravděpodobnost srážek neudává. Sloupec ji bere z mixu modelů, úhrn v mm je z modelu."
-    : "Sloupec ukazuje pravděpodobnost srážek, pod ním úhrn v mm.";
+  $("ppnote").textContent = "Nahoře teplota, šedě pocitová. Sloupec je pravděpodobnost srážek, pod ním úhrn." +
+    (d.ppBorrowed ? " Tento model pravděpodobnost neudává, beru ji z mixu modelů." : "");
+}
+
+function renderDaily(){
+  const d = current(), el = $("daily");
+  if(!d){ el.innerHTML = `<div class="rowlab">${state.loading ? "Načítám…" : "Žádná data."}</div>`; $("dnote").textContent = ""; return; }
+  const list = daily(d), wd = ["Ne","Po","Út","St","Čt","Pá","So"];
+  const half = (h, isDay) => !h ? `<div class="half${isDay ? "" : " n"}"><b>–</b></div>` :
+    `<div class="half${isDay ? "" : " n"}">${icon(h.code, isDay)}<b class="num">${deg(h.temp)}</b>
+     <span class="pp num${h.pp !== null && h.pp < 20 ? " low" : ""}">${h.pp === null ? "" : Math.round(h.pp) + " %"}</span></div>`;
+  el.innerHTML = list.map(x => {
+    const dt = new Date(Date.parse(x.date + "T00:00Z")), mm = (x.day ? x.day.mm : 0) + (x.night ? x.night.mm : 0);
+    const name = x.date === d.today ? "Dnes" : wd[dt.getUTCDay()];
+    return `<div class="dday"><div class="dn">${name} <span class="num">${dt.getUTCDate()}.</span></div>
+      <div class="halves">${half(x.day, true)}${half(x.night, false)}</div>
+      <div class="mm num">${mm >= 0.05 ? mm.toFixed(1).replace(".", ",") + " mm" : ""}</div></div>`;
+  }).join("");
+  $("dnote").textContent = "Den je 6 až 18 h s nejvyšší teplotou, noc 18 až 6 h s nejnižší." +
+    (list.length < 5 ? " Tento model počítá jen " + list.length + " dny dopředu." : "");
 }
 
 function renderCmp(){
   $("cmp").innerHTML = MODELS.map(m => {
     const d = state.data[m.id];
-    if(!d) return `<tr data-m="${m.id}"><td>${esc(m.name)}</td><td colspan="5" class="muted">načítám…</td></tr>`;
-    if(d.error) return `<tr><td>${esc(m.name)}</td><td colspan="5" class="muted">nedostupný</td></tr>`;
+    if(!d) return `<tr data-m="${m.id}"><td>${esc(m.name)}<small>${esc(m.src)}</small></td><td colspan="5" class="muted">načítám…</td></tr>`;
+    if(d.error) return `<tr><td>${esc(m.name)}<small>${esc(m.src)}</small></td><td colspan="5" class="muted">nedostupný</td></tr>`;
     const rs = d.rows, ts = rs.map(r => r.t).filter(has), pps = rs.map(r => r.pp).filter(has);
     const sum = rs.reduce((a, r) => a + (has(r.mm) ? r.mm : 0), 0);
-    return `<tr data-m="${m.id}" class="${m.id === state.model ? "sel" : ""}"><td>${esc(m.name)}</td>
+    return `<tr data-m="${m.id}" class="${m.id === state.model ? "sel" : ""}"><td>${esc(m.name)}<small>${esc(m.src)}</small></td>
       <td class="num">${deg(rs[0].t)}</td><td class="num">${deg(rs[0].f)}</td>
       <td class="num">${deg(Math.min(...ts))} / ${deg(Math.max(...ts))}</td>
       <td class="num r">${pps.length ? Math.round(Math.max(...pps)) + " %" : "–"}</td>
@@ -406,7 +538,7 @@ function renderCmp(){
 }
 
 function render(){
-  renderNow(); renderModels(); renderStrip(); renderCmp();
+  renderNow(); renderModels(); renderStrip(); renderDaily(); renderCmp();
   const all = MODELS.every(m => state.data[m.id] && state.data[m.id].error);
   if(all && !state.loading) notice("Předpověď se nepodařilo načíst (" + state.data.best_match.error + "). Zkontrolujte připojení a zkuste to znovu.", true, true);
   $("upd").textContent = state.updated ? "Aktualizováno " + state.updated.toLocaleTimeString("cs-CZ", {hour:"2-digit", minute:"2-digit"}) : "";
