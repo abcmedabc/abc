@@ -2472,7 +2472,10 @@ const lyId = L => cueKey(L) + "|" + fnv(lyNorm(L.lyrics));
 function lyTimes(L) {
   if (!L.lyrics) return null;
   const id = lyId(L), m = musicFor(L);
-  return lySync[id] || (m && m.sync && m.sync[id.split("|")[1]]) || null;
+  if (lySync[id]) return lySync[id];
+  const raw = m && m.sync && m.sync[id.split("|")[1]];   // music.json counts only the non-empty lyric lines
+  if (!raw) return null;
+  let j = 0; return L.lyrics.split("\n").map(x => x.trim() ? (raw[j++] ?? null) : null);
 }
 let song = null;   // the song now playing: { L, pos() }
 let lySendT = null;
