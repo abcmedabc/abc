@@ -1071,11 +1071,12 @@ METALÁK: Čus! Jedeme kolem s Vepřoněma na turné a tak mě napadlo, že by m
         const before = line.slice(0, m.index), after = line.slice(m.index + m[0].length);
         if (before.trim()) pushStage(before);
         const c = m[1]; const t = /^(\d+)\s*[-–.:]?\s*(.*)$/.exec(c);
+        const quiet = /-\s*10\s*$/.test(c);
         const title = normText((t ? t[2] : c).replace(/\s*-\s*\d+\s*$/, "")) || "Hudba";
         const fx = /^(stáhnout|stahnout|ztišit|vypnout)/i.test(title) ? null : (CUE_FX.find(([re]) => re.test(title)) || [])[1] || null;
         const tech = !t && /^(stáhnout|stahnout|ztišit|zesílit|opět|pustit|vypnout)/i.test(title);
         const ann = `Hudba${/^(hudba|píseň|song)$/i.test(title) ? "" : ": " + title.replace(/\s*\(pokračuje\)/, "")}.`;
-        cue = { kind: tech ? "tech" : "cue", who: "song", track: t ? t[1] : "", title, lyrics: "", fx,
+        cue = { kind: tech ? "tech" : "cue", who: "song", track: t ? t[1] : "", title, lyrics: "", fx, quiet,
                 segs: [tech || fx ? { type: "cue" } : { type: "cue", text: ann, key: hashKey("vypravec|" + ann) }] };
         push(cue);
         if (after.trim()) { pushStage(after); prev = "blank"; } else prev = "cue";
@@ -1509,15 +1510,16 @@ let music = {};
 const normCue = x => (x || "").toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/\(pokracuje\)/g, "").replace(/[^a-z0-9]+/g, " ").trim();
 const cueKey = L => L.track ? "t" + (+L.track) : "n:" + normCue(L.title);
 const musicFor = L => (L && L.kind === "cue" && !L.fx && music[cueKey(L)]) || null;
+const ambFor = L => (L && L.kind === "cue" && L.fx && L.track && music[cueKey(L)]) || null;   // a recorded sound effect: plays under the dialogue
 fetch("music.json", { cache: "no-store" }).then(r => r.ok ? r.json() : {}).then(m => {
   music = m || {};
   const all = new Set(), have = new Set();
-  ORDER.forEach(id => ACTS[id].lines.forEach(L => { if (L.kind === "cue" && !L.fx) { all.add(cueKey(L)); if (music[cueKey(L)]) have.add(cueKey(L)); } }));
+  ORDER.forEach(id => ACTS[id].lines.forEach(L => { if (L.kind === "cue" && L.track) { all.add(cueKey(L)); if (music[cueKey(L)]) have.add(cueKey(L)); } }));
   const el = document.getElementById("musicInfo");
-  if (el && have.size) el.textContent = `Nahraná hudba: ${have.size} z ${all.size} písniček – ostatní se jen přečtou.`;
+  if (el && have.size) el.textContent = `Nahraná hudba a zvuky: ${have.size} z ${all.size} – ostatní se jen přečtou nebo zahrají vygenerovaným zvukem.`;
   document.querySelectorAll("#script li.cue").forEach(li => markMusic(li));
 }).catch(() => {});
-function markMusic(li) { const L = li && li._L; if (L && musicFor(L)) li.classList.add("has-music"); }
+function markMusic(li) { const L = li && li._L; if (L && (musicFor(L) || ambFor(L))) li.classList.add("has-music"); }
 fetch("manifest.json", { cache: "no-store" }).then(r => r.ok ? r.json() : {}).then(m => { manifest = m || {}; computeStudio(); buildCast(); }).catch(() => {});
 const keyRole = {};
 ORDER.forEach(id => ACTS[id].lines.forEach(L => L.segs.forEach(s => { if (s.key) keyRole[s.key] = s.type === "say" ? L.who : "vypravec"; (s.also || []).forEach(a => keyRole[a.key] = a.who); })));
@@ -2375,6 +2377,33 @@ async function playClip(src, t, at, dur) {
     });
   } catch (e) { return false; }
 }
+// background sound (farm, phone ringing…): starts at its cue and keeps playing under the dialogue until a „stáhnout / ztišit /
+// vypnout“ cue, the end of the act, a stop or its own end. „-10“ in the cue title = 10 dB quieter. „opět pustit“ restarts it.
+let amb = null, ambLast = null;
+function ambStop(fade = 0) {
+  const A = amb; amb = null; if (!A) return;
+  if (!fade) return A.kill();
+  const t0 = performance.now(), v0 = A.vol, iv = setInterval(() => { const k = 1 - (performance.now() - t0) / (fade * 1000); if (k <= 0) { clearInterval(iv); A.kill(); } else A.set(v0 * k); }, 80);
+}
+async function ambStart(src, vol, maxSec) {
+  ambStop(0.5); ambLast = { src, vol, maxSec };
+  const A = { vol, set() {}, kill() {} }; amb = A;
+  try {
+    if (carOn()) {
+      const el = new Audio(await rawUrl(src)); if (amb !== A) return;
+      el.volume = vol; A.set = v => { try { el.volume = Math.max(0, v); } catch (e) {} }; A.kill = () => { el.pause(); el.removeAttribute("src"); el.load(); };
+      el.addEventListener("ended", () => { if (amb === A) amb = null; });
+      el.play().catch(() => {});
+    } else {
+      const a = audio(), buf = await getBuf(src); if (amb !== A) return;
+      const n = a.createBufferSource(), g = a.createGain(); n.buffer = buf; g.gain.value = vol; n.connect(g); g.connect(a.master || a.destination);
+      A.set = v => { g.gain.value = Math.max(0, v); }; A.kill = () => { try { n.stop(); } catch (e) {} };
+      n.onended = () => { if (amb === A) amb = null; };
+      n.start();
+    }
+    if (maxSec) setTimeout(() => { if (amb === A) ambStop(2); }, maxSec * 1000);
+  } catch (e) { if (amb === A) amb = null; }
+}
 // a song: through the media element in car mode (like the voices), otherwise Web Audio; `len` = only the beginning, faded out
 async function playMusic(src, t, len) {
   const FADE = 2;
@@ -2560,7 +2589,15 @@ async function playFrom(i, from) {
           if (s.fx && (mine || myStage(L, s))) await yourSound(s.fx, span, t);   // learning: the sound is yours to make
           else await wait(Math.max(s.fx ? playFx(s.fx) : 0, opts.readDirs && !myDir ? 200 : 450));
         } else if (s.type === "cue" && (L.kind === "tech" || L.fx)) {
-          if (L.fx) await wait(playFx(L.fx) || 800);
+          const recorded = ambFor(L), mode = opts.music || "full";
+          if (L.kind === "tech") {
+            if (/^(stáhnout|stahnout|ztišit|vypnout)/i.test(L.title)) ambStop(3);
+            else if (/^(opět|pustit)/i.test(L.title) && ambLast && mode !== "skip" && mode !== "say") ambStart(ambLast.src, ambLast.vol, ambLast.maxSec);
+            await wait(300);
+          } else if (recorded && mode !== "say" && mode !== "skip") {
+            ambStart(recorded.src, /-\s*10\b/.test(L.raw || L.title) || L.quiet ? 0.32 : 0.6, /zvon|mobil/i.test(L.title) ? 8 : null);
+            await wait(1500);
+          } else if (L.fx) await wait(playFx(L.fx) || 800);
         } else if (s.type === "cue") {
           if (opts.stopAtMusic) {
             playing = false; renderBtn();
@@ -2587,6 +2624,7 @@ async function playFrom(i, from) {
       await wait(350);
     }
     if (t !== token) return;
+    ambStop(3);
     if (opts.loopAct) { await wait(1500); if (t !== token) return; showAct(actId, true); i = 0; continue; }   // „Jednání pořád dokola“
     const nx = nextAct();
     if (!nx) { playing = false; cur = 0; renderBtn(); document.getElementById("now").textContent = "Konec hry"; return; }
@@ -2598,7 +2636,7 @@ async function playFrom(i, from) {
   }
 }
 function stop(silent) {
-  token++;
+  token++; ambStop(0);
   if (hasTTS) synth.cancel();
   playingSrcs.forEach((done, src) => { try { src.onended = null; src.stop(); } catch (e) {} done(); }); playingSrcs.clear();
   document.querySelectorAll(".speaking").forEach(s => s.classList.remove("speaking"));
