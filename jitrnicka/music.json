@@ -33,7 +33,8 @@
   "src": "music/t14_afrika-jelitko_eec79c7c.mp3",
   "title": "AFRIKA jelítko",
   "dur": 43.68,
-  "from": "548b90bc-14-AFRIKA_jel_tko.wav"
+  "from": "548b90bc-14-AFRIKA_jel_tko.wav",
+  "sync": {}
  },
  "t6": {
   "src": "music/t6_ezo-podcast-3x_0ec11b33.mp3",
@@ -75,13 +76,29 @@
   "src": "music/t15_afrika-refren_c53fa1e7.mp3",
   "title": "AFRIKA refren",
   "dur": 40.49,
-  "from": "a7a62884-15-AFRIKA_refren.wav"
+  "from": "a7a62884-15-AFRIKA_refren.wav",
+  "sync": {
+   "628ff7da": [
+    11.32,
+    18.56,
+    25.88
+   ]
+  }
  },
  "t13": {
   "src": "music/t13_afrika-pastika_91e70783.mp3",
   "title": "AFRIKA paštika",
   "dur": 43.68,
-  "from": "b7090084-13-AFRIKA_pastika.wav"
+  "from": "b7090084-13-AFRIKA_pastika.wav",
+  "sync": {
+   "d7aee4ef": [
+    11.22,
+    13.78,
+    16.2,
+    22.22,
+    25.74
+   ]
+  }
  },
  "t3": {
   "src": "music/t10_efekt-farma-chlivek_412dc448.mp3",

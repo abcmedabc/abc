@@ -299,6 +299,8 @@ details.sub[open] > summary ~ * { margin-top: 8px; }
 .cue-title .n { margin-left: auto; font-family: var(--body); font-weight: 400; font-size: 13px; color: var(--muted); font-variant-numeric: tabular-nums; }
 .sndpick { font: 12px/1.2 var(--body, inherit); margin-left: 8px; padding: 2px 4px; border-radius: 6px; border: 1px solid var(--line, currentColor); background: transparent; color: inherit; max-width: 100%; vertical-align: middle; }
 li.cue.has-music .cue-title > span:not(.track):not(.eq)::after { content: " ▶"; font-size: .8em; opacity: .7; }
+.ly.cur { color: var(--ink); font-weight: 700; background: color-mix(in srgb, var(--song, #5f7a2a) 18%, transparent); border-radius: 4px; }
+.lyrics.timing .ly { text-decoration: underline dotted; cursor: pointer; }
 .lyrics { white-space: pre-line; margin: 6px 0 0; font-size: 15px; color: var(--muted); }
 .eq { display: none; gap: 2px; align-items: flex-end; height: 12px; }
 .line.active .eq { display: inline-flex; }
@@ -375,7 +377,8 @@ li.cue.has-music .cue-title > span:not(.track):not(.eq)::after { content: " ▶"
     <label for="opt-stop"><input type="checkbox" id="opt-stop"> Zastavit u hudby</label>
     <div class="carbox" id="musicbox">
       <b>Hudba</b>
-      <label for="opt-music" class="sel">Písničky <select id="opt-music"><option value="full">zahrát celé</option><option value="intro">zahrát začátek</option><option value="say">jen přečíst název</option><option value="skip">přeskočit</option></select></label>
+      <label for="opt-music" class="sel">Písničky <select id="opt-music"><option value="full">nahrávka – celá</option><option value="intro">nahrávka – jen začátek</option><option value="say">jen scénická poznámka („Hudba: …“)</option><option value="skip">přeskočit</option></select></label>
+      <span class="carkey">U každé písničky ve scénáři jde nastavení změnit (rozbalovací menu u názvu).</span>
       <label for="opt-musiclen" class="learn-x" id="musiclenRow"><span>Délka začátku písničky</span><input type="range" id="opt-musiclen" min="5" max="90" step="5" value="20"><output id="musiclenVal">20 s</output></label>
       <span class="carkey" id="musicInfo">Nahraná hudba: zatím žádná – písničky bez nahrávky se jen přečtou.</span>
     </div>
@@ -1289,6 +1292,8 @@ function hideRevealed() { clearTimeout(revealTimer); document.querySelectorAll("
 function revealLine(L) { hideRevealed(); L.el.classList.add("revealed"); revealTimer = setTimeout(hideRevealed, 5000); }
 const isMine = L => !!opts.learn && (L.who === opts.learn || (L.with || []).includes(opts.learn));
 function lineTap(L, e) {
+  const ly = e && e.target && e.target.closest && e.target.closest(".ly");
+  if (ly && song && song.L === L && lyTap(L, +ly.dataset.l)) { ly.classList.add("cur"); return; }
   if (!isMine(L)) hideRevealed();
   if (opts.silent) { cur = L.i; setActive(L.i, false); return; }
   if (playing && cur === L.i && isMine(L)) { if (holding) releaseHold(); else holdOn = true; return; }   // my line now: hold / go on
@@ -1376,7 +1381,7 @@ function showAct(id, scrollTop) {
     } else if (L.kind === "cue" && L.fx) {
       body = `<div class="cue-title">🔊 Zvuk ${L.track ? `<span class="track">${esc(L.track)}</span>` : ""}<span>${esc(L.title)}</span><span class="eq"><i></i><i></i><i></i></span>${num}</div>`;
     } else if (L.kind === "cue") {
-      body = `<div class="cue-title">♪ Hudba ${L.track ? `<span class="track">${esc(L.track)}</span>` : ""}<span>${esc(L.title)}</span><span class="eq"><i></i><i></i><i></i></span>${num}</div>${L.lyrics ? `<p class="lyrics">${esc(L.lyrics)}</p>` : ""}`;
+      body = `<div class="cue-title">♪ Hudba ${L.track ? `<span class="track">${esc(L.track)}</span>` : ""}<span>${esc(L.title)}</span><span class="eq"><i></i><i></i><i></i></span>${num}</div>${L.lyrics ? `<p class="lyrics">${L.lyrics.split("\n").map((x, k) => x.trim() ? `<span class="ly" data-l="${k}">${esc(x)}</span>` : "").join("\n")}</p>` : ""}`;
     } else if (L.kind === "stage") {
       body = `<p class="text"><span class="dir" data-k="0">${esc(L.segs[0].text)}</span></p>`;
     } else {
@@ -1542,12 +1547,12 @@ function buildFxRec() {
 let sndPicks = {}; try { sndPicks = JSON.parse(localStorage.getItem("jj-sndpick") || "{}") || {}; } catch (e) { sndPicks = {}; }
 const sndId = L => L.kind === "cue" ? "c:" + cueKey(L) + ":" + L.i + ":" + normCue(L.title).slice(0, 20) : "s:" + (L.segs[0].key || L.segs[0].text.slice(0, 40));
 function sndChoices(L) {
-  if (L.kind === "cue" && !L.fx && musicFor(L)) return [["rec", "▶ nahrávka"], ["name", "jen název"], ["none", "nic"]];
+  if (L.kind === "cue" && !L.fx && musicFor(L)) return [["auto", "podle nastavení"], ["rec", "▶ nahrávka"], ["name", "jen poznámka"], ["none", "nic"]];
   if (L.kind === "cue" && L.fx && ambFor(L)) return [["rec", "▶ nahrávka"], ["gen", "vygenerovaný zvuk"], ["none", "nic"]];
   if (L.kind === "stage" && L.segs[0].fx && fxRec[L.segs[0].fx]) return [["rec", "▶ nahrávka"], ["gen", "vygenerovaný zvuk"], ["none", "nic"]];
   return null;
 }
-const sndPick = L => sndPicks[sndId(L)] || "rec";
+const sndPick = L => sndPicks[sndId(L)] || (L.kind === "cue" && !L.fx ? "auto" : "rec");
 // a short recorded sound, played once over whatever runs (does not stop the background sound)
 async function oneShot(src, maxSec = 8) {
   try {
@@ -2446,19 +2451,60 @@ async function ambStart(src, vol, maxSec) {
   } catch (e) { if (amb === A) amb = null; }
 }
 // a song: through the media element in car mode (like the voices), otherwise Web Audio; `len` = only the beginning, faded out
-async function playMusic(src, t, len) {
+const lyNorm = x => (x || "").toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/[^a-z0-9]+/g, " ").trim();
+const fnv = x => { const b = new TextEncoder().encode(x); let h = 0x811c9dc5; for (const c of b) { h ^= c; h = Math.imul(h, 0x01000193) >>> 0; } return h.toString(16).padStart(8, "0"); };
+let lySync = {}; try { lySync = JSON.parse(localStorage.getItem("jj-lysync") || "{}") || {}; } catch (e) { lySync = {}; }
+const lyId = L => cueKey(L) + "|" + fnv(lyNorm(L.lyrics));
+function lyTimes(L) {
+  if (!L.lyrics) return null;
+  const id = lyId(L), m = musicFor(L);
+  return lySync[id] || (m && m.sync && m.sync[id.split("|")[1]]) || null;
+}
+let song = null;   // the song now playing: { L, pos() }
+let lySendT = null;
+function lyTap(L, k) {   // while the song plays, a tap on a lyric line marks when it starts (saved here, and sent to be built in)
+  if (!song || song.L !== L) return false;
+  const lines = L.lyrics.split("\n"), id = lyId(L), times = (lySync[id] || lyTimes(L) || lines.map(() => null)).slice();
+  times[k] = Math.max(0, Math.round((song.pos() - 0.3) * 100) / 100);
+  lySync[id] = times; try { localStorage.setItem("jj-lysync", JSON.stringify(lySync)); } catch (e) {}
+  clearTimeout(lySendT);
+  lySendT = setTimeout(async () => {
+    if (!dbRef) return;
+    try { let by = ""; try { by = userRef ? await userRef.id() : ""; } catch (e) {}
+      await dbRef.collection("requests").doc("lyr-" + fnv(id)).set({ by, type: "lyrics", key: cueKey(L), lid: id.split("|")[1], title: L.title, times, state: "queued", at: new Date().toISOString() }); } catch (e) {}
+  }, 4000);
+  return true;
+}
+function lyFollow(L, pos) {   // highlight the line being sung, send it to the car display
+  const times = lyTimes(L), el = L.el, lines = L.lyrics ? L.lyrics.split("\n") : [];
+  let k = -1;
+  if (times) times.forEach((x, i) => { if (x != null && x <= pos) k = i; });
+  if (el) el.querySelectorAll(".ly").forEach(sp => sp.classList.toggle("cur", +sp.dataset.l === k));
+  const txt = k >= 0 && lines[k].trim() ? lines[k].trim() : "♪ " + L.title;
+  if (txt !== metaText) { metaKey = "♪" + txt; metaText = txt; metaMine = false; setMeta(); }
+  if (k >= 0 && el) { const sp = el.querySelector(`.ly[data-l="${k}"]`); if (sp) { const r = sp.getBoundingClientRect(); if (r.bottom > innerHeight - 190 || r.top < 70) window.scrollBy({ top: r.top - innerHeight * 0.33, behavior: "smooth" }); } }
+}
+async function playMusic(src, t, len, L) {
   const FADE = 2;
+  let iv = null;
+  const startSong = pos => {
+    if (!L) return;
+    song = { L, pos }; if (L.el) L.el.querySelector(".lyrics")?.classList.add("timing");
+    iv = setInterval(() => { if (t === token) lyFollow(L, pos()); }, 250);
+  };
+  const endSong = () => { clearInterval(iv); if (L && L.el) { L.el.querySelector(".lyrics")?.classList.remove("timing"); L.el.querySelectorAll(".ly.cur").forEach(x => x.classList.remove("cur")); } if (song && song.L === L) song = null; };
   try {
     if (carOn()) {
       let url = src; try { url = await rawUrl(src); } catch (e) {}
       if (t !== token) return;
       let ramp = null;
       await streamClip(url, t, undefined, len || undefined, el => {
+        if (el) startSong(() => el.currentTime);
         if (!el || !len) return;
         const t0 = performance.now();
         ramp = setInterval(() => { const left = len - (performance.now() - t0) / 1000; try { el.volume = Math.max(0, Math.min(1, left / FADE)); } catch (e) {} }, 100);
       });
-      clearInterval(ramp);
+      clearInterval(ramp); endSong();
       return;
     }
     const a = audio(), buf = await getBuf(src);
@@ -2467,10 +2513,12 @@ async function playMusic(src, t, len) {
       const s = a.createBufferSource(), g = a.createGain(); s.buffer = buf; s.connect(g); g.connect(a.master || a.destination);
       playingSrcs.set(s, () => res());
       s.onended = () => { playingSrcs.delete(s); res(); };
+      const t0 = a.currentTime; startSong(() => a.currentTime - t0);
       if (len && len < buf.duration) { const now = a.currentTime; g.gain.setValueAtTime(1, now + Math.max(0, len - FADE)); g.gain.linearRampToValueAtTime(0.0001, now + len); s.start(0, 0, len); }
       else s.start();
     });
-  } catch (e) {}
+    endSong();
+  } catch (e) { endSong(); }
 }
 function prefetch(id) {
   if (!id) return;
@@ -2652,14 +2700,16 @@ async function playFrom(i, from) {
             document.getElementById("now").textContent = `${label(L)} · pak stiskni ▶`;
             return;
           }
-          const pk = sndPick(L), mode = (L.kind === "cue" && musicFor(L) && pk === "none") ? "skip" : (pk === "name" ? "say" : (opts.music || "full")), mf = musicFor(L);
+          const pk = musicFor(L) ? sndPick(L) : "auto", g = opts.music || "full", mf = musicFor(L);
+          const mode = pk === "none" ? "skip" : pk === "name" ? "say" : pk === "rec" ? (g === "intro" ? "intro" : "full") : g;
           if (mode === "skip") { await wait(300); continue; }
           if (mf && mode !== "say") {
             metaKey = "♪" + L.title; metaText = "♪ " + L.title; metaMine = false; setMeta();
-            await playMusic(mf.src, t, mode === "intro" ? (opts.musicLen || 20) : null);
+            await playMusic(mf.src, t, mode === "intro" ? (opts.musicLen || 20) : null, L);
             if (t !== token) return;
             await wait(400); continue;
           }
+          metaKey = "n" + s.text; metaText = s.text; metaMine = false; setMeta();   // car display: the stage note („Hudba: …“)
           if (opts.readDirs) { const src = clipFor(s); if (!(src && await playClip(src, t))) await speak(s.text, "vypravec", t); }
           await wait(800);
         }
