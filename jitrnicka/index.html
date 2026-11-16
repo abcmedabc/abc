@@ -2508,6 +2508,9 @@ async function ambStart(src, vol, maxSec) {
 const lyNorm = x => (x || "").toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/[^a-z0-9]+/g, " ").trim();
 const fnv = x => { const b = new TextEncoder().encode(x); let h = 0x811c9dc5; for (const c of b) { h ^= c; h = Math.imul(h, 0x01000193) >>> 0; } return h.toString(16).padStart(8, "0"); };
 let lySync = {}; try { lySync = JSON.parse(localStorage.getItem("jj-lysync") || "{}") || {}; } catch (e) { lySync = {}; }
+try {   // timings tapped before 16. 11. are built into the page now: drop the old local copies (some had a stray time at the end)
+  if (localStorage.getItem("jj-lysync-v") !== "2") { lySync = {}; localStorage.setItem("jj-lysync", "{}"); localStorage.setItem("jj-lysync-v", "2"); }
+} catch (e) {}
 const lyId = L => cueKey(L) + "|" + fnv(lyNorm(L.lyrics));
 function lyTimes(L) {
   if (!L.lyrics) return null;
@@ -2516,7 +2519,7 @@ function lyTimes(L) {
   let shared = null;   // saved „pro všechny“ from the page: the newest one wins
   Object.values(reqs || {}).forEach(r => { if (r && r.type === "lyrics" && r.scope === "all" && r.key === cueKey(L) && r.lid === lid && (!shared || r.at > shared.at)) shared = r; });
   const full = lySync[id] || (shared && shared.times) || (m && m.tap && m.tap[lid]);   // tapped by hand: one entry per line of the script text
-  if (full) return lines.map((x, i) => x.trim() ? (full[i] ?? null) : null);
+  if (full) { let last = -1; return lines.map((x, i) => { const v = x.trim() ? (full[i] ?? null) : null; if (v == null || v <= last) return null; last = v; return v; }); }   // a time earlier than the line before it is a mis-tap: ignored
   const raw = m && m.sync && m.sync[lid];                  // found automatically: one entry per non-empty line
   if (!raw) return null;
   let j = 0; return lines.map(x => x.trim() ? (raw[j++] ?? null) : null);
