@@ -297,6 +297,7 @@ details.sub[open] > summary ~ * { margin-top: 8px; }
 .cue-title { font-family: var(--display); font-weight: 800; font-size: 17px; color: var(--song); display: flex; gap: 10px; align-items: baseline; flex-wrap: wrap; }
 .cue-title .track { font-variant-numeric: tabular-nums; font-size: 13px; letter-spacing: .08em; text-transform: uppercase; opacity: .85; }
 .cue-title .n { margin-left: auto; font-family: var(--body); font-weight: 400; font-size: 13px; color: var(--muted); font-variant-numeric: tabular-nums; }
+.sndpick { font: 12px/1.2 var(--body, inherit); margin-left: 8px; padding: 2px 4px; border-radius: 6px; border: 1px solid var(--line, currentColor); background: transparent; color: inherit; max-width: 100%; vertical-align: middle; }
 li.cue.has-music .cue-title > span:not(.track):not(.eq)::after { content: " ▶"; font-size: .8em; opacity: .7; }
 .lyrics { white-space: pre-line; margin: 6px 0 0; font-size: 15px; color: var(--muted); }
 .eq { display: none; gap: 2px; align-items: flex-end; height: 12px; }
@@ -1367,7 +1368,7 @@ function showAct(id, scrollTop) {
   A.lines.forEach(L => {
     const li = document.createElement("li");
     li.className = "line" + (L.kind === "stage" ? " stage" : L.kind === "cue" ? " cue" : L.kind === "tech" ? " stage tech" : "");
-    li.setAttribute("style", style(L.who)); li.tabIndex = 0; li.dataset.who = L.who; li._L = L; if (L.kind === "cue") markMusic(li);
+    li.setAttribute("style", style(L.who)); li.tabIndex = 0; li.dataset.who = L.who; li._L = L;
     const num = `<span class="n">${L.i + 1}</span>`;
     let body;
     if (L.kind === "tech") {
@@ -1385,7 +1386,7 @@ function showAct(id, scrollTop) {
     li.innerHTML = `${avatar(L.who)}<div class="body">${body}</div>`;
     li.addEventListener("click", e => lineTap(L, e));
     li.addEventListener("keydown", e => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); lineTap(L); } });
-    L.el = li;
+    L.el = li; if (L.kind === "cue" || L.kind === "stage") markMusic(li);
     $script.appendChild(li);
   });
   applyLearn();
@@ -1517,9 +1518,49 @@ fetch("music.json", { cache: "no-store" }).then(r => r.ok ? r.json() : {}).then(
   ORDER.forEach(id => ACTS[id].lines.forEach(L => { if (L.kind === "cue" && L.track) { all.add(cueKey(L)); if (music[cueKey(L)]) have.add(cueKey(L)); } }));
   const el = document.getElementById("musicInfo");
   if (el && have.size) el.textContent = `Nahraná hudba a zvuky: ${have.size} z ${all.size} – ostatní se jen přečtou nebo zahrají vygenerovaným zvukem.`;
-  document.querySelectorAll("#script li.cue").forEach(li => markMusic(li));
+  buildFxRec();
+  document.querySelectorAll("#script li.cue, #script li.stage").forEach(li => markMusic(li));
 }).catch(() => {});
-function markMusic(li) { const L = li && li._L; if (L && (musicFor(L) || ambFor(L))) li.classList.add("has-music"); }
+function markMusic(li) {
+  const L = li && li._L; if (!L) return;
+  if (musicFor(L) || ambFor(L)) li.classList.add("has-music");
+  const opts_ = sndChoices(L); if (!opts_ || li.querySelector(".sndpick")) return;
+  const sel = document.createElement("select"); sel.className = "sndpick"; sel.title = "Co tady zahrát";
+  sel.innerHTML = opts_.map(([v, t]) => `<option value="${v}">${t}</option>`).join("");
+  sel.value = sndPick(L);
+  ["click", "pointerdown", "keydown"].forEach(ev => sel.addEventListener(ev, e => e.stopPropagation()));
+  sel.addEventListener("change", () => { sndPicks[sndId(L)] = sel.value; try { localStorage.setItem("jj-sndpick", JSON.stringify(sndPicks)); } catch (e) {} });
+  (li.querySelector(".cue-title, .text") || li).appendChild(sel);
+}
+// recorded sounds that can also stand in for a stage-direction sound of the same kind ((objeví se…) → zvuk kouzla)
+let fxRec = {};
+function buildFxRec() {
+  fxRec = {};
+  ORDER.forEach(id => ACTS[id].lines.forEach(L => { const m = ambFor(L); if (m && !fxRec[L.fx]) fxRec[L.fx] = m; }));
+}
+// where a recording and something else are possible, the viewer picks per place in the script (stored in this browser)
+let sndPicks = {}; try { sndPicks = JSON.parse(localStorage.getItem("jj-sndpick") || "{}") || {}; } catch (e) { sndPicks = {}; }
+const sndId = L => L.kind === "cue" ? "c:" + cueKey(L) + ":" + L.i + ":" + normCue(L.title).slice(0, 20) : "s:" + (L.segs[0].key || L.segs[0].text.slice(0, 40));
+function sndChoices(L) {
+  if (L.kind === "cue" && !L.fx && musicFor(L)) return [["rec", "▶ nahrávka"], ["name", "jen název"], ["none", "nic"]];
+  if (L.kind === "cue" && L.fx && ambFor(L)) return [["rec", "▶ nahrávka"], ["gen", "vygenerovaný zvuk"], ["none", "nic"]];
+  if (L.kind === "stage" && L.segs[0].fx && fxRec[L.segs[0].fx]) return [["rec", "▶ nahrávka"], ["gen", "vygenerovaný zvuk"], ["none", "nic"]];
+  return null;
+}
+const sndPick = L => sndPicks[sndId(L)] || "rec";
+// a short recorded sound, played once over whatever runs (does not stop the background sound)
+async function oneShot(src, maxSec = 8) {
+  try {
+    if (carOn()) {
+      const el = new Audio(await rawUrl(src)); el.play().catch(() => {});
+      setTimeout(() => { el.pause(); el.removeAttribute("src"); el.load(); }, maxSec * 1000);
+      return new Promise(res => { el.addEventListener("loadedmetadata", () => res(Math.min(maxSec, el.duration || maxSec) * 1000), { once: true }); setTimeout(() => res(maxSec * 1000), 3000); });
+    }
+    const a = audio(), buf = await getBuf(src);
+    const n = a.createBufferSource(); n.buffer = buf; n.connect(a.master || a.destination); n.start(0, 0, Math.min(maxSec, buf.duration));
+    return Math.min(maxSec, buf.duration) * 1000;
+  } catch (e) { return 0; }
+}
 fetch("manifest.json", { cache: "no-store" }).then(r => r.ok ? r.json() : {}).then(m => { manifest = m || {}; computeStudio(); buildCast(); }).catch(() => {});
 const keyRole = {};
 ORDER.forEach(id => ACTS[id].lines.forEach(L => L.segs.forEach(s => { if (s.key) keyRole[s.key] = s.type === "say" ? L.who : "vypravec"; (s.also || []).forEach(a => keyRole[a.key] = a.who); })));
@@ -2587,17 +2628,23 @@ async function playFrom(i, from) {
           if (t !== token) return;
           if (myDir && span) span.classList.add("done");   // hidden learner's direction: show once passed
           if (s.fx && (mine || myStage(L, s))) await yourSound(s.fx, span, t);   // learning: the sound is yours to make
-          else await wait(Math.max(s.fx ? playFx(s.fx) : 0, opts.readDirs && !myDir ? 200 : 450));
+          else {
+            const pk = s.fx && fxRec[s.fx] ? (L.kind === "stage" ? sndPick(L) : "rec") : "gen";   // a recording of that kind is the default
+            const ms = !s.fx || pk === "none" ? 0 : pk === "rec" && opts.fx ? await oneShot(fxRec[s.fx].src, 8) : playFx(s.fx);
+            await wait(Math.max(ms, opts.readDirs && !myDir ? 200 : 450));
+          }
         } else if (s.type === "cue" && (L.kind === "tech" || L.fx)) {
           const recorded = ambFor(L), mode = opts.music || "full";
           if (L.kind === "tech") {
             if (/^(stáhnout|stahnout|ztišit|vypnout)/i.test(L.title)) ambStop(3);
             else if (/^(opět|pustit)/i.test(L.title) && ambLast && mode !== "skip" && mode !== "say") ambStart(ambLast.src, ambLast.vol, ambLast.maxSec);
             await wait(300);
-          } else if (recorded && mode !== "say" && mode !== "skip") {
-            ambStart(recorded.src, /-\s*10\b/.test(L.raw || L.title) || L.quiet ? 0.32 : 0.6, /zvon|mobil/i.test(L.title) ? 8 : null);
-            await wait(1500);
-          } else if (L.fx) await wait(playFx(L.fx) || 800);
+          } else if (recorded && sndPick(L) === "none") {
+            await wait(300);
+          } else if (recorded && sndPick(L) === "rec" && mode !== "say" && mode !== "skip") {
+            if ((recorded.dur || 99) <= 12) await wait(await oneShot(recorded.src, 12) || 800);   // a short sound (zvuk kouzla): once, over the background
+            else { ambStart(recorded.src, L.quiet ? 0.32 : 0.6, /zvon|mobil/i.test(L.title) ? 8 : null); await wait(1500); }
+          } else if (L.fx) await wait(playFx(L.fx, true) || 800);
         } else if (s.type === "cue") {
           if (opts.stopAtMusic) {
             playing = false; renderBtn();
@@ -2605,7 +2652,7 @@ async function playFrom(i, from) {
             document.getElementById("now").textContent = `${label(L)} · pak stiskni ▶`;
             return;
           }
-          const mf = musicFor(L), mode = opts.music || "full";
+          const pk = sndPick(L), mode = (L.kind === "cue" && musicFor(L) && pk === "none") ? "skip" : (pk === "name" ? "say" : (opts.music || "full")), mf = musicFor(L);
           if (mode === "skip") { await wait(300); continue; }
           if (mf && mode !== "say") {
             metaKey = "♪" + L.title; metaText = "♪ " + L.title; metaMine = false; setMeta();

@@ -88,5 +88,47 @@
   "title": "efekt FARMA a chlívek",
   "dur": 153.63,
   "from": "e1b8dcf6-03-efekt_FARMA_a_chl_vek.wav"
+ },
+ "t16": {
+  "src": "music/t16_slon_62a77765.mp3",
+  "title": "SLON",
+  "dur": 23.88,
+  "from": "3a118df0-16-SLON.wav"
+ },
+ "t17": {
+  "src": "music/t17_zvuk-kouzla_2b03a00f.mp3",
+  "title": "zvuk kouzla",
+  "dur": 4.91,
+  "from": "5f9c8dcd-17-zvuk_kouzla.wav"
+ },
+ "t18": {
+  "src": "music/t18_drama_cf1cb386.mp3",
+  "title": "DRAMA",
+  "dur": 59.35,
+  "from": "0569dd1d-18-drama.wav"
+ },
+ "t19": {
+  "src": "music/t19_drama-song-kus-noze_86ce1076.mp3",
+  "title": "DRAMA SONG kus noze",
+  "dur": 116.01,
+  "from": "fc7989bc-19-DRAMA_SONG_kus_noze.wav_1"
+ },
+ "t20": {
+  "src": "music/t20_ezosong-konec_49330f9e.mp3",
+  "title": "ezosong konec",
+  "dur": 97.38,
+  "from": "cde59164-20-Ezosong_konec.wav"
+ },
+ "t21": {
+  "src": "music/t21_metal-podcast_541ab2b6.mp3",
+  "title": "METAL podcast",
+  "dur": 56.53,
+  "from": "2e9387e7-21-metalova_podcast.wav"
+ },
+ "t22": {
+  "src": "music/t22_dekovacka_4c312ca0.mp3",
+  "title": "Děkovačka",
+  "dur": 90.64,
+  "from": "acf534ae-22-Dekovacka_song.wav"
  }
 }
