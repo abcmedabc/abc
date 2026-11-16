@@ -15,7 +15,13 @@
   "src": "music/t2_veterina-blues_f37a1d14.mp3",
   "title": "veterina blues",
   "dur": 39.34,
-  "from": "0de02add-02-Veterina_blues.wav"
+  "from": "0de02add-02-Veterina_blues.wav",
+  "tap": {
+   "7bd8bf34": [
+    4.08,
+    19.7
+   ]
+  }
  },
  "t8": {
   "src": "music/t8_zvoneni-mobilu_ae499332.mp3",
@@ -76,7 +82,14 @@
   "src": "music/t5_karel-song-predehra_1ab350f0.mp3",
   "title": "KAREL SONG predehra",
   "dur": 19.23,
-  "from": "7db9b680-05-KAREL_SONG_predehra.wav"
+  "from": "7db9b680-05-KAREL_SONG_predehra.wav",
+  "tap": {
+   "bea865b2": [
+    2.36,
+    7.33,
+    12.04
+   ]
+  }
  },
  "t4": {
   "src": "music/t4_karel-song-podcast-loop-drums_30d14ee0.mp3",
@@ -197,33 +210,33 @@
   "from": "2e9387e7-21-metalova_podcast.wav",
   "tap": {
    "10a72d7a": [
-    4.47,
-    6.96,
-    9.8,
-    12.96,
+    4.07,
+    6.77,
+    10.04,
+    13.24,
     null,
-    16.8,
-    18.41,
-    20.34,
-    22.06,
+    17.37,
+    19.52,
+    20.6,
+    21.93,
     null,
-    23.58,
-    25.89,
-    27.81,
+    24.04,
+    26.73,
+    29.3,
     null,
-    31.57,
-    33.96,
-    36.78,
-    39.46,
+    31.03,
+    33.97,
+    37.08,
+    40.06,
     null,
-    44.2,
-    45.97,
-    47.6,
-    48.94,
+    44.79,
+    46.2,
+    48.47,
+    50.66,
     null,
-    50.49,
-    53.49,
-    null
+    51.65,
+    55.38,
+    58.13
    ]
   }
  },
