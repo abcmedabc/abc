@@ -2643,7 +2643,7 @@ async function playFrom(i, from) {
             await wait(300);
           } else if (recorded && sndPick(L) === "rec" && mode !== "say" && mode !== "skip") {
             if ((recorded.dur || 99) <= 12) await wait(await oneShot(recorded.src, 12) || 800);   // a short sound (zvuk kouzla): once, over the background
-            else { ambStart(recorded.src, L.quiet ? 0.32 : 0.6, /zvon|mobil/i.test(L.title) ? 8 : null); await wait(1500); }
+            else { ambStart(recorded.src, L.quiet ? 0.32 : 0.6, /zvon|mobil/i.test(L.title) ? 8 : 6); await wait(1500); }   // farm: only a few seconds at the start, phone: 8 s
           } else if (L.fx) await wait(playFx(L.fx, true) || 800);
         } else if (s.type === "cue") {
           if (opts.stopAtMusic) {
