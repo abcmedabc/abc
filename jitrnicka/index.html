@@ -377,7 +377,7 @@ details.sub[open] > summary ~ * { margin-top: 8px; }
       <b>Displej v autě</b>
       <label for="opt-carmode" class="sel">Co ukazovat <select id="opt-carmode"><option value="piece">čtený text po kouscích</option><option value="line">začátek repliky</option><option value="who">jen postavu a pozici</option></select></label>
       <label for="opt-carlen" class="learn-x"><span>Délka textu (kolik znaků se vejde na displej)</span><input type="range" id="opt-carlen" min="12" max="50" step="1" value="25"><output id="carlenVal">25</output></label>
-      <label for="opt-carlead" class="learn-x"><span>Posílat text s předstihem (když se displej opožďuje)</span><input type="range" id="opt-carlead" min="0" max="5" step="0.5" value="0"><output id="carleadVal">0 s</output></label>
+      <label for="opt-carlead" class="learn-x"><span>Zpoždění textu (když je text na displeji dřív než hlas)</span><input type="range" id="opt-carlead" min="0" max="4" step="0.25" value="1.5"><output id="carleadVal">1,5 s</output></label>
       <label for="opt-carswap"><input type="checkbox" id="opt-carswap"> Prohodit řádky (text na druhý řádek, postava na první)</label>
       <label for="opt-cartoggle"><input type="checkbox" id="opt-cartoggle"> Tlačítko ▶ v autě přepíná play i pauzu (pro auta, která pauzu neposílají)</label>
       <span class="carkey">Poslední tlačítko z auta: <b id="carKey">zatím žádné</b></span>
@@ -1205,8 +1205,8 @@ const $lstop = document.getElementById("opt-learnstop"); $lstop.checked = !!opts
 $lstop.addEventListener("change", () => { opts.learnStop = $lstop.checked; saveOpts(); });
 {   // car display settings: fallbacks for cars that behave differently than expected
   const box = document.getElementById("carbox"), md = document.getElementById("opt-carmode"), ln = document.getElementById("opt-carlen"), ld = document.getElementById("opt-carlead"), sw = document.getElementById("opt-carswap"), tg = document.getElementById("opt-cartoggle");
-  const show = () => { box.hidden = !opts.car; md.value = opts.carMode || "piece"; ln.value = Math.min(50, opts.carLen || 25); document.getElementById("carlenVal").textContent = ln.value; ld.value = opts.carLead || 0; document.getElementById("carleadVal").textContent = String(+ld.value).replace(".", ",") + " s"; sw.checked = !!opts.carSwap; tg.checked = !!opts.carToggle; };
-  const upd = () => { opts.carMode = md.value; opts.carLen = +ln.value; opts.carLead = +ld.value; opts.carSwap = sw.checked; opts.carToggle = tg.checked; saveOpts(); show(); metaKey = null; setMeta(); };
+  const show = () => { box.hidden = !opts.car; md.value = opts.carMode || "piece"; ln.value = Math.min(50, opts.carLen || 25); document.getElementById("carlenVal").textContent = ln.value; ld.value = opts.carDelay != null ? opts.carDelay : 1.5; document.getElementById("carleadVal").textContent = String(+ld.value).replace(".", ",") + " s"; sw.checked = !!opts.carSwap; tg.checked = !!opts.carToggle; };
+  const upd = () => { opts.carMode = md.value; opts.carLen = +ln.value; opts.carDelay = +ld.value; opts.carSwap = sw.checked; opts.carToggle = tg.checked; saveOpts(); show(); metaKey = null; setMeta(); };
   [md, sw, tg].forEach(e => e.addEventListener("change", upd)); [ln, ld].forEach(e => e.addEventListener("input", upd));
   document.getElementById("opt-car").addEventListener("change", () => setTimeout(show)); show();
 }
@@ -2322,11 +2322,17 @@ let curSrc = null, curDone = null;
 async function playClip(src, t, at, dur) {
   try {
     const a = audio(); if (!a) return false;
-    if (carOn() && !src.includes("#")) {   // „Do auta“: a real media element, like a video site – that is what Firefox controls
-      const sp = followSpan;
-      let url = src; try { url = await rawUrl(src); } catch (e) {}
+    if (carOn()) {   // „Do auta“: every voice through a real media element, like a video site – that is what Firefox controls
+      const sp = followSpan, seg = /^(.*)#([\d.]+)\+([\d.]+)$/.exec(src);
+      const file = seg ? seg[1] : src, s0 = seg ? +seg[2] : 0;
+      let url = file; try { url = await rawUrl(file); } catch (e) {}
       if (t !== token) return true;
-      const ok = await streamClip(url, t, at, undefined, el => { if (el && sp && isFinite(el.duration)) follow = { span: sp, t0: performance.now() - (at || 0) * 1000, dur: el.duration * 1000 }; });
+      const from = s0 + (at || 0), len = seg ? +seg[3] - (at || 0) : undefined;
+      const ok = await streamClip(url, t, from || undefined, len, el => {
+        if (!el || !sp) return;
+        const total = seg ? +seg[3] : el.duration;
+        if (isFinite(total)) follow = { span: sp, el, s0, dur: total * 1000 };
+      });
       if (ok || t !== token) return true;
     }
     const buf = await getBuf(src);
@@ -2373,7 +2379,7 @@ function cueShort(L) {
 }
 const label = L => L.kind === "cue" ? cueShort(L) : L.kind === "tech" || L.kind === "stage" ? "" : [L.who, ...(L.with || [])].map(w => ROLES[w].name).join(" + ");
 // car display (Bluetooth / AVRCP): line 1 = the sentence being said, line 2 = who + position, line 3 = the act
-let metaText = "", metaKey = null, metaMine = false;
+let metaText = "", metaKey = null, metaMine = false, metaTimers = [];
 const PROD_TITLE = "Jitrnička a Jelítko";
 function carSentence(sp, f, dur) {
   const mine = sp.classList.contains("yourturn"), mode = opts.carMode || "piece", max = opts.carLen || 25;
@@ -2387,9 +2393,8 @@ function carSentence(sp, f, dur) {
       const parts = []; let cur = "";   // pieces of at most `max` characters, cut at word boundaries (car displays cut long titles)
       for (const w of all.split(" ")) { if (cur && (cur + " " + w).length > max) { parts.push(cur); cur = w; } else cur = cur ? cur + " " + w : w; }
       if (cur) parts.push(cur);
-      const ff = Math.min(1, f + (opts.carLead || 0) * 1000 / Math.max(1, dur || 1));   // send the text ahead if the car display lags
       let acc = 0; const total = parts.reduce((n, x) => n + x.length, 0) || 1;
-      txt = parts.find(x => (acc += x.length) / total > ff + 0.02) || parts[parts.length - 1] || "";
+      txt = parts.find(x => (acc += x.length) / total > f) || parts[parts.length - 1] || "";
     }
   }
   const key = (mine ? "*" : "") + txt;
@@ -2404,7 +2409,10 @@ function setMeta() {
     let title = (live && metaText) || (live && (opts.carMode === "who") && (metaMine ? "▶ TY" : who)) || document.getElementById("now").textContent || PROD_TITLE;
     let artist = title === who || title === "▶ TY" ? `${pos} · ${A.title || ""}` : whoLine;
     if (opts.carSwap) [title, artist] = [artist, title];
-    MS.metadata = new MediaMetadata({ title: title.length > 120 ? title.slice(0, 118) + "…" : title, artist, album: `${A.title || ""}${A.name ? " · " + A.name : ""}` || PROD_TITLE });
+    const md = new MediaMetadata({ title: title.length > 120 ? title.slice(0, 118) + "…" : title, artist, album: `${A.title || ""}${A.name ? " · " + A.name : ""}` || PROD_TITLE });
+    const d = (opts.carDelay != null ? opts.carDelay : 1.5) * 1000;
+    if (live && opts.car && d > 0) metaTimers.push(setTimeout(() => { metaTimers.shift(); try { MS.metadata = md; } catch (e) {} }, d));
+    else { metaTimers.forEach(clearTimeout); metaTimers = []; MS.metadata = md; }
   } catch (e) {}
 }
 // follow the voice inside a long line: keep the sentence being read on screen, not just the start of the line
@@ -2413,7 +2421,7 @@ setInterval(() => {
   if (!follow || !playing || holding || !follow.span || !follow.span.isConnected) return;
   const sp = follow.span;
   if (!sp.classList.contains("speaking") && !sp.classList.contains("yourturn")) { follow = null; return; }
-  const f = Math.min(1, Math.max(0, (performance.now() - follow.t0) / Math.max(1, follow.dur)));
+  const f = Math.min(1, Math.max(0, follow.el ? (follow.el.currentTime - follow.s0) * 1000 / Math.max(1, follow.dur) : (performance.now() - follow.t0) / Math.max(1, follow.dur)));
   carSentence(sp, f, follow.dur);
   const r = sp.getBoundingClientRect(), y = r.top + f * r.height, bottom = innerHeight - 190;
   if (y > bottom || y < 70) window.scrollBy({ top: y - innerHeight * 0.33, behavior: matchMedia("(prefers-reduced-motion: reduce)").matches ? "auto" : "smooth" });
