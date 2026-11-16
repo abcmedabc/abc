@@ -315,6 +315,28 @@ li.cue.has-music .cue-title > span:not(.track):not(.eq)::after { content: " ▶"
 .songnav { flex-basis: 100%; display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
 .songnav span { flex: 1 1 120px; font-weight: 700; color: var(--ink); min-width: 0; }
 .songnav button { font: inherit; font-size: 14px; padding: 8px 12px; border-radius: 10px; border: 1px solid var(--line, currentColor); background: transparent; color: var(--ink); }
+.modebar { display: flex; gap: 10px; flex-wrap: wrap; margin: 4px 0 14px; }
+button.modebtn { font: 700 15px var(--display); padding: 10px 18px; border-radius: 999px; border: 2px solid var(--jitrnicka); background: var(--jitrnicka-tint, transparent); color: var(--ink); cursor: pointer; }
+.songview { position: fixed; inset: 0; z-index: 15; background: var(--bg); overflow-y: auto; padding-top: env(safe-area-inset-top, 0px);
+  padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px)); padding-bottom: 170px; }
+.sv-in { max-width: 720px; margin: 0 auto; display: flex; flex-direction: column; gap: 14px; padding-top: 14px; }
+.sv-top { display: flex; align-items: center; justify-content: space-between; gap: 10px; flex-wrap: wrap; }
+.sv-top h2 { margin: 0; font: 800 22px var(--display); color: var(--ink); }
+.sv-pick summary { cursor: pointer; font-weight: 600; color: var(--ink); }
+.sv-pick label { display: flex; gap: 10px; align-items: center; padding: 6px 0; font-size: 15px; color: var(--ink); }
+.sv-now { display: flex; flex-direction: column; gap: 2px; font: 800 20px var(--display); color: var(--ink); }
+.sv-now small { font: 400 14px var(--body, inherit); color: var(--muted); }
+.sv-lyrics { font-size: 22px; line-height: 1.45; display: flex; flex-direction: column; gap: 4px; min-height: 30vh; }
+.sv-lyrics .gap { height: 14px; }
+.sv-lyrics span { color: var(--muted); padding: 2px 6px; border-radius: 6px; transition: color .2s, background .2s; }
+.sv-lyrics span.cur { color: var(--ink); font-weight: 800; background: color-mix(in srgb, var(--song, #5f7a2a) 22%, transparent); }
+.sv-lyrics span.done { color: var(--ink); }
+.sv-lyrics .notext { color: var(--muted); font-size: 16px; }
+.sv-ctl { display: flex; gap: 10px; flex-wrap: wrap; }
+.sv-ctl button { font: 700 16px var(--display); padding: 14px 16px; border-radius: 12px; border: 2px solid var(--line, currentColor); background: transparent; color: var(--ink); flex: 1 1 120px; }
+.sv-ctl .sv-next { border-color: var(--accent); flex: 2 1 200px; }
+.sv-back { align-self: flex-start; }
+body.songs-on .wrap { visibility: hidden; }
 .ly.cur { color: var(--ink); font-weight: 700; background: color-mix(in srgb, var(--song, #5f7a2a) 18%, transparent); border-radius: 4px; }
 .lyrics.timing .ly { text-decoration: underline dotted; cursor: pointer; }
 .lyrics { white-space: pre-line; margin: 6px 0 0; font-size: 15px; color: var(--muted); }
@@ -384,6 +406,7 @@ li.cue.has-music .cue-title > span:not(.track):not(.eq)::after { content: " ▶"
     <h1><span class="b">Jelítko</span> a <span class="a">Jitrnička</span></h1>
     <p class="lead">Stiskni přehrát a hra poběží jednání za jednáním až do konce. Ťuknutím na repliku začneš od ní.</p>
   </header>
+  <div class="modebar"><button type="button" class="modebtn" id="songsOpen">♪ Učení písniček</button></div>
 
   <div class="acts" role="tablist" id="acts"></div>
 
@@ -422,11 +445,6 @@ li.cue.has-music .cue-title > span:not(.track):not(.eq)::after { content: " ▶"
     <label for="opt-hide" class="learn-h"><input type="checkbox" id="opt-hide"> Skrýt text mé role</label>
     <label for="opt-learnstop" class="learn-h"><input type="checkbox" id="opt-learnstop"> Zastavit před další replikou</label>
     <label for="opt-loop" class="learn-h"><input type="checkbox" id="opt-loop"> Jednání pořád dokola</label>
-    <div class="songlearn" id="songlearn">
-      <label for="opt-songs" class="learn-h"><input type="checkbox" id="opt-songs"> Učím se písničky (každá pořád dokola)</label>
-      <select id="songSet"><option value="chorus">sborové – Tiki-Taky Afrika + METAL</option><option value="all">všechny písničky s textem</option></select>
-      <div class="songnav" id="songNav" hidden><button type="button" id="songPrev">⏮ Předchozí</button><span id="songName"></span><button type="button" id="songNext">Další písnička ⏭</button></div>
-    </div>
     <label for="opt-extra" class="learn-x"><span>Víc času na mou repliku</span><input type="range" id="opt-extra" min="0" max="100" step="10" value="0"><output id="extraVal">+0 %</output></label>
     <p class="learn-p" id="learnHint" hidden>Tvoje repliky ani scénické poznámky k tvé postavě se nečtou (ostatní poznámky ano). Místo tvé repliky je pauza stejně dlouhá jako replika. Když potřebuješ víc času, klepni během ní na svou repliku – hra počká, dokud na ni neklepneš znovu (nebo na ▶ či na další repliku).</p>
   </div>
@@ -450,6 +468,21 @@ li.cue.has-music .cue-title > span:not(.track):not(.eq)::after { content: " ▶"
     <div class="dlg-btns"><button class="dlg-cancel" type="button">Zrušit</button><button class="dlg-ok gbtn" type="button">Spustit nahrávání</button></div>
   </div>
 </div>
+
+<section class="songview" id="songView" hidden aria-label="Učení písniček">
+  <div class="sv-in">
+    <div class="sv-top"><h2>♪ Učení písniček</h2><button type="button" class="modebtn" id="songsClose">Učení scénáře</button></div>
+    <details class="sv-pick" id="svPick"><summary>Vybrat písničky <span id="svCount"></span></summary><div id="svList"></div></details>
+    <div class="sv-now"><span id="svName">—</span><small id="svRep"></small></div>
+    <div class="sv-lyrics" id="svLyrics"></div>
+    <div class="sv-ctl">
+      <button type="button" id="svPrev">⏮ Předchozí</button>
+      <button type="button" id="svPlay" class="sv-play">▶ Přehrát</button>
+      <button type="button" id="svNext" class="sv-next">Další písnička ⏭</button>
+    </div>
+    <button type="button" class="modebtn sv-back" id="songsClose2">Učení scénáře</button>
+  </div>
+</section>
 
 <div class="bar">
   <div class="progress"><span id="prog"></span></div>
@@ -1208,7 +1241,7 @@ function avatar(who) {
 const esc = s => s.replace(/[&<>"]/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
 
 // ---------- options ----------
-const opts = { readDirs: true, stopAtMusic: false, studio: true, learn: "", hideMine: false, learnStop: false, loopAct: false, songMode: false, songSet: "chorus", extra: 0, car: true, music: "full", musicLen: 20, silent: false, fx: true };
+const opts = { readDirs: true, stopAtMusic: false, studio: true, learn: "", hideMine: false, learnStop: false, loopAct: false, songMode: false, songPick: null, extra: 0, car: true, music: "full", musicLen: 20, silent: false, fx: true };
 try { const o = JSON.parse(localStorage.getItem("jj-opts-2") || "{}"); if (!o.fxDefaultOn) { delete o.fx; o.fxDefaultOn = true; } Object.assign(opts, o); } catch (e) {}   // sounds are on by default now
 function saveOpts() { try { localStorage.setItem("jj-opts-2", JSON.stringify(opts)); } catch (e) {} }
 [["opt-dirs", "readDirs"], ["opt-stop", "stopAtMusic"], ["opt-fx", "fx"], ["opt-studio", "studio"], ["opt-silent", "silent"], ["opt-car", "car"]].forEach(([id, k]) => {
@@ -2576,7 +2609,8 @@ function lyFollow(L, pos) {   // highlight the line being sung, send it to the c
     txt = parts[Math.min(parts.length - 1, Math.floor((pos - times[k]) / span * parts.length))];
   }
   if (txt !== metaText) { metaKey = "♪" + txt; metaText = txt; metaMine = false; setMeta(); }
-  if (k >= 0 && el) { const sp = el.querySelector(`.ly[data-l="${k}"]`); if (sp) { const r = sp.getBoundingClientRect(); if (r.bottom > innerHeight - 190 || r.top < 70) window.scrollBy({ top: r.top - innerHeight * 0.33, behavior: "smooth" }); } }
+  svFollow(L, k);
+  if (k >= 0 && el && !opts.songMode) { const sp = el.querySelector(`.ly[data-l="${k}"]`); if (sp) { const r = sp.getBoundingClientRect(); if (r.bottom > innerHeight - 190 || r.top < 70) window.scrollBy({ top: r.top - innerHeight * 0.33, behavior: "smooth" }); } }
 }
 async function playMusic(src, t, len, L) {
   const FADE = 2;
@@ -2851,52 +2885,76 @@ function stop(silent) {
 
 // past the end of an act (cur === length) counts as the start of the next one
 function normCur() { if (cur >= lines().length && nextAct()) { showAct(nextAct(), true); } else if (cur >= lines().length) cur = 0; }
-// ---------- learning the songs: one song over and over, ⏭ / „Další písnička“ / car next = the next song ----------
-const CHORUS = ["t13", "t14", "t15", "t21"];   // sborové: Tiki-Taky Afrika (13–15) and METAL at the end
-let songIdx = 0;
-function songList() {
+// ---------- learning the songs: a full-screen view, the chosen songs one by one, each on repeat until „Další písnička“ ----------
+const CHORUS = ["t13", "t14", "t15", "t21"];   // default choice: the three Tiki-Taky Afrika songs and METAL at the end
+let songIdx = 0, songRep = 0;
+function allSongs() {
   const out = [], seen = new Set();
   ORDER.forEach(id => ACTS[id].lines.forEach((L, i) => {
     if (L.kind !== "cue" || L.fx || !musicFor(L) || !L.lyrics) return;
-    const k = cueKey(L); if (seen.has(k)) return;
-    if ((opts.songSet || "chorus") === "chorus" && !CHORUS.includes(k)) return;
-    seen.add(k); out.push({ act: id, i, L });
+    const k = cueKey(L); if (seen.has(k)) return; seen.add(k); out.push({ act: id, i, L, k });
   }));
-  if ((opts.songSet || "chorus") === "chorus") out.sort((a, b) => CHORUS.indexOf(cueKey(a.L)) - CHORUS.indexOf(cueKey(b.L)));
   return out;
 }
+const songList = () => { const pick = opts.songPick || CHORUS; return allSongs().filter(x => pick.includes(x.k)); };
+function svBuildPick() {
+  const all = allSongs(), pick = opts.songPick || CHORUS;
+  document.getElementById("svList").innerHTML = all.map(x => `<label><input type="checkbox" value="${x.k}" ${pick.includes(x.k) ? "checked" : ""}> ${esc(x.L.track)} ${esc(x.L.title)}</label>`).join("");
+  document.getElementById("svCount").textContent = `(${songList().length} z ${all.length})`;
+  document.querySelectorAll("#svList input").forEach(c => c.addEventListener("change", () => {
+    opts.songPick = [...document.querySelectorAll("#svList input:checked")].map(x => x.value); saveOpts();
+    document.getElementById("svCount").textContent = `(${songList().length} z ${all.length})`;
+    if (playing) stop(); songShow(0);
+  }));
+}
+function svLyrics(L) {
+  const box = document.getElementById("svLyrics");
+  box.innerHTML = L.lyrics ? L.lyrics.split("\n").map((x, k) => x.trim() ? `<span data-l="${k}">${esc(x.trim())}</span>` : `<div class="gap"></div>`).join("") : `<p class="notext">Tahle písnička nemá ve scénáři text.</p>`;
+  if (!lyTimes(L)) box.insertAdjacentHTML("beforeend", `<p class="notext">Text zatím není načasovaný – řádky se nezvýrazňují.</p>`);
+}
+function svFollow(L, k) {   // called from lyFollow: highlight in the song view too
+  if (!document.body.classList.contains("songs-on")) return;
+  const box = document.getElementById("svLyrics");
+  box.querySelectorAll("span[data-l]").forEach(sp => { const n = +sp.dataset.l; sp.classList.toggle("cur", n === k); sp.classList.toggle("done", k >= 0 && n < k); });
+  const c = box.querySelector("span.cur");
+  if (c) { const r = c.getBoundingClientRect(); if (r.top < 90 || r.bottom > innerHeight - 200) c.scrollIntoView({ block: "center", behavior: "smooth" }); }
+}
 function songShow(k) {
-  const list = songList(); if (!list.length) return null;
+  const list = songList();
+  if (!list.length) { document.getElementById("svName").textContent = "Není vybraná žádná písnička."; document.getElementById("svLyrics").innerHTML = ""; return null; }
   songIdx = ((k % list.length) + list.length) % list.length;
   const it = list[songIdx];
   if (actId !== it.act) showAct(it.act, false);
-  cur = it.i; setActive(cur, true);
-  document.getElementById("songName").textContent = `${songIdx + 1}/${list.length} · ${it.L.track} ${it.L.title}`;
+  cur = it.i; setActive(cur, false);
+  document.getElementById("svName").textContent = `${it.L.track} ${it.L.title}`;
+  document.getElementById("svRep").textContent = `${songIdx + 1}. z ${list.length}` + (songRep > 1 ? ` · ${songRep}. opakování` : "");
+  if (document.getElementById("svLyrics").dataset.k !== it.k) { svLyrics(it.L); document.getElementById("svLyrics").dataset.k = it.k; }
   return it;
 }
 async function songLoop(k) {
   stop(true);
   const t = ++token;
-  playing = true; renderBtn();
+  playing = true; renderBtn(); songRep = 0;
   for (;;) {
+    songRep++;
     const it = songShow(k); if (!it) { playing = false; renderBtn(); return; }
     k = songIdx;
-    document.getElementById("now").textContent = "♪ " + it.L.title + " · dokola";
-    it.L.el && it.L.el.classList.add("speaking");
+    document.getElementById("now").textContent = "♪ " + it.L.title + (songRep > 1 ? ` · ${songRep}×` : "");
     await playMusic(musicFor(it.L).src, t, null, it.L);
-    it.L.el && it.L.el.classList.remove("speaking");
     if (t !== token) return;
+    svFollow(it.L, -1);
     await wait(1500);
     if (t !== token) return;
   }
 }
-function songStep(d) { if (playing) songLoop(songIdx + d); else songShow(songIdx + d); }
-function songModeSet(on, set) {
-  opts.songMode = on; if (set) opts.songSet = set; saveOpts();
-  document.getElementById("opt-songs").checked = on; document.getElementById("songSet").value = opts.songSet || "chorus";
-  document.getElementById("songNav").hidden = !on;
+function songStep(d) { songRep = 0; if (playing) songLoop(songIdx + d); else songShow(songIdx + d); }
+function songModeSet(on) {
   if (playing) stop();
-  if (on) songShow(0);
+  opts.songMode = on; saveOpts();
+  document.body.classList.toggle("songs-on", on);
+  document.getElementById("songView").hidden = !on;
+  if (on) { svBuildPick(); songRep = 0; document.getElementById("svLyrics").dataset.k = ""; songShow(songIdx); document.getElementById("songView").scrollTop = 0; }
+  else { const L = lines()[cur]; if (L && L.el) L.el.scrollIntoView({ block: "center" }); }
 }
 function step(d) {
   if (opts.songMode) { if (!opts.silent) unlock(); songStep(d); return; }
@@ -2951,6 +3009,7 @@ if (MS) {
 }
 function renderBtn() {
   $play.innerHTML = playing && !holding ? ICON_PAUSE : ICON_PLAY;
+  const sp = document.getElementById("svPlay"); if (sp) sp.textContent = playing && !holding ? "⏸ Pauza" : "▶ Přehrát";
   mediaSync();
   $play.setAttribute("aria-label", holding ? "Pokračovat" : playing ? "Pozastavit" : "Přehrát");
   document.body.classList.toggle("paused", !playing || holding);
@@ -2971,10 +3030,11 @@ $play.addEventListener("click", () => {
   else if (opts.songMode) songLoop(songIdx);
   else { normCur(); playFrom(cur); }
 });
-document.getElementById("opt-songs").addEventListener("change", e => songModeSet(e.target.checked));
-document.getElementById("songSet").addEventListener("change", e => { opts.songSet = e.target.value; saveOpts(); if (opts.songMode) { if (playing) stop(); songShow(0); } });
-document.getElementById("songNext").addEventListener("click", () => { unlock(); songStep(1); });
-document.getElementById("songPrev").addEventListener("click", () => { unlock(); songStep(-1); });
+document.getElementById("songsOpen").addEventListener("click", () => songModeSet(true));
+["songsClose", "songsClose2"].forEach(id => document.getElementById(id).addEventListener("click", () => songModeSet(false)));
+document.getElementById("svNext").addEventListener("click", () => { unlock(); songStep(1); });
+document.getElementById("svPrev").addEventListener("click", () => { unlock(); songStep(-1); });
+document.getElementById("svPlay").addEventListener("click", () => $play.click());
 document.getElementById("prev").addEventListener("click", () => step(-1));
 document.getElementById("next").addEventListener("click", () => step(1));
 document.getElementById("actPrev").addEventListener("click", () => { const p = prevAct(); if (p) { unlock(); chooseAct(p); } });
@@ -3018,10 +3078,8 @@ renderBtn();
 buildCast(); showNotice();
 const bootHash = fromHash();
 showAct((bootHash || {}).act || ORDER[0], false);
-document.getElementById("opt-songs").checked = !!opts.songMode; document.getElementById("songSet").value = opts.songSet || "chorus"; document.getElementById("songNav").hidden = !opts.songMode;
-const songsFromLink = () => { songModeSet(true, "chorus"); document.getElementById("learnbox").scrollIntoView({ block: "start" }); };
-if (bootHash && bootHash.songs) setTimeout(songsFromLink, 600);   // after music.json has arrived
-else if (opts.songMode) setTimeout(() => songShow(songIdx), 600);
+const songsFromLink = () => songModeSet(true);
+if ((bootHash && bootHash.songs) || opts.songMode) setTimeout(songsFromLink, 600);   // after music.json has arrived
 if (bootHash && bootHash.line) setTimeout(() => goHash(true, bootHash), 300);
 applySilent();
 addEventListener("hashchange", () => { const h = fromHash(); if (h && h.songs) { songsFromLink(); return; } if (!h || (h.act === actId && (!h.line || h.line === cur))) return; stop(); goHash(true); });
