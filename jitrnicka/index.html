@@ -2472,10 +2472,12 @@ const lyId = L => cueKey(L) + "|" + fnv(lyNorm(L.lyrics));
 function lyTimes(L) {
   if (!L.lyrics) return null;
   const id = lyId(L), m = musicFor(L);
-  if (lySync[id]) return lySync[id];
-  const raw = m && m.sync && m.sync[id.split("|")[1]];   // music.json counts only the non-empty lyric lines
+  const lines = L.lyrics.split("\n"), lid = id.split("|")[1];
+  const full = lySync[id] || (m && m.tap && m.tap[lid]);   // tapped by hand: one entry per line of the script text
+  if (full) return lines.map((x, i) => x.trim() ? (full[i] ?? null) : null);
+  const raw = m && m.sync && m.sync[lid];                  // found automatically: one entry per non-empty line
   if (!raw) return null;
-  let j = 0; return L.lyrics.split("\n").map(x => x.trim() ? (raw[j++] ?? null) : null);
+  let j = 0; return lines.map(x => x.trim() ? (raw[j++] ?? null) : null);
 }
 let song = null;   // the song now playing: { L, pos() }
 let lySendT = null;
@@ -2516,13 +2518,15 @@ async function lyTimer(L) {   // play the song alone and tap the big button when
   };
   const msg = t => { const m = document.getElementById("lyMsg"); if (m) m.textContent = t; };
   let testIv = null;
-  const start = async () => { clearInterval(testIv); if (lyEl) lyEl.pause(); lyEl = new Audio(await rawUrl(musicFor(L).src)); lyEl.play().catch(() => {}); };
+  let endAt = 0;
+  const clock = () => !lyEl ? 0 : lyEl.ended ? (lyEl.duration || 0) + (performance.now() - endAt) / 1000 : lyEl.currentTime;   // continues into the silence after the end
+  const start = async () => { clearInterval(testIv); if (lyEl) lyEl.pause(); endAt = 0; lyEl = new Audio(await rawUrl(musicFor(L).src)); lyEl.addEventListener("ended", () => { endAt = performance.now(); msg("Nahrávka skončila – ťukej dál, čas běží (řádky zpívané do ticha)."); }); lyEl.play().catch(() => {}); };
   async function act(e) {
     const a = e.currentTarget.dataset.a;
     if (a === "play") { k = 0; await start(); draw(); }
     else if (a === "stop") { clearInterval(testIv); if (lyEl) lyEl.pause(); }
     else if (a === "back") { k = Math.max(0, k - 1); if (lyEl) lyEl.currentTime = Math.max(0, (times[idx[k]] || lyEl.currentTime) - 2); draw(); }
-    else if (a === "mark") { if (!lyEl || lyEl.paused) { msg("Nejdřív pusť písničku (▶)."); return; } if (k < idx.length) { times[idx[k]] = Math.round(Math.max(0, lyEl.currentTime - 0.25) * 100) / 100; k++; draw(); } }
+    else if (a === "mark") { if (!lyEl || (lyEl.paused && !lyEl.ended)) { msg("Nejdřív pusť písničku (▶)."); return; } if (k < idx.length) { times[idx[k]] = Math.round(Math.max(0, clock() - 0.25) * 100) / 100; k++; draw(); if (lyEl.ended) msg("Nahrávka skončila – ťukej dál, čas běží."); } }
     else if (a === "save") {
       lySync[lyId(L)] = times; try { localStorage.setItem("jj-lysync", JSON.stringify(lySync)); } catch (e) {}
       const sent = await lySend(L, times); buildLyList(); const P2 = document.getElementById("lyPanel"); if (P2) { P2.hidden = false; P2.textContent = sent ? `Uloženo a odesláno – ${L.title}. Napiš Claudovi, ať časy zapracuje pro všechny.` : `Uloženo v tomto prohlížeči – ${L.title}.`; }
@@ -2530,7 +2534,8 @@ async function lyTimer(L) {   // play the song alone and tap the big button when
     }
     else if (a === "test") {
       await start(); draw();
-      testIv = setInterval(() => { if (!lyEl) return; let j = -1; idx.forEach((li, q) => { if (times[li] != null && times[li] <= lyEl.currentTime) j = q; }); P.querySelectorAll("ol li").forEach((x, q) => x.classList.toggle("now", q === j)); if (lyEl.ended) clearInterval(testIv); }, 200);
+      const lastT = Math.max(0, ...times.filter(x => x != null));
+      testIv = setInterval(() => { if (!lyEl) return; const c = clock(); let j = -1; idx.forEach((li, q) => { if (times[li] != null && times[li] <= c) j = q; }); P.querySelectorAll("ol li").forEach((x, q) => x.classList.toggle("now", q === j)); if (lyEl.ended && c > lastT + 4) clearInterval(testIv); }, 200);
     }
     else if (a === "close") { clearInterval(testIv); if (lyEl) lyEl.pause(); P.hidden = true; }
   }
@@ -2550,31 +2555,50 @@ function lyFollow(L, pos) {   // highlight the line being sung, send it to the c
   let k = -1;
   if (times) times.forEach((x, i) => { if (x != null && x <= pos) k = i; });
   if (el) el.querySelectorAll(".ly").forEach(sp => sp.classList.toggle("cur", +sp.dataset.l === k));
-  const txt = k >= 0 && lines[k].trim() ? lines[k].trim() : "♪ " + L.title;
+  let txt = k >= 0 && lines[k].trim() ? lines[k].trim() : "♪ " + L.title;
+  const max = opts.carLen || 25;
+  if (k >= 0 && txt.length > max) {   // a long sung line goes to the car display in pieces that fit, spread until the next line
+    const parts = []; let c = "";
+    for (const w of txt.split(/\s+/)) { if (c && (c + " " + w).length > max) { parts.push(c); c = w; } else c = c ? c + " " + w : w; }
+    if (c) parts.push(c);
+    const nx = times.find((x, i) => i > k && x != null), span = Math.max(1.5, (nx != null ? nx : times[k] + 0.12 * txt.length) - times[k]);
+    txt = parts[Math.min(parts.length - 1, Math.floor((pos - times[k]) / span * parts.length))];
+  }
   if (txt !== metaText) { metaKey = "♪" + txt; metaText = txt; metaMine = false; setMeta(); }
   if (k >= 0 && el) { const sp = el.querySelector(`.ly[data-l="${k}"]`); if (sp) { const r = sp.getBoundingClientRect(); if (r.bottom > innerHeight - 190 || r.top < 70) window.scrollBy({ top: r.top - innerHeight * 0.33, behavior: "smooth" }); } }
 }
 async function playMusic(src, t, len, L) {
   const FADE = 2;
   let iv = null;
+  let posFn = () => 0;
   const startSong = pos => {
     if (!L) return;
-    song = { L, pos }; if (L.el) L.el.querySelector(".lyrics")?.classList.add("timing");
-    iv = setInterval(() => { if (t === token) lyFollow(L, pos()); }, 250);
+    posFn = pos; song = { L, pos: () => posFn() }; if (L.el) L.el.querySelector(".lyrics")?.classList.add("timing");
+    iv = setInterval(() => { if (t === token) lyFollow(L, posFn()); }, 250);
+  };
+  const afterEnd = async dur => {   // lines timed after the end of the recording are sung into the silence: wait for them
+    if (!L || len || t !== token) return;
+    const times = (lyTimes(L) || []).filter(x => x != null), last = Math.max(0, ...times);
+    if (!(last > dur - 0.5)) return;
+    const t0 = performance.now(); posFn = () => dur + (performance.now() - t0) / 1000;
+    const hold = (last - dur) + Math.max(3, 0.07 * (L.lyrics.split("\n").filter(x => x.trim()).pop() || "").length * 10 / 10 + 2.5);
+    await wait(hold * 1000);
   };
   const endSong = () => { clearInterval(iv); if (L && L.el) { L.el.querySelector(".lyrics")?.classList.remove("timing"); L.el.querySelectorAll(".ly.cur").forEach(x => x.classList.remove("cur")); } if (song && song.L === L) song = null; };
   try {
     if (carOn()) {
       let url = src; try { url = await rawUrl(src); } catch (e) {}
       if (t !== token) return;
-      let ramp = null;
+      let ramp = null, elDur = 0;
       await streamClip(url, t, undefined, len || undefined, el => {
-        if (el) startSong(() => el.currentTime);
+        if (el) { startSong(() => el.currentTime); el.addEventListener("ended", () => { elDur = el.duration; }, { once: true }); elDur = el.duration; }
         if (!el || !len) return;
         const t0 = performance.now();
         ramp = setInterval(() => { const left = len - (performance.now() - t0) / 1000; try { el.volume = Math.max(0, Math.min(1, left / FADE)); } catch (e) {} }, 100);
       });
-      clearInterval(ramp); endSong();
+      clearInterval(ramp);
+      if (isFinite(elDur) && elDur) await afterEnd(elDur);
+      endSong();
       return;
     }
     const a = audio(), buf = await getBuf(src);
@@ -2587,6 +2611,7 @@ async function playMusic(src, t, len, L) {
       if (len && len < buf.duration) { const now = a.currentTime; g.gain.setValueAtTime(1, now + Math.max(0, len - FADE)); g.gain.linearRampToValueAtTime(0.0001, now + len); s.start(0, 0, len); }
       else s.start();
     });
+    await afterEnd(buf.duration);
     endSong();
   } catch (e) { endSong(); }
 }

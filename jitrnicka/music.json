@@ -3,7 +3,13 @@
   "src": "music/t7_solo-metal_2ee7211f.mp3",
   "title": "solo metal",
   "dur": 17.76,
-  "from": "0d3ea2d0-07_-metalak_trh.wav"
+  "from": "0d3ea2d0-07_-metalak_trh.wav",
+  "tap": {
+   "55a12a92": [
+    3.05,
+    9.39
+   ]
+  }
  },
  "t2": {
   "src": "music/t2_veterina-blues_f37a1d14.mp3",
@@ -42,13 +48,29 @@
     21.7,
     25.45
    ]
+  },
+  "tap": {
+   "c00f12b9": [
+    11.17,
+    14.66,
+    18.2,
+    21.93,
+    null,
+    25.67
+   ]
   }
  },
  "t6": {
   "src": "music/t6_ezo-podcast-3x_0ec11b33.mp3",
   "title": "EZO podcast 3x",
   "dur": 56.74,
-  "from": "6fbbdbcf-06-Ezo_podcast_3x.wav"
+  "from": "6fbbdbcf-06-Ezo_podcast_3x.wav",
+  "tap": {
+   "021fc020": [
+    18.8,
+    27.09
+   ]
+  }
  },
  "t5": {
   "src": "music/t5_karel-song-predehra_1ab350f0.mp3",
@@ -91,6 +113,13 @@
     18.15,
     25.45
    ]
+  },
+  "tap": {
+   "628ff7da": [
+    11.17,
+    18.46,
+    25.78
+   ]
   }
  },
  "t13": {
@@ -105,6 +134,16 @@
     17.85,
     21.45,
     25.45
+   ]
+  },
+  "tap": {
+   "d7aee4ef": [
+    10.96,
+    14.46,
+    18.2,
+    21.78,
+    25.74,
+    25.71
    ]
   }
  },
@@ -143,13 +182,50 @@
   "src": "music/t20_ezosong-konec_49330f9e.mp3",
   "title": "ezosong konec",
   "dur": 97.38,
-  "from": "cde59164-20-Ezosong_konec.wav"
+  "from": "cde59164-20-Ezosong_konec.wav",
+  "tap": {
+   "021fc020": [
+    17.21,
+    26.46
+   ]
+  }
  },
  "t21": {
   "src": "music/t21_metal-podcast_541ab2b6.mp3",
   "title": "METAL podcast",
   "dur": 56.53,
-  "from": "2e9387e7-21-metalova_podcast.wav"
+  "from": "2e9387e7-21-metalova_podcast.wav",
+  "tap": {
+   "10a72d7a": [
+    4.47,
+    6.96,
+    9.8,
+    12.96,
+    null,
+    16.8,
+    18.41,
+    20.34,
+    22.06,
+    null,
+    23.58,
+    25.89,
+    27.81,
+    null,
+    31.57,
+    33.96,
+    36.78,
+    39.46,
+    null,
+    44.2,
+    45.97,
+    47.6,
+    48.94,
+    null,
+    50.49,
+    53.49,
+    null
+   ]
+  }
  },
  "t22": {
   "src": "music/t22_dekovacka_4c312ca0.mp3",
