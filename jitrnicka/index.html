@@ -476,7 +476,7 @@ body.songs-on .wrap { visibility: hidden; }
     <div class="sv-timer" id="svTimer" hidden></div>
     <div class="sv-now" id="svHead" title="Pustit písničku"><span id="svName">—</span><small id="svRep"></small></div>
     <div class="sv-lyrics" id="svLyrics" title="Ťukni na řádek – písnička hraje od něj"></div>
-    <button type="button" class="modebtn sv-back" id="songsClose2">Učení scénáře</button>
+    <button type="button" class="modebtn sv-back" id="svNextBtn">Další písnička ⏭</button>
   </div>
 </section>
 
@@ -2924,7 +2924,13 @@ function svFollow(L, k) {   // called from lyFollow: highlight in the song view 
   const box = document.getElementById("svLyrics");
   box.querySelectorAll("span[data-l]").forEach(sp => { const n = +sp.dataset.l; sp.classList.toggle("cur", n === k); sp.classList.toggle("done", k >= 0 && n < k); });
   const c = box.querySelector("span.cur");
-  if (c) { const r = c.getBoundingClientRect(); if (r.top < 90 || r.bottom > innerHeight - 200) c.scrollIntoView({ block: "center", behavior: "smooth" }); }
+  if (c) {   // keep the sung line on screen, but never scroll past the song title while the line fits below it
+    const V = document.getElementById("songView"), H = document.getElementById("svHead"), r = c.getBoundingClientRect();
+    if (r.top < 0 || r.bottom > innerHeight - 190) {
+      const want = V.scrollTop + r.top - innerHeight * 0.35, title = H.offsetTop - 8;
+      V.scrollTo({ top: Math.max(title, want), behavior: "smooth" });
+    }
+  }
 }
 const SET_ICON = document.getElementById("setBtn").innerHTML;
 const TIMER_ICON = '<svg viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M9 2h6v2H9zM12 6a8 8 0 1 0 0 16 8 8 0 0 0 0-16zm0 2a6 6 0 1 1 0 12 6 6 0 0 1 0-12zm-1 2v4.6l3.3 2 1-1.7-2.3-1.3V10z"/></svg>';
@@ -3053,7 +3059,8 @@ $play.addEventListener("click", () => {
   else { normCur(); playFrom(cur); }
 });
 document.getElementById("songsOpen").addEventListener("click", () => songModeSet(true));
-["songsClose", "songsClose2"].forEach(id => document.getElementById(id).addEventListener("click", () => songModeSet(false)));
+document.getElementById("songsClose").addEventListener("click", () => songModeSet(false));
+document.getElementById("svNextBtn").addEventListener("click", () => { unlock(); songStep(1); });
 document.getElementById("svHead").addEventListener("click", () => { unlock(); songLoop(songIdx); });
 document.getElementById("svLyrics").addEventListener("click", e => {   // a tapped line: the song plays from that line (when the lyrics are timed)
   unlock();
@@ -3113,7 +3120,8 @@ buildCast(); showNotice();
 const bootHash = fromHash();
 showAct((bootHash || {}).act || ORDER[0], false);
 const songsFromLink = () => songModeSet(true);
-if ((bootHash && bootHash.songs) || opts.songMode) setTimeout(songsFromLink, 600);   // after music.json has arrived
+if (bootHash && bootHash.songs) setTimeout(songsFromLink, 600);   // after music.json has arrived; otherwise the script view is the default
+else if (opts.songMode) { opts.songMode = false; saveOpts(); }
 if (bootHash && bootHash.line) setTimeout(() => goHash(true, bootHash), 300);
 applySilent();
 addEventListener("hashchange", () => { const h = fromHash(); if (h && h.songs) { songsFromLink(); return; } if (!h || (h.act === actId && (!h.line || h.line === cur))) return; stop(); goHash(true); });
