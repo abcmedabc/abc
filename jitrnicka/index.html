@@ -2209,7 +2209,7 @@ async function saveAndGenerate() {
 (async () => {
   const user = await capUse("user"); userRef = user;
   canEdit = user ? await user.canEdit().catch(() => false) : false;
-  const db = await capUse("db");
+  const db = user ? await capUse("db") : null;   // signed-out viewers: no database (and no „Sign in“ prompt over the player)
   if (db) {
     dbRef = db;
     db.doc("status/gen").onSnapshot(s => { gstat = s.exists ? s.data() : null; buildCast(); }, () => {});
