@@ -303,12 +303,12 @@ li.cue.has-music .cue-title > span:not(.track):not(.eq)::after { content: " ▶"
 .lytool summary { cursor: pointer; font-weight: 600; color: var(--ink); }
 .lyrow { display: flex; align-items: center; justify-content: space-between; gap: 8px; padding: 6px 0; border-bottom: 1px solid var(--line, #ddd); flex-wrap: wrap; }
 .lyrow small { color: var(--muted); }
-.lytool button, #lyPanel button { font: inherit; padding: 6px 10px; border-radius: 8px; border: 1px solid var(--line, currentColor); background: transparent; color: var(--ink); }
-#lyPanel { display: grid; gap: 8px; padding: 10px 0; }
-#lyPanel .big { padding: 16px 12px; font-size: 16px; font-weight: 700; border-width: 2px; border-color: var(--accent); text-align: left; }
-#lyPanel ol { margin: 0; padding-left: 22px; display: grid; gap: 2px; }
-#lyPanel li.now { font-weight: 700; color: var(--ink); }
-#lyPanel .row { display: flex; gap: 8px; flex-wrap: wrap; }
+.lytool button, #lyPanel button, .sv-timer button { font: inherit; padding: 6px 10px; border-radius: 8px; border: 1px solid var(--line, currentColor); background: transparent; color: var(--ink); }
+#lyPanel, .sv-timer:not([hidden]) { display: grid; gap: 8px; padding: 10px 0; }
+#lyPanel .big, .sv-timer .big { padding: 16px 12px; font-size: 16px; font-weight: 700; border-width: 2px; border-color: var(--accent); text-align: left; }
+#lyPanel ol, .sv-timer ol { margin: 0; padding-left: 22px; display: grid; gap: 2px; }
+#lyPanel li.now, .sv-timer li.now { font-weight: 700; color: var(--ink); }
+#lyPanel .row, .sv-timer .row { display: flex; gap: 8px; flex-wrap: wrap; }
 #script li.linked { outline: 3px solid var(--accent); outline-offset: 3px; border-radius: 10px; transition: outline-color 2s; }
 .songlearn { flex-basis: 100%; display: flex; flex-wrap: wrap; gap: 8px 12px; align-items: center; min-width: 0; }
 .songlearn select { font: inherit; font-size: 14px; max-width: 100%; min-width: 0; }
@@ -326,15 +326,15 @@ button.modebtn { font: 700 15px var(--display); padding: 10px 18px; border-radiu
 .sv-pick label { display: flex; gap: 10px; align-items: center; padding: 6px 0; font-size: 15px; color: var(--ink); }
 .sv-now { display: flex; flex-direction: column; gap: 2px; font: 800 20px var(--display); color: var(--ink); }
 .sv-now small { font: 400 14px var(--body, inherit); color: var(--muted); }
-.sv-lyrics { font-size: 22px; line-height: 1.45; display: flex; flex-direction: column; gap: 4px; min-height: 30vh; }
+.sv-now { cursor: pointer; }
+.sv-lyrics { font-size: 17px; line-height: 1.6; display: flex; flex-direction: column; gap: 0; min-height: 30vh; cursor: pointer; }
+.sv-timer { border: 1px solid var(--line, currentColor); border-radius: 12px; padding: 4px 12px; }
+body.songs-on #prev, body.songs-on #next, body.songs-on #pos { display: none; }
 .sv-lyrics .gap { height: 14px; }
 .sv-lyrics span { color: var(--muted); padding: 2px 6px; border-radius: 6px; transition: color .2s, background .2s; }
 .sv-lyrics span.cur { color: var(--ink); font-weight: 800; background: color-mix(in srgb, var(--song, #5f7a2a) 22%, transparent); }
 .sv-lyrics span.done { color: var(--ink); }
 .sv-lyrics .notext { color: var(--muted); font-size: 16px; }
-.sv-ctl { display: flex; gap: 10px; flex-wrap: wrap; }
-.sv-ctl button { font: 700 16px var(--display); padding: 14px 16px; border-radius: 12px; border: 2px solid var(--line, currentColor); background: transparent; color: var(--ink); flex: 1 1 120px; }
-.sv-ctl .sv-next { border-color: var(--accent); flex: 2 1 200px; }
 .sv-back { align-self: flex-start; }
 body.songs-on .wrap { visibility: hidden; }
 .ly.cur { color: var(--ink); font-weight: 700; background: color-mix(in srgb, var(--song, #5f7a2a) 18%, transparent); border-radius: 4px; }
@@ -473,13 +473,9 @@ body.songs-on .wrap { visibility: hidden; }
   <div class="sv-in">
     <div class="sv-top"><h2>♪ Učení písniček</h2><button type="button" class="modebtn" id="songsClose">Učení scénáře</button></div>
     <details class="sv-pick" id="svPick"><summary>Vybrat písničky <span id="svCount"></span></summary><div id="svList"></div></details>
-    <div class="sv-now"><span id="svName">—</span><small id="svRep"></small></div>
-    <div class="sv-lyrics" id="svLyrics"></div>
-    <div class="sv-ctl">
-      <button type="button" id="svPrev">⏮ Předchozí</button>
-      <button type="button" id="svPlay" class="sv-play">▶ Přehrát</button>
-      <button type="button" id="svNext" class="sv-next">Další písnička ⏭</button>
-    </div>
+    <div class="sv-timer" id="svTimer" hidden></div>
+    <div class="sv-now" id="svHead" title="Pustit písničku"><span id="svName">—</span><small id="svRep"></small></div>
+    <div class="sv-lyrics" id="svLyrics" title="Ťukni na řádek – písnička hraje od něj"></div>
     <button type="button" class="modebtn sv-back" id="songsClose2">Učení scénáře</button>
   </div>
 </section>
@@ -2517,7 +2513,9 @@ function lyTimes(L) {
   if (!L.lyrics) return null;
   const id = lyId(L), m = musicFor(L);
   const lines = L.lyrics.split("\n"), lid = id.split("|")[1];
-  const full = lySync[id] || (m && m.tap && m.tap[lid]);   // tapped by hand: one entry per line of the script text
+  let shared = null;   // saved „pro všechny“ from the page: the newest one wins
+  Object.values(reqs || {}).forEach(r => { if (r && r.type === "lyrics" && r.scope === "all" && r.key === cueKey(L) && r.lid === lid && (!shared || r.at > shared.at)) shared = r; });
+  const full = lySync[id] || (shared && shared.times) || (m && m.tap && m.tap[lid]);   // tapped by hand: one entry per line of the script text
   if (full) return lines.map((x, i) => x.trim() ? (full[i] ?? null) : null);
   const raw = m && m.sync && m.sync[lid];                  // found automatically: one entry per non-empty line
   if (!raw) return null;
@@ -2525,10 +2523,10 @@ function lyTimes(L) {
 }
 let song = null;   // the song now playing: { L, pos() }
 let lySendT = null;
-async function lySend(L, times) {
+async function lySend(L, times, all) {
   if (!dbRef) return false;
   try { let by = ""; try { by = userRef ? await userRef.id() : ""; } catch (e) {}
-    await dbRef.collection("requests").doc("lyr-" + fnv(lyId(L))).set({ by, type: "lyrics", key: cueKey(L), lid: lyId(L).split("|")[1], title: L.title, times, state: "queued", at: new Date().toISOString() }); return true; } catch (e) { return false; }
+    await dbRef.collection("requests").doc("lyr-" + fnv(lyId(L))).set({ by, type: "lyrics", key: cueKey(L), lid: lyId(L).split("|")[1], title: L.title, times, state: all ? "done" : "queued", scope: all ? "all" : "me", at: new Date().toISOString() }); return true; } catch (e) { return false; }
 }
 function lySongs() {   // every song with lyrics in the script and a recording, once per lyrics text
   const seen = new Set(), out = [];
@@ -2544,9 +2542,9 @@ function buildLyList() {
   box.querySelectorAll("button[data-i]").forEach(b => b.addEventListener("click", () => lyTimer(rows[+b.dataset.i])));
 }
 let lyEl = null;
-async function lyTimer(L) {   // play the song alone and tap the big button whenever a lyric line starts
+async function lyTimer(L, P = document.getElementById("lyPanel")) {   // play the song alone and tap the big button whenever a lyric line starts
   if (playing) $play.click();
-  const P = document.getElementById("lyPanel"); P.hidden = false;
+  P.hidden = false;
   const lines = L.lyrics.split("\n"), idx = lines.map((x, i) => x.trim() ? i : -1).filter(i => i >= 0);
   const times = (lyTimes(L) || lines.map(() => null)).slice();
   let k = 0;
@@ -2556,7 +2554,7 @@ async function lyTimer(L) {   // play the song alone and tap the big button when
       <div class="row"><button type="button" data-a="play">▶ Pustit od začátku</button><button type="button" data-a="stop">■ Stop</button><button type="button" data-a="back">↶ O řádek zpět</button></div>
       <button type="button" class="big" data-a="mark">${k < idx.length ? `Ťukni, až začne: „${esc(lines[idx[k]].trim())}“` : "Hotovo – ulož"}</button>
       <ol>${idx.map((li, j) => `<li class="${j === k ? "now" : ""}">${times[li] != null ? `<small>${times[li].toFixed(1)} s</small> ` : ""}${esc(lines[li].trim())}</li>`).join("")}</ol>
-      <div class="row"><button type="button" data-a="save">Uložit</button><button type="button" data-a="test">Vyzkoušet s textem</button><button type="button" data-a="close">Zavřít</button></div>
+      <div class="row"><button type="button" data-a="save">Uložit pro mě</button><button type="button" data-a="saveall">Uložit pro všechny</button><button type="button" data-a="test">Vyzkoušet s textem</button><button type="button" data-a="close">Zavřít</button></div>
       <small id="lyMsg"></small>`;
     P.querySelectorAll("button[data-a]").forEach(b => b.addEventListener("click", act));
   };
@@ -2571,10 +2569,18 @@ async function lyTimer(L) {   // play the song alone and tap the big button when
     else if (a === "stop") { clearInterval(testIv); if (lyEl) lyEl.pause(); }
     else if (a === "back") { k = Math.max(0, k - 1); if (lyEl) lyEl.currentTime = Math.max(0, (times[idx[k]] || lyEl.currentTime) - 2); draw(); }
     else if (a === "mark") { if (!lyEl || (lyEl.paused && !lyEl.ended)) { msg("Nejdřív pusť písničku (▶)."); return; } if (k < idx.length) { times[idx[k]] = Math.round(Math.max(0, clock() - 0.25) * 100) / 100; k++; draw(); if (lyEl.ended) msg("Nahrávka skončila – ťukej dál, čas běží."); } }
-    else if (a === "save") {
-      lySync[lyId(L)] = times; try { localStorage.setItem("jj-lysync", JSON.stringify(lySync)); } catch (e) {}
-      const sent = await lySend(L, times); buildLyList(); const P2 = document.getElementById("lyPanel"); if (P2) { P2.hidden = false; P2.textContent = sent ? `Uloženo a odesláno – ${L.title}. Napiš Claudovi, ať časy zapracuje pro všechny.` : `Uloženo v tomto prohlížeči – ${L.title}.`; }
-      if (lyEl) lyEl.pause();
+    else if (a === "save" || a === "saveall") {
+      const all = a === "saveall";
+      if (all) { delete lySync[lyId(L)]; } else lySync[lyId(L)] = times;
+      try { localStorage.setItem("jj-lysync", JSON.stringify(lySync)); } catch (e) {}
+      const sent = all ? await lySend(L, times, true) : false;
+      if (all && !sent) { lySync[lyId(L)] = times; try { localStorage.setItem("jj-lysync", JSON.stringify(lySync)); } catch (e) {} }
+      if (all && sent) reqs["lyr-" + fnv(lyId(L))] = { type: "lyrics", scope: "all", key: cueKey(L), lid: lyId(L).split("|")[1], times, at: new Date().toISOString() };
+      buildLyList(); if (lyEl) lyEl.pause();
+      P.innerHTML = `<p>${all ? (sent ? `Uloženo pro všechny – ${esc(L.title)}.` : `Pro všechny se uložit nepodařilo (nejsi přihlášený?), uloženo jen tady – ${esc(L.title)}.`) : `Uloženo v tomto prohlížeči – ${esc(L.title)}.`}</p><div class="row"><button type="button" data-a="close">Zavřít</button></div>`;
+      P.querySelector("[data-a=close]").addEventListener("click", () => { P.hidden = true; });
+      if (document.body.classList.contains("songs-on")) { document.getElementById("svLyrics").dataset.k = ""; songShow(songIdx); }
+      return;
     }
     else if (a === "test") {
       await start(); draw();
@@ -2612,7 +2618,7 @@ function lyFollow(L, pos) {   // highlight the line being sung, send it to the c
   svFollow(L, k);
   if (k >= 0 && el && !opts.songMode) { const sp = el.querySelector(`.ly[data-l="${k}"]`); if (sp) { const r = sp.getBoundingClientRect(); if (r.bottom > innerHeight - 190 || r.top < 70) window.scrollBy({ top: r.top - innerHeight * 0.33, behavior: "smooth" }); } }
 }
-async function playMusic(src, t, len, L) {
+async function playMusic(src, t, len, L, from = 0) {
   const FADE = 2;
   let iv = null;
   let posFn = () => 0;
@@ -2635,7 +2641,7 @@ async function playMusic(src, t, len, L) {
       let url = src; try { url = await rawUrl(src); } catch (e) {}
       if (t !== token) return;
       let ramp = null, elDur = 0;
-      await streamClip(url, t, undefined, len || undefined, el => {
+      await streamClip(url, t, from || undefined, len || undefined, el => {
         if (el) { startSong(() => el.currentTime); el.addEventListener("ended", () => { elDur = el.duration; }, { once: true }); elDur = el.duration; }
         if (!el || !len) return;
         const t0 = performance.now();
@@ -2652,7 +2658,8 @@ async function playMusic(src, t, len, L) {
       const s = a.createBufferSource(), g = a.createGain(); s.buffer = buf; s.connect(g); g.connect(a.master || a.destination);
       playingSrcs.set(s, () => res());
       s.onended = () => { playingSrcs.delete(s); res(); };
-      const t0 = a.currentTime; startSong(() => a.currentTime - t0);
+      const t0 = a.currentTime - from; startSong(() => a.currentTime - t0);
+      if (from) { s.start(0, from); return; }
       if (len && len < buf.duration) { const now = a.currentTime; g.gain.setValueAtTime(1, now + Math.max(0, len - FADE)); g.gain.linearRampToValueAtTime(0.0001, now + len); s.start(0, 0, len); }
       else s.start();
     });
@@ -2919,19 +2926,28 @@ function svFollow(L, k) {   // called from lyFollow: highlight in the song view 
   const c = box.querySelector("span.cur");
   if (c) { const r = c.getBoundingClientRect(); if (r.top < 90 || r.bottom > innerHeight - 200) c.scrollIntoView({ block: "center", behavior: "smooth" }); }
 }
+const SET_ICON = document.getElementById("setBtn").innerHTML;
+const TIMER_ICON = '<svg viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M9 2h6v2H9zM12 6a8 8 0 1 0 0 16 8 8 0 0 0 0-16zm0 2a6 6 0 1 1 0 12 6 6 0 0 1 0-12zm-1 2v4.6l3.3 2 1-1.7-2.3-1.3V10z"/></svg>';
+function songBar(on) {   // bottom bar: outer arrows = previous / next song, the settings button opens the song timing
+  const sb = document.getElementById("setBtn");
+  sb.innerHTML = on ? TIMER_ICON : SET_ICON; sb.setAttribute("aria-label", on ? "Načasování písničky" : "Nastavení"); sb.title = sb.getAttribute("aria-label");
+  ["actPrev", "actNext"].forEach(id => { const b = document.getElementById(id); b.disabled = on ? false : b.disabled; b.title = on ? (id === "actPrev" ? "Předchozí písnička" : "Další písnička") : (id === "actPrev" ? "Předchozí jednání" : "Další jednání"); b.setAttribute("aria-label", b.title); });
+  if (!on) { document.getElementById("actPrev").disabled = !prevAct(); document.getElementById("actNext").disabled = !nextAct(); }
+}
 function songShow(k) {
   const list = songList();
   if (!list.length) { document.getElementById("svName").textContent = "Není vybraná žádná písnička."; document.getElementById("svLyrics").innerHTML = ""; return null; }
   songIdx = ((k % list.length) + list.length) % list.length;
   const it = list[songIdx];
   if (actId !== it.act) showAct(it.act, false);
-  cur = it.i; setActive(cur, false);
+  cur = it.i; setActive(cur, false); songBar(true);
   document.getElementById("svName").textContent = `${it.L.track} ${it.L.title}`;
+  if (!playing) document.getElementById("now").textContent = it.L.title;
   document.getElementById("svRep").textContent = `${songIdx + 1}. z ${list.length}` + (songRep > 1 ? ` · ${songRep}. opakování` : "");
   if (document.getElementById("svLyrics").dataset.k !== it.k) { svLyrics(it.L); document.getElementById("svLyrics").dataset.k = it.k; }
   return it;
 }
-async function songLoop(k) {
+async function songLoop(k, from = 0) {
   stop(true);
   const t = ++token;
   playing = true; renderBtn(); songRep = 0;
@@ -2939,8 +2955,8 @@ async function songLoop(k) {
     songRep++;
     const it = songShow(k); if (!it) { playing = false; renderBtn(); return; }
     k = songIdx;
-    document.getElementById("now").textContent = "♪ " + it.L.title + (songRep > 1 ? ` · ${songRep}×` : "");
-    await playMusic(musicFor(it.L).src, t, null, it.L);
+    document.getElementById("now").textContent = it.L.title;
+    await playMusic(musicFor(it.L).src, t, null, it.L, from); from = 0;
     if (t !== token) return;
     svFollow(it.L, -1);
     await wait(1500);
@@ -2953,8 +2969,9 @@ function songModeSet(on) {
   opts.songMode = on; saveOpts();
   document.body.classList.toggle("songs-on", on);
   document.getElementById("songView").hidden = !on;
+  document.getElementById("svTimer").hidden = true;
   if (on) { svBuildPick(); songRep = 0; document.getElementById("svLyrics").dataset.k = ""; songShow(songIdx); document.getElementById("songView").scrollTop = 0; }
-  else { const L = lines()[cur]; if (L && L.el) L.el.scrollIntoView({ block: "center" }); }
+  else { songBar(false); document.getElementById("now").textContent = "Připraveno"; const L = lines()[cur]; if (L && L.el) L.el.scrollIntoView({ block: "center" }); }
 }
 function step(d) {
   if (opts.songMode) { if (!opts.silent) unlock(); songStep(d); return; }
@@ -3009,7 +3026,6 @@ if (MS) {
 }
 function renderBtn() {
   $play.innerHTML = playing && !holding ? ICON_PAUSE : ICON_PLAY;
-  const sp = document.getElementById("svPlay"); if (sp) sp.textContent = playing && !holding ? "⏸ Pauza" : "▶ Přehrát";
   mediaSync();
   $play.setAttribute("aria-label", holding ? "Pokračovat" : playing ? "Pozastavit" : "Přehrát");
   document.body.classList.toggle("paused", !playing || holding);
@@ -3026,19 +3042,31 @@ $play.addEventListener("click", () => {
   if (opts.silent) return;
   unlock();
   if (holding) { releaseHold(); return; }
-  if (playing) { stop(); document.getElementById("now").textContent = "Pozastaveno"; }
+  if (playing) { stop(); const it = opts.songMode && songList()[songIdx]; document.getElementById("now").textContent = it ? it.L.title : "Pozastaveno"; }
   else if (opts.songMode) songLoop(songIdx);
   else { normCur(); playFrom(cur); }
 });
 document.getElementById("songsOpen").addEventListener("click", () => songModeSet(true));
 ["songsClose", "songsClose2"].forEach(id => document.getElementById(id).addEventListener("click", () => songModeSet(false)));
-document.getElementById("svNext").addEventListener("click", () => { unlock(); songStep(1); });
-document.getElementById("svPrev").addEventListener("click", () => { unlock(); songStep(-1); });
-document.getElementById("svPlay").addEventListener("click", () => $play.click());
+document.getElementById("svHead").addEventListener("click", () => { unlock(); songLoop(songIdx); });
+document.getElementById("svLyrics").addEventListener("click", e => {   // a tapped line: the song plays from that line (when the lyrics are timed)
+  unlock();
+  const sp = e.target.closest("span[data-l]"), it = songList()[songIdx];
+  const tm = sp && it ? lyTimes(it.L) : null, at = tm ? tm[+sp.dataset.l] : null;
+  songLoop(songIdx, at != null ? Math.max(0, at - 0.6) : 0);
+});
 document.getElementById("prev").addEventListener("click", () => step(-1));
 document.getElementById("next").addEventListener("click", () => step(1));
-document.getElementById("actPrev").addEventListener("click", () => { const p = prevAct(); if (p) { unlock(); chooseAct(p); } });
-document.getElementById("actNext").addEventListener("click", () => { const x = nextAct(); if (x) { unlock(); chooseAct(x); } });
+document.getElementById("actPrev").addEventListener("click", () => { if (opts.songMode) { unlock(); songStep(-1); return; } const p = prevAct(); if (p) { unlock(); chooseAct(p); } });
+document.getElementById("actNext").addEventListener("click", () => { if (opts.songMode) { unlock(); songStep(1); return; } const x = nextAct(); if (x) { unlock(); chooseAct(x); } });
+document.getElementById("setBtn").addEventListener("click", e => {
+  if (!opts.songMode) return;
+  e.stopImmediatePropagation();   // song view: the timing of the current song
+  const it = songList()[songIdx]; if (!it) return;
+  const P = document.getElementById("svTimer");
+  if (!P.hidden) { P.hidden = true; return; }
+  lyTimer(it.L, P); document.getElementById("songView").scrollTop = 0;
+});
 document.getElementById("setBtn").addEventListener("click", () => {   // pause and jump to the options (Učím se roli…)
   if (playing || holding) { stop(); document.getElementById("now").textContent = "Pozastaveno"; }
   const ob = document.getElementById("optsBox"); if (ob) ob.open = true;
