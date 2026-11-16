@@ -297,6 +297,7 @@ details.sub[open] > summary ~ * { margin-top: 8px; }
 .cue-title { font-family: var(--display); font-weight: 800; font-size: 17px; color: var(--song); display: flex; gap: 10px; align-items: baseline; flex-wrap: wrap; }
 .cue-title .track { font-variant-numeric: tabular-nums; font-size: 13px; letter-spacing: .08em; text-transform: uppercase; opacity: .85; }
 .cue-title .n { margin-left: auto; font-family: var(--body); font-weight: 400; font-size: 13px; color: var(--muted); font-variant-numeric: tabular-nums; }
+li.cue.has-music .cue-title > span:not(.track):not(.eq)::after { content: " ▶"; font-size: .8em; opacity: .7; }
 .lyrics { white-space: pre-line; margin: 6px 0 0; font-size: 15px; color: var(--muted); }
 .eq { display: none; gap: 2px; align-items: flex-end; height: 12px; }
 .line.active .eq { display: inline-flex; }
@@ -371,13 +372,19 @@ details.sub[open] > summary ~ * { margin-top: 8px; }
   <div class="opts">
     <label for="opt-dirs"><input type="checkbox" id="opt-dirs" checked> Číst scénické poznámky</label>
     <label for="opt-stop"><input type="checkbox" id="opt-stop"> Zastavit u hudby</label>
+    <div class="carbox" id="musicbox">
+      <b>Hudba</b>
+      <label for="opt-music" class="sel">Písničky <select id="opt-music"><option value="full">zahrát celé</option><option value="intro">zahrát začátek</option><option value="say">jen přečíst název</option><option value="skip">přeskočit</option></select></label>
+      <label for="opt-musiclen" class="learn-x" id="musiclenRow"><span>Délka začátku písničky</span><input type="range" id="opt-musiclen" min="5" max="90" step="5" value="20"><output id="musiclenVal">20 s</output></label>
+      <span class="carkey" id="musicInfo">Nahraná hudba: zatím žádná – písničky bez nahrávky se jen přečtou.</span>
+    </div>
     <label for="opt-fx"><input type="checkbox" id="opt-fx"> Zvuky · chrochtání, zívání…</label>
     <label for="opt-car"><input type="checkbox" id="opt-car"> Do auta · hraje na pozadí i se zamčeným telefonem, play/pauza z volantu, ztlumí Spotify, displej nezhasíná</label>
     <div class="carbox" id="carbox">
       <b>Displej v autě</b>
       <label for="opt-carmode" class="sel">Co ukazovat <select id="opt-carmode"><option value="piece">čtený text po kouscích</option><option value="line">začátek repliky</option><option value="who">jen postavu a pozici</option></select></label>
       <label for="opt-carlen" class="learn-x"><span>Délka textu (kolik znaků se vejde na displej)</span><input type="range" id="opt-carlen" min="12" max="50" step="1" value="25"><output id="carlenVal">25</output></label>
-      <label for="opt-carlead" class="learn-x"><span>Zpoždění textu (když je text na displeji dřív než hlas)</span><input type="range" id="opt-carlead" min="0" max="4" step="0.25" value="1.5"><output id="carleadVal">1,5 s</output></label>
+      <label for="opt-carlead" class="learn-x"><span>Zpoždění textu (když je text na displeji dřív než hlas)</span><input type="range" id="opt-carlead" min="0" max="4" step="0.25" value="0.5"><output id="carleadVal">0,5 s</output></label>
       <label for="opt-carswap"><input type="checkbox" id="opt-carswap"> Prohodit řádky (text na druhý řádek, postava na první)</label>
       <label for="opt-cartoggle"><input type="checkbox" id="opt-cartoggle"> Tlačítko ▶ v autě přepíná play i pauzu (pro auta, která pauzu neposílají)</label>
       <span class="carkey">Poslední tlačítko z auta: <b id="carKey">zatím žádné</b></span>
@@ -1174,7 +1181,7 @@ function avatar(who) {
 const esc = s => s.replace(/[&<>"]/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
 
 // ---------- options ----------
-const opts = { readDirs: true, stopAtMusic: false, studio: true, learn: "", hideMine: false, learnStop: false, loopAct: false, extra: 0, car: true, silent: false, fx: true };
+const opts = { readDirs: true, stopAtMusic: false, studio: true, learn: "", hideMine: false, learnStop: false, loopAct: false, extra: 0, car: true, music: "full", musicLen: 20, silent: false, fx: true };
 try { const o = JSON.parse(localStorage.getItem("jj-opts-2") || "{}"); if (!o.fxDefaultOn) { delete o.fx; o.fxDefaultOn = true; } Object.assign(opts, o); } catch (e) {}   // sounds are on by default now
 function saveOpts() { try { localStorage.setItem("jj-opts-2", JSON.stringify(opts)); } catch (e) {} }
 [["opt-dirs", "readDirs"], ["opt-stop", "stopAtMusic"], ["opt-fx", "fx"], ["opt-studio", "studio"], ["opt-silent", "silent"], ["opt-car", "car"]].forEach(([id, k]) => {
@@ -1205,10 +1212,17 @@ const $lstop = document.getElementById("opt-learnstop"); $lstop.checked = !!opts
 $lstop.addEventListener("change", () => { opts.learnStop = $lstop.checked; saveOpts(); });
 {   // car display settings: fallbacks for cars that behave differently than expected
   const box = document.getElementById("carbox"), md = document.getElementById("opt-carmode"), ln = document.getElementById("opt-carlen"), ld = document.getElementById("opt-carlead"), sw = document.getElementById("opt-carswap"), tg = document.getElementById("opt-cartoggle");
-  const show = () => { box.hidden = !opts.car; md.value = opts.carMode || "piece"; ln.value = Math.min(50, opts.carLen || 25); document.getElementById("carlenVal").textContent = ln.value; ld.value = opts.carDelay != null ? opts.carDelay : 1.5; document.getElementById("carleadVal").textContent = String(+ld.value).replace(".", ",") + " s"; sw.checked = !!opts.carSwap; tg.checked = !!opts.carToggle; };
+  const show = () => { box.hidden = !opts.car; md.value = opts.carMode || "piece"; ln.value = Math.min(50, opts.carLen || 25); document.getElementById("carlenVal").textContent = ln.value; ld.value = opts.carDelay != null ? opts.carDelay : 0.5; document.getElementById("carleadVal").textContent = String(+ld.value).replace(".", ",") + " s"; sw.checked = !!opts.carSwap; tg.checked = !!opts.carToggle; };
   const upd = () => { opts.carMode = md.value; opts.carLen = +ln.value; opts.carDelay = +ld.value; opts.carSwap = sw.checked; opts.carToggle = tg.checked; saveOpts(); show(); metaKey = null; setMeta(); };
   [md, sw, tg].forEach(e => e.addEventListener("change", upd)); [ln, ld].forEach(e => e.addEventListener("input", upd));
   document.getElementById("opt-car").addEventListener("change", () => setTimeout(show)); show();
+}
+{   // music: play the recordings (music.json), only their beginning, just announce the title, or skip
+  const md = document.getElementById("opt-music"), ln = document.getElementById("opt-musiclen");
+  const show = () => { md.value = opts.music || "full"; ln.value = opts.musicLen || 20; document.getElementById("musiclenVal").textContent = ln.value + " s"; document.getElementById("musiclenRow").hidden = md.value !== "intro"; };
+  md.addEventListener("change", () => { opts.music = md.value; saveOpts(); show(); });
+  ln.addEventListener("input", () => { opts.musicLen = +ln.value; saveOpts(); show(); });
+  show();
 }
 const $loop = document.getElementById("opt-loop"); $loop.checked = !!opts.loopAct;   // keep replaying the current act until another one is chosen
 $loop.addEventListener("change", () => { opts.loopAct = $loop.checked; saveOpts(); });
@@ -1352,7 +1366,7 @@ function showAct(id, scrollTop) {
   A.lines.forEach(L => {
     const li = document.createElement("li");
     li.className = "line" + (L.kind === "stage" ? " stage" : L.kind === "cue" ? " cue" : L.kind === "tech" ? " stage tech" : "");
-    li.setAttribute("style", style(L.who)); li.tabIndex = 0; li.dataset.who = L.who;
+    li.setAttribute("style", style(L.who)); li.tabIndex = 0; li.dataset.who = L.who; li._L = L; if (L.kind === "cue") markMusic(li);
     const num = `<span class="n">${L.i + 1}</span>`;
     let body;
     if (L.kind === "tech") {
@@ -1489,6 +1503,21 @@ function computeStudio() {
   ORDER.forEach(id => ACTS[id].lines.forEach(L => L.segs.forEach(s => { if (s.key && manifest[s.key]) studioRoles.add(s.type === "say" ? L.who : "vypravec"); })));
   document.getElementById("studio-wrap").hidden = !studioRoles.size;
 }
+// recorded songs: music.json = { "<cue key>": { "src": "music/….mp3", "title": "…", "dur": seconds } }, the key is
+// "t<track number>" for numbered cues ([[[06-EZO podcast]]] → "t6"), otherwise "n:<title without accents>"
+let music = {};
+const normCue = x => (x || "").toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/\(pokracuje\)/g, "").replace(/[^a-z0-9]+/g, " ").trim();
+const cueKey = L => L.track ? "t" + (+L.track) : "n:" + normCue(L.title);
+const musicFor = L => (L && L.kind === "cue" && !L.fx && music[cueKey(L)]) || null;
+fetch("music.json", { cache: "no-store" }).then(r => r.ok ? r.json() : {}).then(m => {
+  music = m || {};
+  const all = new Set(), have = new Set();
+  ORDER.forEach(id => ACTS[id].lines.forEach(L => { if (L.kind === "cue" && !L.fx) { all.add(cueKey(L)); if (music[cueKey(L)]) have.add(cueKey(L)); } }));
+  const el = document.getElementById("musicInfo");
+  if (el && have.size) el.textContent = `Nahraná hudba: ${have.size} z ${all.size} písniček – ostatní se jen přečtou.`;
+  document.querySelectorAll("#script li.cue").forEach(li => markMusic(li));
+}).catch(() => {});
+function markMusic(li) { const L = li && li._L; if (L && musicFor(L)) li.classList.add("has-music"); }
 fetch("manifest.json", { cache: "no-store" }).then(r => r.ok ? r.json() : {}).then(m => { manifest = m || {}; computeStudio(); buildCast(); }).catch(() => {});
 const keyRole = {};
 ORDER.forEach(id => ACTS[id].lines.forEach(L => L.segs.forEach(s => { if (s.key) keyRole[s.key] = s.type === "say" ? L.who : "vypravec"; (s.also || []).forEach(a => keyRole[a.key] = a.who); })));
@@ -2346,7 +2375,38 @@ async function playClip(src, t, at, dur) {
     });
   } catch (e) { return false; }
 }
-function prefetch(id) { if (!id) return; ACTS[id].lines.forEach(L => L.segs.forEach(s => { const src = clipFor(s); if (src) getBuf(src).catch(() => {}); })); }
+// a song: through the media element in car mode (like the voices), otherwise Web Audio; `len` = only the beginning, faded out
+async function playMusic(src, t, len) {
+  const FADE = 2;
+  try {
+    if (carOn()) {
+      let url = src; try { url = await rawUrl(src); } catch (e) {}
+      if (t !== token) return;
+      let ramp = null;
+      await streamClip(url, t, undefined, len || undefined, el => {
+        if (!el || !len) return;
+        const t0 = performance.now();
+        ramp = setInterval(() => { const left = len - (performance.now() - t0) / 1000; try { el.volume = Math.max(0, Math.min(1, left / FADE)); } catch (e) {} }, 100);
+      });
+      clearInterval(ramp);
+      return;
+    }
+    const a = audio(), buf = await getBuf(src);
+    if (t !== token) return;
+    await new Promise(res => {
+      const s = a.createBufferSource(), g = a.createGain(); s.buffer = buf; s.connect(g); g.connect(a.master || a.destination);
+      playingSrcs.set(s, () => res());
+      s.onended = () => { playingSrcs.delete(s); res(); };
+      if (len && len < buf.duration) { const now = a.currentTime; g.gain.setValueAtTime(1, now + Math.max(0, len - FADE)); g.gain.linearRampToValueAtTime(0.0001, now + len); s.start(0, 0, len); }
+      else s.start();
+    });
+  } catch (e) {}
+}
+function prefetch(id) {
+  if (!id) return;
+  ACTS[id].lines.forEach(L => L.segs.forEach(s => { const src = clipFor(s); if (src) getBuf(src).catch(() => {}); }));
+  if (opts.music === "full" || opts.music === "intro" || !opts.music) ACTS[id].lines.forEach(L => { const m = musicFor(L); if (m) loadRaw(m.src).catch(() => {}); });   // songs: download only, decode when played
+}
 
 // ---------- engine ----------
 const keep = [];
@@ -2410,7 +2470,7 @@ function setMeta() {
     let artist = title === who || title === "▶ TY" ? `${pos} · ${A.title || ""}` : whoLine;
     if (opts.carSwap) [title, artist] = [artist, title];
     const md = new MediaMetadata({ title: title.length > 120 ? title.slice(0, 118) + "…" : title, artist, album: `${A.title || ""}${A.name ? " · " + A.name : ""}` || PROD_TITLE });
-    const d = (opts.carDelay != null ? opts.carDelay : 1.5) * 1000;
+    const d = (opts.carDelay != null ? opts.carDelay : 0.5) * 1000;
     if (live && opts.car && d > 0) metaTimers.push(setTimeout(() => { metaTimers.shift(); try { MS.metadata = md; } catch (e) {} }, d));
     else { metaTimers.forEach(clearTimeout); metaTimers = []; MS.metadata = md; }
   } catch (e) {}
@@ -2507,6 +2567,14 @@ async function playFrom(i, from) {
             cur = n + 1;
             document.getElementById("now").textContent = `${label(L)} · pak stiskni ▶`;
             return;
+          }
+          const mf = musicFor(L), mode = opts.music || "full";
+          if (mode === "skip") { await wait(300); continue; }
+          if (mf && mode !== "say") {
+            metaKey = "♪" + L.title; metaText = "♪ " + L.title; metaMine = false; setMeta();
+            await playMusic(mf.src, t, mode === "intro" ? (opts.musicLen || 20) : null);
+            if (t !== token) return;
+            await wait(400); continue;
           }
           if (opts.readDirs) { const src = clipFor(s); if (!(src && await playClip(src, t))) await speak(s.text, "vypravec", t); }
           await wait(800);
