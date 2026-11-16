@@ -299,6 +299,16 @@ details.sub[open] > summary ~ * { margin-top: 8px; }
 .cue-title .n { margin-left: auto; font-family: var(--body); font-weight: 400; font-size: 13px; color: var(--muted); font-variant-numeric: tabular-nums; }
 .sndpick { font: 12px/1.2 var(--body, inherit); margin-left: 8px; padding: 2px 4px; border-radius: 6px; border: 1px solid var(--line, currentColor); background: transparent; color: inherit; max-width: 100%; vertical-align: middle; }
 li.cue.has-music .cue-title > span:not(.track):not(.eq)::after { content: " ▶"; font-size: .8em; opacity: .7; }
+.lytool { flex-basis: 100%; }
+.lytool summary { cursor: pointer; font-weight: 600; color: var(--ink); }
+.lyrow { display: flex; align-items: center; justify-content: space-between; gap: 8px; padding: 6px 0; border-bottom: 1px solid var(--line, #ddd); flex-wrap: wrap; }
+.lyrow small { color: var(--muted); }
+.lytool button, #lyPanel button { font: inherit; padding: 6px 10px; border-radius: 8px; border: 1px solid var(--line, currentColor); background: transparent; color: var(--ink); }
+#lyPanel { display: grid; gap: 8px; padding: 10px 0; }
+#lyPanel .big { padding: 16px 12px; font-size: 16px; font-weight: 700; border-width: 2px; border-color: var(--accent); text-align: left; }
+#lyPanel ol { margin: 0; padding-left: 22px; display: grid; gap: 2px; }
+#lyPanel li.now { font-weight: 700; color: var(--ink); }
+#lyPanel .row { display: flex; gap: 8px; flex-wrap: wrap; }
 .ly.cur { color: var(--ink); font-weight: 700; background: color-mix(in srgb, var(--song, #5f7a2a) 18%, transparent); border-radius: 4px; }
 .lyrics.timing .ly { text-decoration: underline dotted; cursor: pointer; }
 .lyrics { white-space: pre-line; margin: 6px 0 0; font-size: 15px; color: var(--muted); }
@@ -380,6 +390,7 @@ li.cue.has-music .cue-title > span:not(.track):not(.eq)::after { content: " ▶"
       <label for="opt-music" class="sel">Písničky <select id="opt-music"><option value="full">nahrávka – celá</option><option value="intro">nahrávka – jen začátek</option><option value="say">jen scénická poznámka („Hudba: …“)</option><option value="skip">přeskočit</option></select></label>
       <span class="carkey">U každé písničky ve scénáři jde nastavení změnit (rozbalovací menu u názvu).</span>
       <label for="opt-musiclen" class="learn-x" id="musiclenRow"><span>Délka začátku písničky</span><input type="range" id="opt-musiclen" min="5" max="90" step="5" value="20"><output id="musiclenVal">20 s</output></label>
+      <details class="lytool"><summary>Načasovat texty písniček</summary><div id="lyList">Načítám…</div></details>
       <span class="carkey" id="musicInfo">Nahraná hudba: zatím žádná – písničky bez nahrávky se jen přečtou.</span>
     </div>
     <label for="opt-fx"><input type="checkbox" id="opt-fx"> Zvuky · chrochtání, zívání…</label>
@@ -1523,7 +1534,7 @@ fetch("music.json", { cache: "no-store" }).then(r => r.ok ? r.json() : {}).then(
   ORDER.forEach(id => ACTS[id].lines.forEach(L => { if (L.kind === "cue" && L.track) { all.add(cueKey(L)); if (music[cueKey(L)]) have.add(cueKey(L)); } }));
   const el = document.getElementById("musicInfo");
   if (el && have.size) el.textContent = `Nahraná hudba a zvuky: ${have.size} z ${all.size} – ostatní se jen přečtou nebo zahrají vygenerovaným zvukem.`;
-  buildFxRec();
+  buildFxRec(); buildLyList();
   document.querySelectorAll("#script li.cue, #script li.stage").forEach(li => markMusic(li));
 }).catch(() => {});
 function markMusic(li) {
@@ -1547,12 +1558,15 @@ function buildFxRec() {
 let sndPicks = {}; try { sndPicks = JSON.parse(localStorage.getItem("jj-sndpick") || "{}") || {}; } catch (e) { sndPicks = {}; }
 const sndId = L => L.kind === "cue" ? "c:" + cueKey(L) + ":" + L.i + ":" + normCue(L.title).slice(0, 20) : "s:" + (L.segs[0].key || L.segs[0].text.slice(0, 40));
 function sndChoices(L) {
+  if (L.kind === "cue" && !L.fx && musicFor(L) && musicFor(L).speech) return [["rec", "▶ promluva (nahrávka)"], ["text", "namluvený text"]];
   if (L.kind === "cue" && !L.fx && musicFor(L)) return [["auto", "podle nastavení"], ["rec", "▶ nahrávka"], ["name", "jen poznámka"], ["none", "nic"]];
   if (L.kind === "cue" && L.fx && ambFor(L)) return [["rec", "▶ nahrávka"], ["gen", "vygenerovaný zvuk"], ["none", "nic"]];
   if (L.kind === "stage" && L.segs[0].fx && fxRec[L.segs[0].fx]) return [["rec", "▶ nahrávka"], ["gen", "vygenerovaný zvuk"], ["none", "nic"]];
   return null;
 }
-const sndPick = L => sndPicks[sndId(L)] || (L.kind === "cue" && !L.fx ? "auto" : "rec");
+const sndPick = L => sndPicks[sndId(L)] || (L.kind === "cue" && !L.fx && !(musicFor(L) || {}).speech ? "auto" : "rec");
+// a recording that is a character's line (16-SLON = the elephant ghost speaking): it plays as that character's next line
+let speechOverride = null;
 // a short recorded sound, played once over whatever runs (does not stop the background sound)
 async function oneShot(src, maxSec = 8) {
   try {
@@ -2462,17 +2476,70 @@ function lyTimes(L) {
 }
 let song = null;   // the song now playing: { L, pos() }
 let lySendT = null;
+async function lySend(L, times) {
+  if (!dbRef) return false;
+  try { let by = ""; try { by = userRef ? await userRef.id() : ""; } catch (e) {}
+    await dbRef.collection("requests").doc("lyr-" + fnv(lyId(L))).set({ by, type: "lyrics", key: cueKey(L), lid: lyId(L).split("|")[1], title: L.title, times, state: "queued", at: new Date().toISOString() }); return true; } catch (e) { return false; }
+}
+function lySongs() {   // every song with lyrics in the script and a recording, once per lyrics text
+  const seen = new Set(), out = [];
+  ORDER.forEach(id => ACTS[id].lines.forEach(L => { if (L.kind === "cue" && !L.fx && L.lyrics && musicFor(L) && !seen.has(lyId(L))) { seen.add(lyId(L)); out.push(L); } }));
+  return out;
+}
+function buildLyList() {
+  const box = document.getElementById("lyList"); if (!box) return;
+  const rows = lySongs();
+  if (!rows.length) { box.textContent = "Žádná písnička s textem ve scénáři zatím nemá nahrávku."; return; }
+  box.innerHTML = rows.map((L, i) => { const tm = lyTimes(L), n = L.lyrics.split("\n").filter(x => x.trim()).length, done = tm ? tm.filter(x => x != null).length : 0;
+    return `<div class="lyrow"><span>${esc(L.track)} ${esc(L.title)} <small>· ${done ? `načasováno ${done}/${n}` : `nenačasováno (${n} ř.)`}</small></span><button type="button" data-i="${i}">Načasovat</button></div>`; }).join("") + `<div id="lyPanel" hidden></div>`;
+  box.querySelectorAll("button[data-i]").forEach(b => b.addEventListener("click", () => lyTimer(rows[+b.dataset.i])));
+}
+let lyEl = null;
+async function lyTimer(L) {   // play the song alone and tap the big button whenever a lyric line starts
+  if (playing) $play.click();
+  const P = document.getElementById("lyPanel"); P.hidden = false;
+  const lines = L.lyrics.split("\n"), idx = lines.map((x, i) => x.trim() ? i : -1).filter(i => i >= 0);
+  const times = (lyTimes(L) || lines.map(() => null)).slice();
+  let k = 0;
+  if (lyEl) { lyEl.pause(); lyEl = null; }
+  const draw = () => {
+    P.innerHTML = `<b>${esc(L.track)} ${esc(L.title)}</b>
+      <div class="row"><button type="button" data-a="play">▶ Pustit od začátku</button><button type="button" data-a="stop">■ Stop</button><button type="button" data-a="back">↶ O řádek zpět</button></div>
+      <button type="button" class="big" data-a="mark">${k < idx.length ? `Ťukni, až začne: „${esc(lines[idx[k]].trim())}“` : "Hotovo – ulož"}</button>
+      <ol>${idx.map((li, j) => `<li class="${j === k ? "now" : ""}">${times[li] != null ? `<small>${times[li].toFixed(1)} s</small> ` : ""}${esc(lines[li].trim())}</li>`).join("")}</ol>
+      <div class="row"><button type="button" data-a="save">Uložit</button><button type="button" data-a="test">Vyzkoušet s textem</button><button type="button" data-a="close">Zavřít</button></div>
+      <small id="lyMsg"></small>`;
+    P.querySelectorAll("button[data-a]").forEach(b => b.addEventListener("click", act));
+  };
+  const msg = t => { const m = document.getElementById("lyMsg"); if (m) m.textContent = t; };
+  let testIv = null;
+  const start = async () => { clearInterval(testIv); if (lyEl) lyEl.pause(); lyEl = new Audio(await rawUrl(musicFor(L).src)); lyEl.play().catch(() => {}); };
+  async function act(e) {
+    const a = e.currentTarget.dataset.a;
+    if (a === "play") { k = 0; await start(); draw(); }
+    else if (a === "stop") { clearInterval(testIv); if (lyEl) lyEl.pause(); }
+    else if (a === "back") { k = Math.max(0, k - 1); if (lyEl) lyEl.currentTime = Math.max(0, (times[idx[k]] || lyEl.currentTime) - 2); draw(); }
+    else if (a === "mark") { if (!lyEl || lyEl.paused) { msg("Nejdřív pusť písničku (▶)."); return; } if (k < idx.length) { times[idx[k]] = Math.round(Math.max(0, lyEl.currentTime - 0.25) * 100) / 100; k++; draw(); } }
+    else if (a === "save") {
+      lySync[lyId(L)] = times; try { localStorage.setItem("jj-lysync", JSON.stringify(lySync)); } catch (e) {}
+      const sent = await lySend(L, times); buildLyList(); const P2 = document.getElementById("lyPanel"); if (P2) { P2.hidden = false; P2.textContent = sent ? `Uloženo a odesláno – ${L.title}. Napiš Claudovi, ať časy zapracuje pro všechny.` : `Uloženo v tomto prohlížeči – ${L.title}.`; }
+      if (lyEl) lyEl.pause();
+    }
+    else if (a === "test") {
+      await start(); draw();
+      testIv = setInterval(() => { if (!lyEl) return; let j = -1; idx.forEach((li, q) => { if (times[li] != null && times[li] <= lyEl.currentTime) j = q; }); P.querySelectorAll("ol li").forEach((x, q) => x.classList.toggle("now", q === j)); if (lyEl.ended) clearInterval(testIv); }, 200);
+    }
+    else if (a === "close") { clearInterval(testIv); if (lyEl) lyEl.pause(); P.hidden = true; }
+  }
+  draw(); P.scrollIntoView({ block: "nearest" });
+}
 function lyTap(L, k) {   // while the song plays, a tap on a lyric line marks when it starts (saved here, and sent to be built in)
   if (!song || song.L !== L) return false;
   const lines = L.lyrics.split("\n"), id = lyId(L), times = (lySync[id] || lyTimes(L) || lines.map(() => null)).slice();
   times[k] = Math.max(0, Math.round((song.pos() - 0.3) * 100) / 100);
   lySync[id] = times; try { localStorage.setItem("jj-lysync", JSON.stringify(lySync)); } catch (e) {}
   clearTimeout(lySendT);
-  lySendT = setTimeout(async () => {
-    if (!dbRef) return;
-    try { let by = ""; try { by = userRef ? await userRef.id() : ""; } catch (e) {}
-      await dbRef.collection("requests").doc("lyr-" + fnv(id)).set({ by, type: "lyrics", key: cueKey(L), lid: id.split("|")[1], title: L.title, times, state: "queued", at: new Date().toISOString() }); } catch (e) {}
-  }, 4000);
+  lySendT = setTimeout(() => { lySend(L, times); buildLyList(); }, 4000);
   return true;
 }
 function lyFollow(L, pos) {   // highlight the line being sung, send it to the car display
@@ -2656,7 +2723,8 @@ async function playFrom(i, from) {
           span && span.classList.remove("speaking");
         } else if (s.type === "say") {
           span && span.classList.add("speaking"); followSpan = span;
-          const src = clipFor(s);
+          let src = clipFor(s);
+          if (speechOverride && speechOverride.who === L.who) { src = speechOverride.src; speechOverride = null; }
           const others = (s.also || []).map(a => clipFor(a)).filter(Boolean);
           if (src && others.length) await Promise.all([playClip(src, t), ...others.map(o => playClip(o, t))]);
           else if (!(src && await playClip(src, t))) for (const part of chunks(s.text)) { if (t !== token) break; await speak(part, L.who, t); }
@@ -2700,6 +2768,7 @@ async function playFrom(i, from) {
             document.getElementById("now").textContent = `${label(L)} · pak stiskni ▶`;
             return;
           }
+          if (musicFor(L) && musicFor(L).speech) { speechOverride = sndPick(L) === "text" ? null : { who: musicFor(L).speech, src: musicFor(L).src }; await wait(300); continue; }
           const pk = musicFor(L) ? sndPick(L) : "auto", g = opts.music || "full", mf = musicFor(L);
           const mode = pk === "none" ? "skip" : pk === "name" ? "say" : pk === "rec" ? (g === "intro" ? "intro" : "full") : g;
           if (mode === "skip") { await wait(300); continue; }
@@ -2733,7 +2802,7 @@ async function playFrom(i, from) {
   }
 }
 function stop(silent) {
-  token++; ambStop(0);
+  token++; ambStop(0); speechOverride = null;
   if (hasTTS) synth.cancel();
   playingSrcs.forEach((done, src) => { try { src.onended = null; src.stop(); } catch (e) {} done(); }); playingSrcs.clear();
   document.querySelectorAll(".speaking").forEach(s => s.classList.remove("speaking"));

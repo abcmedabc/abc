@@ -110,7 +110,8 @@
   "src": "music/t16_slon_62a77765.mp3",
   "title": "SLON",
   "dur": 23.88,
-  "from": "3a118df0-16-SLON.wav"
+  "from": "3a118df0-16-SLON.wav",
+  "speech": "duch"
  },
  "t17": {
   "src": "music/t17_zvuk-kouzla_2b03a00f.mp3",
