@@ -310,6 +310,11 @@ li.cue.has-music .cue-title > span:not(.track):not(.eq)::after { content: " ▶"
 #lyPanel li.now { font-weight: 700; color: var(--ink); }
 #lyPanel .row { display: flex; gap: 8px; flex-wrap: wrap; }
 #script li.linked { outline: 3px solid var(--accent); outline-offset: 3px; border-radius: 10px; transition: outline-color 2s; }
+.songlearn { flex-basis: 100%; display: flex; flex-wrap: wrap; gap: 8px 12px; align-items: center; min-width: 0; }
+.songlearn select { font: inherit; font-size: 14px; max-width: 100%; min-width: 0; }
+.songnav { flex-basis: 100%; display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
+.songnav span { flex: 1 1 120px; font-weight: 700; color: var(--ink); min-width: 0; }
+.songnav button { font: inherit; font-size: 14px; padding: 8px 12px; border-radius: 10px; border: 1px solid var(--line, currentColor); background: transparent; color: var(--ink); }
 .ly.cur { color: var(--ink); font-weight: 700; background: color-mix(in srgb, var(--song, #5f7a2a) 18%, transparent); border-radius: 4px; }
 .lyrics.timing .ly { text-decoration: underline dotted; cursor: pointer; }
 .lyrics { white-space: pre-line; margin: 6px 0 0; font-size: 15px; color: var(--muted); }
@@ -417,6 +422,11 @@ li.cue.has-music .cue-title > span:not(.track):not(.eq)::after { content: " ▶"
     <label for="opt-hide" class="learn-h"><input type="checkbox" id="opt-hide"> Skrýt text mé role</label>
     <label for="opt-learnstop" class="learn-h"><input type="checkbox" id="opt-learnstop"> Zastavit před další replikou</label>
     <label for="opt-loop" class="learn-h"><input type="checkbox" id="opt-loop"> Jednání pořád dokola</label>
+    <div class="songlearn" id="songlearn">
+      <label for="opt-songs" class="learn-h"><input type="checkbox" id="opt-songs"> Učím se písničky (každá pořád dokola)</label>
+      <select id="songSet"><option value="chorus">sborové – Tiki-Taky Afrika + METAL</option><option value="all">všechny písničky s textem</option></select>
+      <div class="songnav" id="songNav" hidden><button type="button" id="songPrev">⏮ Předchozí</button><span id="songName"></span><button type="button" id="songNext">Další písnička ⏭</button></div>
+    </div>
     <label for="opt-extra" class="learn-x"><span>Víc času na mou repliku</span><input type="range" id="opt-extra" min="0" max="100" step="10" value="0"><output id="extraVal">+0 %</output></label>
     <p class="learn-p" id="learnHint" hidden>Tvoje repliky ani scénické poznámky k tvé postavě se nečtou (ostatní poznámky ano). Místo tvé repliky je pauza stejně dlouhá jako replika. Když potřebuješ víc času, klepni během ní na svou repliku – hra počká, dokud na ni neklepneš znovu (nebo na ▶ či na další repliku).</p>
   </div>
@@ -1198,7 +1208,7 @@ function avatar(who) {
 const esc = s => s.replace(/[&<>"]/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
 
 // ---------- options ----------
-const opts = { readDirs: true, stopAtMusic: false, studio: true, learn: "", hideMine: false, learnStop: false, loopAct: false, extra: 0, car: true, music: "full", musicLen: 20, silent: false, fx: true };
+const opts = { readDirs: true, stopAtMusic: false, studio: true, learn: "", hideMine: false, learnStop: false, loopAct: false, songMode: false, songSet: "chorus", extra: 0, car: true, music: "full", musicLen: 20, silent: false, fx: true };
 try { const o = JSON.parse(localStorage.getItem("jj-opts-2") || "{}"); if (!o.fxDefaultOn) { delete o.fx; o.fxDefaultOn = true; } Object.assign(opts, o); } catch (e) {}   // sounds are on by default now
 function saveOpts() { try { localStorage.setItem("jj-opts-2", JSON.stringify(opts)); } catch (e) {} }
 [["opt-dirs", "readDirs"], ["opt-stop", "stopAtMusic"], ["opt-fx", "fx"], ["opt-studio", "studio"], ["opt-silent", "silent"], ["opt-car", "car"]].forEach(([id, k]) => {
@@ -2841,7 +2851,55 @@ function stop(silent) {
 
 // past the end of an act (cur === length) counts as the start of the next one
 function normCur() { if (cur >= lines().length && nextAct()) { showAct(nextAct(), true); } else if (cur >= lines().length) cur = 0; }
+// ---------- learning the songs: one song over and over, ⏭ / „Další písnička“ / car next = the next song ----------
+const CHORUS = ["t13", "t14", "t15", "t21"];   // sborové: Tiki-Taky Afrika (13–15) and METAL at the end
+let songIdx = 0;
+function songList() {
+  const out = [], seen = new Set();
+  ORDER.forEach(id => ACTS[id].lines.forEach((L, i) => {
+    if (L.kind !== "cue" || L.fx || !musicFor(L) || !L.lyrics) return;
+    const k = cueKey(L); if (seen.has(k)) return;
+    if ((opts.songSet || "chorus") === "chorus" && !CHORUS.includes(k)) return;
+    seen.add(k); out.push({ act: id, i, L });
+  }));
+  if ((opts.songSet || "chorus") === "chorus") out.sort((a, b) => CHORUS.indexOf(cueKey(a.L)) - CHORUS.indexOf(cueKey(b.L)));
+  return out;
+}
+function songShow(k) {
+  const list = songList(); if (!list.length) return null;
+  songIdx = ((k % list.length) + list.length) % list.length;
+  const it = list[songIdx];
+  if (actId !== it.act) showAct(it.act, false);
+  cur = it.i; setActive(cur, true);
+  document.getElementById("songName").textContent = `${songIdx + 1}/${list.length} · ${it.L.track} ${it.L.title}`;
+  return it;
+}
+async function songLoop(k) {
+  stop(true);
+  const t = ++token;
+  playing = true; renderBtn();
+  for (;;) {
+    const it = songShow(k); if (!it) { playing = false; renderBtn(); return; }
+    k = songIdx;
+    document.getElementById("now").textContent = "♪ " + it.L.title + " · dokola";
+    it.L.el && it.L.el.classList.add("speaking");
+    await playMusic(musicFor(it.L).src, t, null, it.L);
+    it.L.el && it.L.el.classList.remove("speaking");
+    if (t !== token) return;
+    await wait(1500);
+    if (t !== token) return;
+  }
+}
+function songStep(d) { if (playing) songLoop(songIdx + d); else songShow(songIdx + d); }
+function songModeSet(on, set) {
+  opts.songMode = on; if (set) opts.songSet = set; saveOpts();
+  document.getElementById("opt-songs").checked = on; document.getElementById("songSet").value = opts.songSet || "chorus";
+  document.getElementById("songNav").hidden = !on;
+  if (playing) stop();
+  if (on) songShow(0);
+}
 function step(d) {
+  if (opts.songMode) { if (!opts.silent) unlock(); songStep(d); return; }
   if (!opts.silent) unlock();
   const was = playing;
   if (was) stop(true);
@@ -2910,8 +2968,13 @@ $play.addEventListener("click", () => {
   unlock();
   if (holding) { releaseHold(); return; }
   if (playing) { stop(); document.getElementById("now").textContent = "Pozastaveno"; }
+  else if (opts.songMode) songLoop(songIdx);
   else { normCur(); playFrom(cur); }
 });
+document.getElementById("opt-songs").addEventListener("change", e => songModeSet(e.target.checked));
+document.getElementById("songSet").addEventListener("change", e => { opts.songSet = e.target.value; saveOpts(); if (opts.songMode) { if (playing) stop(); songShow(0); } });
+document.getElementById("songNext").addEventListener("click", () => { unlock(); songStep(1); });
+document.getElementById("songPrev").addEventListener("click", () => { unlock(); songStep(-1); });
 document.getElementById("prev").addEventListener("click", () => step(-1));
 document.getElementById("next").addEventListener("click", () => step(1));
 document.getElementById("actPrev").addEventListener("click", () => { const p = prevAct(); if (p) { unlock(); chooseAct(p); } });
@@ -2939,13 +3002,14 @@ document.getElementById("setBtn").addEventListener("click", () => {   // pause a
 // links: #jednani-5 (an act), #J5-20 or #J5/20 (act 5, line 20 – the line shown in the status bar)
 function fromHash() {
   const h = decodeURIComponent(location.hash || "");
+  if (/^#pisnicky$/i.test(h) || /^#písničky$/i.test(h)) return { songs: true };
   let m = /^#jednani-(\w+)$/.exec(h);
   if (m) return ACTS[m[1]] ? { act: m[1], line: 0 } : null;
   m = /^#[Jj](\w+?)[-/._:](\d+)$/.exec(h) || /^#[Jj](\w+)$/.exec(h);
   return m && ACTS[m[1]] ? { act: m[1], line: Math.max(0, Math.min(ACTS[m[1]].lines.length, +(m[2] || 1)) - 1) } : null;
 }
 function goHash(scroll, h = fromHash()) {
-  if (!h) return false;
+  if (!h || h.songs) return false;
   if (h.act !== actId) showAct(h.act, scroll);
   if (h.line) { cur = h.line; setActive(cur, true); const L = lines()[cur]; if (L && L.el) { L.el.classList.add("linked"); setTimeout(() => L.el.classList.remove("linked"), 2500); } }
   return true;
@@ -2954,9 +3018,13 @@ renderBtn();
 buildCast(); showNotice();
 const bootHash = fromHash();
 showAct((bootHash || {}).act || ORDER[0], false);
+document.getElementById("opt-songs").checked = !!opts.songMode; document.getElementById("songSet").value = opts.songSet || "chorus"; document.getElementById("songNav").hidden = !opts.songMode;
+const songsFromLink = () => { songModeSet(true, "chorus"); document.getElementById("learnbox").scrollIntoView({ block: "start" }); };
+if (bootHash && bootHash.songs) setTimeout(songsFromLink, 600);   // after music.json has arrived
+else if (opts.songMode) setTimeout(() => songShow(songIdx), 600);
 if (bootHash && bootHash.line) setTimeout(() => goHash(true, bootHash), 300);
 applySilent();
-addEventListener("hashchange", () => { const h = fromHash(); if (!h || (h.act === actId && (!h.line || h.line === cur))) return; stop(); goHash(true); });
+addEventListener("hashchange", () => { const h = fromHash(); if (h && h.songs) { songsFromLink(); return; } if (!h || (h.act === actId && (!h.line || h.line === cur))) return; stop(); goHash(true); });
 if (hasTTS) {
   loadVoices();
   if (synth.addEventListener) synth.addEventListener("voiceschanged", loadVoices); else synth.onvoiceschanged = loadVoices;
