@@ -330,10 +330,15 @@ button.modebtn { font: 700 15px var(--display); padding: 10px 18px; border-radiu
 .sv-lyrics { font-size: 17px; line-height: 1.6; display: flex; flex-direction: column; gap: 0; min-height: calc(100vh - 230px); cursor: pointer; }   /* room to bring the title to the top */
 .sv-timer { border: 1px solid var(--line, currentColor); border-radius: 12px; padding: 4px 12px; }
 body.songs-on #prev, body.songs-on #next, body.songs-on #pos { display: none; }
-body.guest .bar { bottom: 137px; border-radius: 16px; margin: 0 8px; }
-body.guest .bar::after { content: ""; position: absolute; left: -8px; right: -8px; top: 100%; height: 137px; background: var(--bg); }
-body.guest .wrap { padding-bottom: 360px; }
-body.guest .songview { padding-bottom: 320px; }
+/* signed-out viewers: claude.ai puts a ~222×77 px sign-in box over the bottom centre. The bar stays at the bottom;
+   the play button becomes a full-width pill (its ends with icons stay visible beside the box) and the arrows go to the top row, above the box */
+body.guest .bar-in { display: grid; grid-template-columns: auto auto auto minmax(0, 1fr) auto auto auto; grid-template-areas: "ap pv pos now nx an set" "pl pl pl pl pl pl pl"; column-gap: 4px; row-gap: 36px; align-items: center; }
+body.guest .status, body.guest .controls, body.guest .transport { display: contents; }
+body.guest #actPrev { grid-area: ap; } body.guest #prev { grid-area: pv; } body.guest #pos { grid-area: pos; padding-left: 4px; }
+body.guest #now { grid-area: now; } body.guest #next { grid-area: nx; } body.guest #actNext { grid-area: an; } body.guest #setBtn { grid-area: set; margin-left: 4px; }
+body.guest #play { grid-area: pl; width: 100%; height: 52px; border-radius: 26px; display: flex; align-items: center; justify-content: space-between; padding: 0 30px; }
+body.guest .wrap { padding-bottom: 80px; }
+body.guest .songview { padding-bottom: 230px; }
 .sv-lyrics .gap { height: 14px; }
 .sv-lyrics span { color: var(--muted); padding: 2px 6px; border-radius: 6px; transition: color .2s, background .2s; }
 .sv-lyrics span.cur { color: var(--ink); font-weight: 800; background: color-mix(in srgb, var(--song, #5f7a2a) 22%, transparent); }
@@ -2215,7 +2220,7 @@ async function saveAndGenerate() {
   canEdit = user ? await user.canEdit().catch(() => false) : false;
   // signed-out viewers on claude.ai get a „Sign in to see this artifact's data“ box over the bottom of the page: lift the player above it
   if (!user && window.parent !== window) {
-    document.body.classList.add("guest");
+    document.body.classList.add("guest"); renderBtn();
   }
   const db = user ? await capUse("db") : null;
   if (db) {
@@ -2627,7 +2632,7 @@ function lyFollow(L, pos) {   // highlight the line being sung, send it to the c
   }
   if (txt !== metaText) { metaKey = "♪" + txt; metaText = txt; metaMine = false; setMeta(); }
   svFollow(L, k);
-  if (k >= 0 && el && !opts.songMode) { const sp = el.querySelector(`.ly[data-l="${k}"]`); if (sp) { const r = sp.getBoundingClientRect(); if (r.bottom > innerHeight - 190 || r.top < 70) (progScroll = performance.now(), window).scrollBy({ top: r.top - innerHeight * 0.33, behavior: "smooth" }); } }
+  if (k >= 0 && el && !opts.songMode) { const sp = el.querySelector(`.ly[data-l="${k}"]`); if (sp) { const r = sp.getBoundingClientRect(); if (r.bottom > visBottom() || r.top < 70) (progScroll = performance.now(), window).scrollBy({ top: r.top - innerHeight * 0.33, behavior: "smooth" }); } }
 }
 async function playMusic(src, t, len, L, from = 0) {
   const FADE = 2;
@@ -2754,27 +2759,34 @@ function setMeta() {
 // follow the voice inside a long line: keep the sentence being read on screen, not just the start of the line
 let follow = null, followSpan = null;
 var progScroll = 0;   // time of the last scroll made by the page (not by the user)
+function visBottom() {   // lowest y where text is still readable: just above the player bar
+  const b = document.querySelector(".bar");
+  const t = b && b.getClientRects().length ? b.getBoundingClientRect().top : innerHeight;
+  return Math.min(innerHeight, t) - 24;
+}
 setInterval(() => {
   if (!follow || !playing || holding || !follow.span || !follow.span.isConnected) return;
   const sp = follow.span;
   if (!sp.classList.contains("speaking") && !sp.classList.contains("yourturn")) { follow = null; return; }
   const f = Math.min(1, Math.max(0, follow.el ? (follow.el.currentTime - follow.s0) * 1000 / Math.max(1, follow.dur) : (performance.now() - follow.t0) / Math.max(1, follow.dur)));
   carSentence(sp, f, follow.dur);
-  const r = sp.getBoundingClientRect(), y = r.top + f * r.height, bottom = innerHeight - 190;
+  const r = sp.getBoundingClientRect(), y = r.top + f * r.height, bottom = visBottom() - 30;
   if (y > bottom || y < 70) (progScroll = performance.now(), window).scrollBy({ top: y - innerHeight * 0.33, behavior: matchMedia("(prefers-reduced-motion: reduce)").matches ? "auto" : "smooth" });
 }, 400);
+function lineIntoView(L) {   // keep the active line between the top and the player bar
+  const r = L.el.getBoundingClientRect();
+  const beh = matchMedia("(prefers-reduced-motion: reduce)").matches ? "auto" : "smooth";
+  const vb = visBottom();
+  if (r.height > vb - 110) { if (r.top < 60 || r.top > innerHeight * 0.4) (progScroll = performance.now(), window).scrollBy({ top: r.top - 80, behavior: beh }); }   // a long line: show its beginning
+  else if (r.top < 60 || r.bottom > vb) (progScroll = performance.now(), window).scrollBy({ top: r.top + r.height / 2 - (60 + vb) / 2, behavior: beh });   // centre it in the part not covered by the bar
+}
 function setActive(i, scroll = true) {
   metaText = ""; metaKey = null; metaMine = false;
   if (ACTS[actId] && i >= 0) { try { history.replaceState(null, "", "#J" + actId + "-" + (i + 1)); } catch (e) {} }
   const LS = lines(), A = ACTS[actId];
   LS.forEach(L => L.el.classList.toggle("active", L.i === i));
   const L = LS[i];
-  if (L && scroll) {
-    const r = L.el.getBoundingClientRect();
-    const beh = matchMedia("(prefers-reduced-motion: reduce)").matches ? "auto" : "smooth";
-    if (r.height > innerHeight - 260) { if (r.top < 60 || r.top > innerHeight * 0.4) (progScroll = performance.now(), window).scrollBy({ top: r.top - 80, behavior: beh }); }   // a long line: show its beginning
-    else if (r.top < 60 || r.bottom > innerHeight - 150) (progScroll = performance.now(), L.el).scrollIntoView({ behavior: beh, block: "center" });
-  }
+  if (L && scroll) { lineIntoView(L); setTimeout(() => { if (L.el.classList.contains("active")) lineIntoView(L); }, 700); }   // again once the active line has finished growing
   const shown = L || LS[cur];
   document.getElementById("now").textContent = L ? label(L) : (playing ? "…" : `${A.title}${A.name ? " · " + A.name : ""}`);
   document.getElementById("pos").textContent = `J${actId}/${(L ? i : cur) + 1}`;
@@ -2938,7 +2950,7 @@ function svFollow(L, k) {   // called from lyFollow: highlight in the song view 
   const c = box.querySelector("span.cur");
   if (c) {   // keep the sung line on screen, but never scroll past the song title while the line fits below it
     const V = document.getElementById("songView"), H = document.getElementById("svHead"), r = c.getBoundingClientRect();
-    if (r.top < 0 || r.bottom > innerHeight - 190) {
+    if (r.top < 0 || r.bottom > visBottom()) {
       const want = V.scrollTop + r.top - innerHeight * 0.35, title = H.offsetTop - 8;
       (progScroll = performance.now(), V).scrollTo({ top: Math.max(title, want), behavior: "smooth" });
     }
@@ -3049,7 +3061,8 @@ if (MS) {
   act("previoustrack", () => { carKey("⏮ předchozí"); step(-1); });
 }
 function renderBtn() {
-  $play.innerHTML = playing && !holding ? ICON_PAUSE : ICON_PLAY;
+  const ic = playing && !holding ? ICON_PAUSE : ICON_PLAY;
+  $play.innerHTML = document.body.classList.contains("guest") ? ic + ic : ic;
   mediaSync();
   $play.setAttribute("aria-label", holding ? "Pokračovat" : playing ? "Pozastavit" : "Přehrát");
   document.body.classList.toggle("paused", !playing || holding);
