@@ -74,7 +74,7 @@ h2{font-family:var(--display);font-size:1.05rem;font-weight:700;margin:0}
 .fact.strong{color:#fff}
 .fact span{display:block;font-size:.85rem;opacity:.8}
 .fact b{display:block;font-weight:700;font-size:1.15rem}
-.fact small{display:block;font-size:.8rem;opacity:.85;white-space:nowrap}
+.fact small{display:block;font-size:.85rem;font-weight:700;white-space:nowrap}
 .fact.rain b{color:var(--rain)}
 .outlook{grid-column:1/-1;margin-top:8px;padding-top:12px;border-top:1px solid var(--line);font-size:.98rem}
 
@@ -278,7 +278,7 @@ footer a{color:var(--accent)}
       <button type="button" id="rplay" aria-label="Přehrát"><svg viewBox="0 0 24 24"><path d="M7 4.5v15l12-7.5z"/></svg></button>
       <input type="range" id="rslider" min="0" max="0" value="0" aria-label="Čas radarového snímku">
     </div>
-    <div class="rkey"><span><i style="background:var(--line)"></i>naměřeno</span><span id="rkey"><i style="background:var(--fc1)"></i>předpověď 1 h</span><span id="rkey2"><i style="background:var(--fc2)"></i>hrubý odhad 2 a 3 h</span></div>
+    <div class="rkey"><span><i style="background:var(--line)"></i>naměřeno</span><span id="rkey"><i style="background:var(--fc1)"></i>předpověď 1 h</span><span id="rkey2"><i style="background:var(--fc2)"></i>odhad 2 a 3 h</span></div>
     <div class="rleg"><span>slabé</span><i></i><span>silné srážky</span></div>
     <div class="rowlab" id="rnote"></div>
   </section>
@@ -852,17 +852,44 @@ async function dwdImage(t){
   const c = document.createElement("canvas"); c.width = bmp.width; c.height = bmp.height;
   const g = c.getContext("2d"); g.drawImage(bmp, 0, 0);
   const im = g.getImageData(0, 0, c.width, c.height), a = im.data, W = c.width;
-  const gw = Math.ceil(W / DWD.cell), gh = Math.ceil(c.height / DWD.cell), mask = new Uint8Array(gw * gh);
-  // Drop the grey veil outside coverage (semi-transparent) and the magenta coverage border. Keep a coarse rain mask.
+  const gw = Math.ceil(W / DWD.cell), gh = Math.ceil(c.height / DWD.cell), mask = new Uint8Array(gw * gh), cov = new Uint8Array(W * c.height);
+  // Drop the grey veil outside coverage (semi-transparent) and the magenta coverage border.
+  // Keep a coarse rain mask (for motion) and which pixels DWD covers (for blending).
   for(let i = 0, n = 0; i < a.length; i += 4, n++){
-    if(a[i + 3] < 250 || (a[i] > 190 && a[i + 1] < 100 && a[i + 2] > 190)) a[i + 3] = 0;
+    const al = a[i + 3];
+    cov[n] = al > 0 && al < 250 ? 0 : 1;
+    if(al < 250 || (a[i] > 190 && a[i + 1] < 100 && a[i + 2] > 190)) a[i + 3] = 0;
     else mask[((n / W | 0) / DWD.cell | 0) * gw + ((n % W) / DWD.cell | 0)] = 1;
   }
   g.putImageData(im, 0, 0);
   const blob = await new Promise(ok => c.toBlob(ok));
   if(!blob) return null;
   const u = URL.createObjectURL(blob); radar.blobs.push(u);
-  return { url:u, mask, gw, gh, mppx:(x2 - x1) / W * DWD.cell, mppy:(y2 - y1) / c.height * DWD.cell };
+  return { url:u, mask, gw, gh, mppx:(x2 - x1) / W * DWD.cell, mppy:(y2 - y1) / c.height * DWD.cell,
+    data:im, cov, W, H:c.height, mpx:(x2 - x1) / W, mpy:(y2 - y1) / c.height };
+}
+// Forecast frame: DWD forecast where DWD covers, elsewhere the source image S moved by motion mv.
+function blendDWD(F, S, t, mv){
+  const W = S.W, H = S.H, out = new ImageData(W, H), o = out.data, s = S.data.data;
+  const h = (t - S.t) / 3600e3, dx = Math.round(mv.dx * h / S.mpx), dy = Math.round(-mv.dy * h / S.mpy);
+  const f = F && F.data.data, cov = F && F.cov;
+  for(let y = 0; y < H; y++){
+    const sy = y - dy, inY = sy >= 0 && sy < H;
+    for(let x = 0; x < W; x++){
+      const n = y * W + x, i = n * 4;
+      if(cov && cov[n]){ o[i] = f[i]; o[i + 1] = f[i + 1]; o[i + 2] = f[i + 2]; o[i + 3] = f[i + 3]; continue; }
+      const sx = x - dx; if(!inY || sx < 0 || sx >= W) continue;
+      const k = (sy * W + sx) * 4; o[i] = s[k]; o[i + 1] = s[k + 1]; o[i + 2] = s[k + 2]; o[i + 3] = s[k + 3];
+    }
+  }
+  return out;
+}
+async function imageURL(im){
+  const c = document.createElement("canvas"); c.width = im.width; c.height = im.height;
+  c.getContext("2d").putImageData(im, 0, 0);
+  const blob = await new Promise(ok => c.toBlob(ok));
+  if(!blob) return null;
+  const u = URL.createObjectURL(blob); radar.blobs.push(u); return u;
 }
 // Best shift of rain mask a onto b (grid cells), from DWD analysis now vs DWD forecast +60 min.
 function motion(a, b){
@@ -918,7 +945,7 @@ function radarNote(){
   const fut = radar.frames.filter(f => f.future), h = fut.length ? Math.round((fut[fut.length - 1].t - radar.now) / 3600e3) : 0;
   $("rnote").textContent = !radar.ok ? "Místo je mimo dosah radarů ČHMÚ a DWD." :
     "Zpět 90 min" + (h ? ", dopředu " + h + " h." : ".") + " Česko: ČHMÚ. Jinde: DWD." +
-    (h ? (radar.mv ? " V Česku je předpověď jen posun snímku." : " Předpověď jen v Německu.") : "") +
+    (h ? (radar.mv ? " Mimo předpověď DWD jen posun snímků." : " Předpověď jen v Německu.") : "") +
     " Červená: vybrané místo. Modrá: vy.";
 }
 function getMe(then, quiet){
@@ -954,11 +981,9 @@ function radarShow(i){
   radar.frames.forEach((f, j) => { const o = f.rough ? .5 : f.future ? .6 : .72; if(f.cz) f.cz.setOpacity(j === i ? o : 0); if(f.de) f.de.setOpacity(j === i ? o : 0); });
   $("rslider").value = i;
   const f = radar.frames[i], hm = new Date(f.t).toLocaleTimeString("cs-CZ", {hour:"2-digit", minute:"2-digit"});
-  const dm = Math.round(Math.abs(f.t - radar.now) / 60e3), dur = dm >= 60 ? Math.floor(dm / 60) + " h" + (dm % 60 ? " " + dm % 60 + " min" : "") : dm + " min";
-  const rel = f.future ? "+" + dur + (f.rough ? ", hrubý odhad" : ", předpověď") : (dm ? "−" + dur : "poslední snímek");
-  $("rtime").textContent = hm + ", " + rel;
+  $("rtime").textContent = hm + (f.future ? (f.rough ? ", odhad" : ", předpověď") : f.t === radar.now ? ", poslední" : "");
   $("map").classList.toggle("fut", !!f.future);
-  $("map").dataset.fut = f.rough ? "HRUBÝ ODHAD" : "PŘEDPOVĚĎ";
+  $("map").dataset.fut = f.rough ? "ODHAD" : "PŘEDPOVĚĎ";
 }
 function radarStop(){
   clearTimeout(radar.timer); radar.timer = 0;
@@ -996,7 +1021,19 @@ async function radarLoad(){
   // DWD frames arrive slowly (seconds each). Fetch the two needed for motion first,
   // then the rest; the Czech forecast appears as soon as motion is known.
   radar.mv = null; radarNote();
-  const imgs = [], fut1 = Math.min(radar.frames.length - 1, nowIdx + 6);
+  const imgs = [], fut1 = Math.min(radar.frames.length - 1, nowIdx + 6), pending = [];
+  let A = null, last = null;
+  // Blend each DWD forecast with the moved German analysis, so rain from Germany enters Czechia.
+  const blendAll = async () => {
+    while(radar.mv && A && pending.length && seq === radar.seq){
+      const j = pending.shift(), F = imgs[j], f = radar.frames[j];
+      const out = blendDWD(F, A, f.t, radar.mv), u = await imageURL(out);
+      if(seq !== radar.seq) return;
+      if(u && f.de) f.de.setUrl(u);
+      F.data = null; F.cov = null;
+      if(!last || f.t > last.t) last = {data:out, W:A.W, H:A.H, mpx:A.mpx, mpy:A.mpy, t:f.t};
+    }
+  };
   const order = [nowIdx - 1, fut1, nowIdx, ...radar.frames.map((_, j) => j)].filter((j, k, a) => j >= 0 && a.indexOf(j) === k);
   const tryMotion = () => {
     if(radar.mv || seq !== radar.seq) return;
@@ -1007,6 +1044,9 @@ async function radarLoad(){
     if(!mv) return;
     const k = 3600e3 / (radar.frames[ib].t - radar.frames[ia].t); mv = {dx: mv.dx * k, dy: mv.dy * k};
     radar.mv = mv;
+    A = imgs[ia]; A.t = radar.frames[ia].t;
+    imgs.forEach((im, j) => { if(im && j <= nowIdx && im !== A){ im.data = null; im.cov = null; } });
+    blendAll();
     radar.frames.forEach(f => {
       if(!f.future) return;
       f.cz = L.imageOverlay(radarName(found), shifted(RADAR.bounds, mv, (f.t - found) / 3600e3), {opacity:0, pane:"radar", interactive:false}).addTo(radar.map);
@@ -1019,7 +1059,9 @@ async function radarLoad(){
       if(!img || seq !== radar.seq) return;
       imgs[j] = img;
       f.de = L.imageOverlay(img.url, DWD.bounds, {opacity:0, pane:"radarde", interactive:false}).addTo(radar.map);
-      radarShow(radar.idx); tryMotion();
+      if(f.future) pending.push(j);
+      else if(radar.mv){ img.data = null; img.cov = null; }
+      radarShow(radar.idx); tryMotion(); return blendAll();
     });
   };
   // At most 4 requests at a time, in priority order.
@@ -1027,6 +1069,16 @@ async function radarLoad(){
   const worker = async () => { while(next < order.length && seq === radar.seq) await fetchOne(order[next++]); };
   await Promise.all([worker(), worker(), worker(), worker()]);
   if(seq !== radar.seq) return;
+  await blendAll();
+  // Beyond the DWD forecast (or where it failed): keep moving the last frame.
+  if(radar.mv && (last || A)) for(const f of radar.frames){
+    if(!f.future || f.de) continue;
+    const u = await imageURL(blendDWD(null, last || A, f.t, radar.mv));
+    if(seq !== radar.seq) return;
+    if(u) f.de = L.imageOverlay(u, DWD.bounds, {opacity:0, pane:"radarde", interactive:false}).addTo(radar.map);
+  }
+  A = last = null;
+  radarShow(radar.idx);
   if(!radar.mv){
     const cur = radar.frames[radar.idx];
     radar.frames = radar.frames.filter(f => !f.future || f.de);
