@@ -34,7 +34,9 @@
 html,body{margin:0}
 body{background:var(--bg);color:var(--ink);font-family:var(--body);font-size:16px;line-height:1.4;
   -webkit-text-size-adjust:100%}
-main{max-width:720px;margin:0 auto;padding:16px 16px 40px;display:flex;flex-direction:column;gap:16px}
+main{max-width:720px;margin:0 auto;padding:10px 10px 28px;display:flex;flex-direction:column;gap:10px}
+/* Everything 35 % smaller except the map itself. */
+#locform,#notice,#now,#models,.hours,.daily,.radar>header,.rctl,.rleg,#rnote,.cmp,footer{zoom:.66}
 button,input{font:inherit;color:inherit}
 button{cursor:pointer}
 :focus-visible{outline:2px solid var(--accent);outline-offset:2px}
@@ -73,13 +75,10 @@ h2{font-family:var(--display);font-size:1.05rem;font-weight:700;margin:0}
 .outlook{grid-column:1/-1;margin-top:8px;padding-top:12px;border-top:1px solid var(--line);font-size:.98rem}
 
 /* Models */
-.models{display:flex;gap:8px;overflow-x:auto;padding:2px 16px;margin:0 -16px;scrollbar-width:none}
+.models{display:flex;flex-wrap:wrap;gap:8px}
 .models::-webkit-scrollbar{display:none}
-.chip{flex:none;border:1px solid var(--line);background:var(--card);border-radius:12px;padding:8px 14px;text-align:left;min-height:48px}
-.chip b{display:block;font-weight:600;font-size:.95rem}
-.chip small{color:var(--muted);font-size:.75rem}
+.chip{flex:none;border:1px solid var(--line);background:var(--card);border-radius:20px;padding:7px 16px;min-height:44px;font-weight:600}
 .chip[aria-pressed="true"]{background:var(--accent);border-color:var(--accent);color:var(--card)}
-.chip[aria-pressed="true"] small{color:inherit;opacity:.85}
 .chip:disabled{opacity:.45;cursor:not-allowed}
 
 /* Hourly strip */
@@ -134,11 +133,13 @@ h2{font-family:var(--display);font-size:1.05rem;font-weight:700;margin:0}
 .rowlab{padding:6px 16px 0;font-size:.8rem;color:var(--muted)}
 
 /* Radar */
-.radar{padding:14px 0 12px}
+.radar{padding:9px 0 8px;border-radius:10px}
 .radar header{display:flex;justify-content:space-between;align-items:baseline;gap:12px;padding:0 16px 8px}
 #rtime{font-size:.88rem;color:var(--muted)}
-#map{height:320px;position:relative;z-index:0;background:var(--bg)}
+#map{height:280px;position:relative;z-index:0;background:var(--bg)}
 .leaflet-container{font-family:var(--body)}
+.rme{display:grid!important;place-items:center}
+.rme svg{width:18px;height:18px;fill:none;stroke:#222;stroke-width:2;stroke-linecap:round}
 #map .leaflet-tile-pane{filter:saturate(.55) contrast(.95)}
 #map.dark .leaflet-tile-pane{filter:invert(1) hue-rotate(180deg) brightness(.85) contrast(.85) saturate(.4)}
 .rctl{display:flex;align-items:center;gap:12px;padding:10px 16px 0}
@@ -217,7 +218,7 @@ footer a{color:var(--accent)}
     <header><h2>Hodinová</h2>
       <div class="legend"><span><i></i>teplota</span><span><i class="f"></i>pocitová</span></div></header>
     <div class="scroll" id="scroll"><div class="strip" id="strip"></div></div>
-    <div class="rowlab" id="ppnote">Sloupec ukazuje pravděpodobnost srážek, pod ním úhrn v mm.</div>
+    <div class="rowlab" id="ppnote"></div>
   </section>
 
   <section class="card daily">
@@ -227,19 +228,19 @@ footer a{color:var(--accent)}
   </section>
 
   <section class="card radar">
-    <header><h2>Radar ČHMÚ</h2><span id="rtime" class="num">Načítám…</span></header>
+    <header><h2>Radar</h2><span id="rtime" class="num">Načítám…</span></header>
     <div id="map" role="img" aria-label="Mapa srážek z radaru ČHMÚ"></div>
     <div class="rctl">
       <button type="button" id="rplay" aria-label="Přehrát posledních 90 minut"><svg viewBox="0 0 24 24"><path d="M7 4.5v15l12-7.5z"/></svg></button>
       <input type="range" id="rslider" min="0" max="0" value="0" aria-label="Čas radarového snímku">
     </div>
     <div class="rleg"><span>slabé</span><i></i><span>silné srážky</span></div>
-    <div class="rowlab" id="rnote">Naměřené srážky za posledních 90 minut, snímek každých 5 minut.</div>
+    <div class="rowlab" id="rnote"></div>
   </section>
 
   <section class="card cmp">
-    <h2>Srovnání modelů</h2>
-    <p>Hodnoty za příštích 48 hodin. Když se modely shodují, je předpověď jistější. Klepnutím na řádek model vyberete.</p>
+    <h2>Modely</h2>
+    <p>Příštích 48 h. Klepnutím model vyberete.</p>
     <div class="tw"><table>
       <thead><tr><th>Model</th><th>Teď</th><th>Pocitově</th><th>Min/max</th><th>Déšť</th><th>Úhrn</th></tr></thead>
       <tbody id="cmp"></tbody>
@@ -254,13 +255,13 @@ footer a{color:var(--accent)}
 <script>
 "use strict";
 const MODELS = [
-  {id:"best_match",           name:"Nejlepší mix",  src:"Open-Meteo vybere podle místa"},
+  {id:"best_match",           short:"Mix", name:"Nejlepší mix",  src:"Open-Meteo vybere podle místa"},
   {id:"icon_seamless",        name:"ICON",          src:"DWD, Německo, až 2 km"},
   {id:"chmi_aladin_seamless", name:"ALADIN",        src:"ČHMÚ, až 1 km"},
   {id:"metno",                name:"Yr.no",         src:"MET Norway", metno:true},
   {id:"ecmwf_ifs025",         name:"ECMWF IFS",     src:"Evropské centrum"},
   {id:"ukmo_seamless",        name:"UKMO",          src:"Met Office, Británie"},
-  {id:"meteofrance_seamless", name:"AROME/ARPEGE",  src:"Météo-France"},
+  {id:"meteofrance_seamless", short:"AROME", name:"AROME/ARPEGE",  src:"Météo-France"},
   {id:"gfs_seamless",         name:"GFS",           src:"NOAA, USA"}
 ];
 const VARS = "temperature_2m,apparent_temperature,precipitation_probability,precipitation,weather_code,wind_speed_10m,wind_gusts_10m,relative_humidity_2m,is_day";
@@ -507,8 +508,7 @@ function renderNow(){
 function renderModels(){
   $("models").innerHTML = MODELS.map(m => {
     const d = state.data[m.id], bad = d && d.error;
-    return `<button type="button" class="chip" data-m="${m.id}" aria-pressed="${m.id === state.model}" ${bad ? "disabled" : ""}>
-      <b>${esc(m.name)}</b><small>${bad ? "teď nedostupný" : esc(m.src)}</small></button>`;
+    return `<button type="button" class="chip" data-m="${m.id}" aria-pressed="${m.id === state.model}" title="${esc(m.name + ", " + m.src + (bad ? ", teď nedostupný" : ""))}" ${bad ? "disabled" : ""}>${esc(m.short || m.name)}</button>`;
   }).join("");
 }
 
@@ -543,8 +543,7 @@ function renderStrip(){
   el.style.width = W + "px";
   el.innerHTML = `<div class="days">${days}</div><div class="body"><i class="hl"></i>${seps}<div class="cols">${top}</div>${curve}<div class="cols">${bot}</div></div>`;
   $("scroll").scrollLeft = state.resetScroll ? 0 : keep; state.resetScroll = false;
-  $("ppnote").textContent = "Nahoře teplota, šedě pocitová. Sloupec je pravděpodobnost srážek, pod ním úhrn." +
-    (d.ppBorrowed ? " Tento model pravděpodobnost neudává, beru ji z mixu modelů." : "");
+  $("ppnote").textContent = "Šedě pocitová. Sloupec: šance na srážky, pod ním mm." + (d.ppBorrowed ? " Šance z mixu." : "");
 }
 
 function renderDaily(){
@@ -561,8 +560,7 @@ function renderDaily(){
       <div class="halves">${half(x.day, true)}${half(x.night, false)}</div>
       <div class="mm num">${mm >= 0.05 ? mm.toFixed(1).replace(".", ",") + " mm" : ""}</div></div>`;
   }).join("");
-  $("dnote").textContent = "Den je 6 až 18 h s nejvyšší teplotou, noc 18 až 6 h s nejnižší." +
-    (d.extFrom ? " Tento model počítá jen pár dní dopředu. Dny označené mix doplňuje směs modelů." : "");
+  $("dnote").textContent = "Den 6 až 18 h max., noc 18 až 6 h min." + (d.extFrom ? " Mix: za hranou modelu." : "");
 }
 
 function renderCmp(){
@@ -666,6 +664,7 @@ function locate(quiet){
   if(!quiet) notice("Zjišťuji polohu…");
   navigator.geolocation.getCurrentPosition(async pos => {
     const lat = pos.coords.latitude, lon = pos.coords.longitude;
+    state.me = {lat, lon};
     let name = "Moje poloha", sub = lat.toFixed(3) + "° s. š., " + lon.toFixed(3) + "° v. d.";
     try{
       const j = await getJSON("https://photon.komoot.io/reverse?lat=" + lat.toFixed(5) + "&lon=" + lon.toFixed(5));
@@ -688,17 +687,39 @@ $("refresh").addEventListener("click", () => { notice(""); load(); radarLoad(); 
 document.addEventListener("visibilitychange", () => { if(!document.hidden && state.updated && Date.now() - state.updated > 30 * 60e3){ load(); radarLoad(); } });
 
 
-/* Radar ČHMÚ */
+/* Radar: ČHMÚ on top, DWD fills areas outside Czech coverage */
 const RADAR = {
   url: "https://opendata.chmi.cz/meteorology/weather/radar/composite/maxz/png_masked/pacz2gmaps3.z_max3d.",
   bounds: [[48.047, 11.267], [52.167, 20.770]],
   data: [[48.047, 11.267], [51.458, 19.624]],
-  frames: 19, step: 5 * 60e3
+  frames: 10, step: 10 * 60e3, poll: 5 * 60e3
 };
-const radar = { map:null, base:null, labels:null, marker:null, layers:[], times:[], idx:0, timer:0, dark:null, seq:0 };
+const DWD = {
+  url: "https://maps.dwd.de/geoserver/dwd/wms?service=WMS&version=1.1.1&request=GetMap&layers=dwd:Niederschlagsradar&styles=&format=image/png&transparent=true&srs=EPSG:3857",
+  bounds: [[46.5, 5.0], [55.5, 19.0]], w: 900
+};
+const radar = { map:null, base:null, place:null, me:null, frames:[], blobs:[], idx:0, timer:0, dark:null, seq:0 };
 const radarName = t => { const d = new Date(t), z = n => String(n).padStart(2, "0");
   return RADAR.url + d.getUTCFullYear() + z(d.getUTCMonth() + 1) + z(d.getUTCDate()) + "." + z(d.getUTCHours()) + z(d.getUTCMinutes()) + ".0.png"; };
 const probe = url => new Promise(ok => { const im = new Image(); im.onload = () => ok(true); im.onerror = () => ok(false); im.src = url; });
+const mx = lon => lon * 20037508.34 / 180;
+const my = lat => Math.log(Math.tan((90 + lat) * Math.PI / 360)) * 6378137;
+async function dwdImage(t){
+  const [[la1, lo1], [la2, lo2]] = DWD.bounds, x1 = mx(lo1), x2 = mx(lo2), y1 = my(la1), y2 = my(la2);
+  const h = Math.round(DWD.w * (y2 - y1) / (x2 - x1));
+  const r = await fetch(DWD.url + "&bbox=" + [x1, y1, x2, y2].map(v => v.toFixed(0)).join(",") + "&width=" + DWD.w + "&height=" + h + "&time=" + new Date(t).toISOString().slice(0, 19) + "Z");
+  if(!r.ok || !/image\/png/.test(r.headers.get("content-type") || "")) return null;
+  const bmp = await createImageBitmap(await r.blob());
+  const c = document.createElement("canvas"); c.width = bmp.width; c.height = bmp.height;
+  const g = c.getContext("2d"); g.drawImage(bmp, 0, 0);
+  const im = g.getImageData(0, 0, c.width, c.height), a = im.data;
+  // Drop the grey veil outside coverage (semi-transparent) and the magenta coverage border.
+  for(let i = 0; i < a.length; i += 4) if(a[i + 3] < 250 || (a[i] > 190 && a[i + 1] < 100 && a[i + 2] > 190)) a[i + 3] = 0;
+  g.putImageData(im, 0, 0);
+  const blob = await new Promise(ok => c.toBlob(ok));
+  if(!blob) return null;
+  const u = URL.createObjectURL(blob); radar.blobs.push(u); return u;
+}
 function isDark(){
   const t = document.documentElement.getAttribute("data-theme");
   return t ? t === "dark" : !!(window.matchMedia && matchMedia("(prefers-color-scheme: dark)").matches);
@@ -708,24 +729,44 @@ function radarTiles(){
   const dark = isDark(); if(dark === radar.dark) return; radar.dark = dark;
   $("map").classList.toggle("dark", dark);
   if(!radar.base) radar.base = L.tileLayer("https://tile.openstreetmap.org/{z}/{x}/{y}.png", {maxZoom:12,
-    attribution:'© <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>, radar © ČHMÚ'}).addTo(radar.map);
+    attribution:'© <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>, radar © ČHMÚ, DWD'}).addTo(radar.map);
+}
+const covered = ll => L.latLngBounds(RADAR.data).contains(ll) || L.latLngBounds(DWD.bounds).contains(ll);
+function radarMarkers(){
+  if(!radar.map) return;
+  const p = state.place || DEFAULT_PLACE;
+  if(radar.place) radar.place.remove();
+  if(radar.me) radar.me.remove();
+  radar.place = L.circleMarker([p.lat, p.lon], {radius:7, weight:2, color:"#fff", fillColor:"#d63a2f", fillOpacity:1, pane:"labels"}).addTo(radar.map);
+  radar.me = state.me ? L.circleMarker([state.me.lat, state.me.lon], {radius:5, weight:2, color:"#fff", fillColor:"#1f78e0", fillOpacity:1, pane:"labels"}).addTo(radar.map) : null;
 }
 function radarCenter(){
   if(!radar.map) return;
-  const p = state.place || DEFAULT_PLACE, ll = [p.lat, p.lon];
-  const inside = L.latLngBounds(RADAR.data).contains(ll);
-  radar.map.setView(inside ? ll : [49.8, 15.5], inside ? 8 : 6);
-  if(radar.marker) radar.marker.remove();
-  radar.marker = inside ? L.circleMarker(ll, {radius:6, weight:2, color:"#fff", fillColor:"#1f6fb5", fillOpacity:1, pane:"labels"}).addTo(radar.map) : null;
-  $("rnote").textContent = inside ? "Naměřené srážky za posledních 90 minut, snímek každých 5 minut."
-    : "Radar ČHMÚ pokrývá jen Česko a blízké okolí. Vybrané místo je mimo dosah.";
+  const p = state.place || DEFAULT_PLACE, ll = [p.lat, p.lon], ok = covered(ll);
+  radar.map.setView(ok ? ll : [50.5, 12.5], ok ? 8 : 5);
+  radarMarkers();
+  $("rnote").textContent = (ok ? "Posledních 90 min. ČHMÚ, mimo jeho dosah DWD." : "Místo je mimo dosah radarů ČHMÚ a DWD.") + " Červená: předpověď, modrá: vy.";
+}
+function getMe(then, quiet){
+  if(!navigator.geolocation){ if(!quiet) notice("Tento prohlížeč polohu neumí."); return; }
+  navigator.geolocation.getCurrentPosition(pos => {
+    state.me = {lat:pos.coords.latitude, lon:pos.coords.longitude};
+    radarMarkers(); if(then) then();
+  }, err => { if(!quiet) notice(err.code === 1 ? "Přístup k poloze je zakázaný. Povolte ho v prohlížeči." : "Polohu se nepodařilo zjistit.", true); },
+  {timeout:10000, maximumAge:120000});
+}
+function centerMe(){
+  const go = () => radar.map.setView([state.me.lat, state.me.lon], Math.max(radar.map.getZoom(), 9));
+  const had = !!state.me;
+  getMe(go, had);
+  if(had) go();
 }
 function radarShow(i){
-  if(!radar.layers.length) return;
+  if(!radar.frames.length) return;
   radar.idx = i;
-  radar.layers.forEach((l, j) => l.setOpacity(j === i ? .75 : 0));
+  radar.frames.forEach((f, j) => { f.cz.setOpacity(j === i ? .75 : 0); if(f.de) f.de.setOpacity(j === i ? .7 : 0); });
   $("rslider").value = i;
-  const t = radar.times[i], ago = Math.round((Date.now() - t) / 60e3);
+  const t = radar.frames[i].t, ago = Math.round((Date.now() - t) / 60e3);
   $("rtime").textContent = new Date(t).toLocaleTimeString("cs-CZ", {hour:"2-digit", minute:"2-digit"}) + (ago > 1 ? ", před " + ago + " min" : "");
 }
 function radarStop(){
@@ -737,36 +778,54 @@ function radarPlay(){
   if(radar.timer){ radarStop(); return; }
   $("rplay").innerHTML = '<svg viewBox="0 0 24 24"><path d="M6 4.5h4v15H6zM14 4.5h4v15h-4z"/></svg>';
   $("rplay").setAttribute("aria-label", "Zastavit animaci");
-  let i = radar.idx >= radar.layers.length - 1 ? 0 : radar.idx;
-  const tick = () => { radarShow(i); const last = i === radar.layers.length - 1; i = last ? 0 : i + 1; radar.timer = setTimeout(tick, last ? 1500 : 400); };
+  let i = radar.idx >= radar.frames.length - 1 ? 0 : radar.idx;
+  const tick = () => { radarShow(i); const last = i === radar.frames.length - 1; i = last ? 0 : i + 1; radar.timer = setTimeout(tick, last ? 1500 : 500); };
   tick();
 }
 async function radarLoad(){
   if(!radar.map) return;
   const seq = ++radar.seq;
   radarStop();
-  let t = Math.floor(Date.now() / RADAR.step) * RADAR.step, found = 0;
-  for(let k = 0; k < 8 && !found; k++, t -= RADAR.step) if(await probe(radarName(t))) found = t;
+  let t = Math.floor(Date.now() / RADAR.poll) * RADAR.poll, found = 0;
+  for(let k = 0; k < 8 && !found; k++, t -= RADAR.poll) if(await probe(radarName(t))) found = t;
   if(seq !== radar.seq) return;
-  radar.layers.forEach(l => l.remove()); radar.layers = []; radar.times = [];
-  if(!found){ $("rtime").textContent = "nedostupný"; $("rnote").textContent = "Radarové snímky ČHMÚ se teď nepodařilo načíst. Zkuste Obnovit."; return; }
+  radar.frames.forEach(f => { f.cz.remove(); if(f.de) f.de.remove(); }); radar.frames = [];
+  radar.blobs.forEach(u => URL.revokeObjectURL(u)); radar.blobs = [];
+  if(!found){ $("rtime").textContent = "nedostupný"; $("rnote").textContent = "Radarové snímky se teď nepodařilo načíst. Zkuste Obnovit."; return; }
   for(let k = RADAR.frames - 1; k >= 0; k--){
     const tt = found - k * RADAR.step;
-    radar.times.push(tt);
-    radar.layers.push(L.imageOverlay(radarName(tt), RADAR.bounds, {opacity:0, pane:"radar", interactive:false}).addTo(radar.map));
+    radar.frames.push({ t:tt, de:null, cz:L.imageOverlay(radarName(tt), RADAR.bounds, {opacity:0, pane:"radar", interactive:false}).addTo(radar.map) });
   }
-  $("rslider").max = radar.layers.length - 1;
-  radarShow(radar.layers.length - 1);
+  $("rslider").max = radar.frames.length - 1;
+  radarShow(radar.frames.length - 1);
+  // DWD frames arrive later; each is added when ready.
+  radar.frames.forEach(f => dwdImage(f.t).then(u => {
+    if(!u || seq !== radar.seq) return;
+    f.de = L.imageOverlay(u, DWD.bounds, {opacity:0, pane:"radarde", interactive:false}).addTo(radar.map);
+    radarShow(radar.idx);
+  }).catch(() => {}));
 }
 function radarInit(){
   if(!window.L){ $("rtime").textContent = "nedostupný"; $("rnote").textContent = "Mapa se nenačetla. Zkontrolujte připojení a obnovte stránku."; return; }
-  radar.map = L.map("map", {zoomControl:true, scrollWheelZoom:false, minZoom:5, maxZoom:12, attributionControl:true});
+  radar.map = L.map("map", {zoomControl:true, scrollWheelZoom:false, minZoom:4, maxZoom:12, attributionControl:true});
+  radar.map.createPane("radarde").style.zIndex = 340;
   radar.map.createPane("radar").style.zIndex = 350;
   radar.map.createPane("labels").style.zIndex = 450;
   radar.map.getPane("labels").style.pointerEvents = "none";
+  const Me = L.Control.extend({ options:{position:"topleft"}, onAdd(){
+    const box = L.DomUtil.create("div", "leaflet-bar leaflet-control"), a = L.DomUtil.create("a", "rme", box);
+    a.href = "#"; a.title = "Na moji polohu"; a.setAttribute("role", "button"); a.setAttribute("aria-label", "Vycentrovat na moji polohu");
+    a.innerHTML = '<svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="6"/><path d="M12 2v4M12 18v4M2 12h4M18 12h4"/></svg>';
+    L.DomEvent.on(a, "click", e => { L.DomEvent.stop(e); centerMe(); });
+    L.DomEvent.disableClickPropagation(box);
+    return box;
+  }});
+  new Me().addTo(radar.map);
   radarTiles(); radarCenter(); radarLoad();
   if(window.matchMedia) matchMedia("(prefers-color-scheme: dark)").addEventListener("change", radarTiles);
   new MutationObserver(radarTiles).observe(document.documentElement, {attributes:true, attributeFilter:["data-theme"]});
+  if(navigator.permissions && navigator.permissions.query)
+    navigator.permissions.query({name:"geolocation"}).then(r => { if(r.state === "granted") getMe(null, true); }).catch(() => {});
 }
 $("rplay").addEventListener("click", radarPlay);
 $("rslider").addEventListener("input", e => { radarStop(); radarShow(+e.target.value); });
