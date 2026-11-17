@@ -336,7 +336,12 @@ body.guest .bar-in { display: grid; grid-template-columns: auto auto auto minmax
 body.guest .status, body.guest .controls, body.guest .transport { display: contents; }
 body.guest #actPrev { grid-area: ap; } body.guest #prev { grid-area: pv; } body.guest #pos { grid-area: pos; padding-left: 4px; }
 body.guest #now { grid-area: now; } body.guest #next { grid-area: nx; } body.guest #actNext { grid-area: an; } body.guest #setBtn { grid-area: set; margin-left: 4px; }
-body.guest #play { grid-area: pl; width: 100%; height: 52px; border-radius: 26px; display: flex; align-items: center; justify-content: space-between; padding: 0 30px; }
+body.guest .bar { padding-bottom: 0; }
+body.guest #play { grid-area: pl; width: auto; height: calc(62px + env(safe-area-inset-bottom, 0px)); border-radius: 26px 26px 0 0; display: flex; align-items: center; justify-content: space-between;
+  margin-left: calc(-1 * max(12px, env(safe-area-inset-left, 0px))); margin-right: calc(-1 * max(12px, env(safe-area-inset-right, 0px)));
+  padding: 0 max(10px, env(safe-area-inset-right, 0px)) env(safe-area-inset-bottom, 0px) max(10px, env(safe-area-inset-left, 0px)); }   /* edge to edge and down to the bottom: the ends and the strip under the box stay tappable */
+body.guest #pos { min-width: 0; overflow: hidden; }
+@media (max-width: 400px) { body.guest .bar-in .ctl:not(.play) { width: 40px; } body.guest .bar-in { column-gap: 2px; } body.guest #now { display: none; } }
 body.guest .wrap { padding-bottom: 80px; }
 body.guest .songview { padding-bottom: 230px; }
 .sv-lyrics .gap { height: 14px; }
