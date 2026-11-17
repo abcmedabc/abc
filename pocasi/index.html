@@ -6,6 +6,7 @@
 <title>Počasí po hodinách</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css">
 <link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,700&family=Instrument+Sans:wght@400;500;600&display=swap" rel="stylesheet">
 <style>
 /* Layout: one column, max 720px. Summary first, then a 48h strip that scrolls sideways, then model comparison. */
@@ -128,8 +129,25 @@ h2{font-family:var(--display);font-size:1.05rem;font-weight:700;margin:0}
 .half.n b{color:var(--muted);font-weight:500}
 .half .pp{font-size:.8rem;font-weight:600;color:var(--rain)}
 .half .pp.low{color:var(--muted);font-weight:500}
+.dday.ext .dn::after{content:" · mix";color:var(--muted);font-weight:500;font-size:.75rem}
 .dday .mm{font-size:.72rem;color:var(--muted);min-height:1.2em;margin-top:2px}
 .rowlab{padding:6px 16px 0;font-size:.8rem;color:var(--muted)}
+
+/* Radar */
+.radar{padding:14px 0 12px}
+.radar header{display:flex;justify-content:space-between;align-items:baseline;gap:12px;padding:0 16px 8px}
+#rtime{font-size:.88rem;color:var(--muted)}
+#map{height:320px;position:relative;z-index:0;background:var(--bg)}
+.leaflet-container{font-family:var(--body)}
+#map .leaflet-tile-pane{filter:saturate(.55) contrast(.95)}
+#map.dark .leaflet-tile-pane{filter:invert(1) hue-rotate(180deg) brightness(.85) contrast(.85) saturate(.4)}
+.rctl{display:flex;align-items:center;gap:12px;padding:10px 16px 0}
+.rctl button{flex:none;width:44px;height:44px;border-radius:50%;border:1px solid var(--line);background:var(--card);display:grid;place-items:center}
+.rctl button svg{width:18px;height:18px;fill:var(--ink)}
+.rctl input{flex:1;min-width:0;accent-color:var(--accent);height:44px}
+.rleg{display:flex;align-items:center;gap:8px;padding:6px 16px 0;font-size:.75rem;color:var(--muted)}
+.rleg i{flex:1;max-width:220px;height:8px;border-radius:4px;background:linear-gradient(90deg,#3f00a8,#0000fc,#0070d0,#00a000,#00e000,#fcfc00,#fc8400,#fc0000,#a00000)}
+.rleg span{white-space:nowrap}
 
 /* Compare */
 .cmp{padding:16px}
@@ -186,7 +204,7 @@ footer a{color:var(--accent)}
 
 <main>
   <form class="loc" id="locform" autocomplete="off">
-    <input id="q" type="search" placeholder="Hledat místo, třeba Olomouc" aria-label="Hledat místo" enterkeyhint="search">
+    <input id="q" type="search" placeholder="Město, ulice nebo třeba Praha 6" aria-label="Hledat místo" enterkeyhint="search">
     <button type="button" id="geo" aria-label="Použít moji polohu"><svg class="ico" style="stroke:var(--accent)"><use href="#i-pin"/></svg><span>Moje poloha</span></button>
     <ul class="results" id="results" hidden></ul>
   </form>
@@ -208,6 +226,17 @@ footer a{color:var(--accent)}
     <div class="rowlab" id="dnote"></div>
   </section>
 
+  <section class="card radar">
+    <header><h2>Radar ČHMÚ</h2><span id="rtime" class="num">Načítám…</span></header>
+    <div id="map" role="img" aria-label="Mapa srážek z radaru ČHMÚ"></div>
+    <div class="rctl">
+      <button type="button" id="rplay" aria-label="Přehrát posledních 90 minut"><svg viewBox="0 0 24 24"><path d="M7 4.5v15l12-7.5z"/></svg></button>
+      <input type="range" id="rslider" min="0" max="0" value="0" aria-label="Čas radarového snímku">
+    </div>
+    <div class="rleg"><span>slabé</span><i></i><span>silné srážky</span></div>
+    <div class="rowlab" id="rnote">Naměřené srážky za posledních 90 minut, snímek každých 5 minut.</div>
+  </section>
+
   <section class="card cmp">
     <h2>Srovnání modelů</h2>
     <p>Hodnoty za příštích 48 hodin. Když se modely shodují, je předpověď jistější. Klepnutím na řádek model vyberete.</p>
@@ -218,9 +247,10 @@ footer a{color:var(--accent)}
   </section>
 
   <footer><span id="upd"></span><button type="button" id="refresh">Obnovit</button>
-    <span>Data: <a href="https://open-meteo.com/" target="_blank" rel="noopener">Open-Meteo</a> (DWD, ČHMÚ, ECMWF, NOAA, Météo-France, Met Office) a <a href="https://www.yr.no/" target="_blank" rel="noopener">MET Norway</a></span></footer>
+    <span>Data: <a href="https://open-meteo.com/" target="_blank" rel="noopener">Open-Meteo</a> (DWD, ČHMÚ, ECMWF, NOAA, Météo-France, Met Office) a <a href="https://www.yr.no/" target="_blank" rel="noopener">MET Norway</a>. Radar: <a href="https://opendata.chmi.cz/" target="_blank" rel="noopener">ČHMÚ</a>, mapa © <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener">OpenStreetMap</a>. Hledání: <a href="https://photon.komoot.io/" target="_blank" rel="noopener">Photon</a>, © <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener">OpenStreetMap</a></span></footer>
 </main>
 
+<script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"></script>
 <script>
 "use strict";
 const MODELS = [
@@ -235,14 +265,16 @@ const MODELS = [
 ];
 const VARS = "temperature_2m,apparent_temperature,precipitation_probability,precipitation,weather_code,wind_speed_10m,wind_gusts_10m,relative_humidity_2m,is_day";
 const HOURS = 48, COL = 50, DAYS = 7;
-const DEFAULT_PLACE = {name:"Praha", sub:"Česko", lat:50.088, lon:14.4208};
+const DEFAULT_PLACE = {name:"Praha", sub:"Česko", lat:50.088, lon:14.4208, cc:"CZ"};
+const inCZ = p => p.cc ? p.cc === "CZ" : (p.lat > 48.55 && p.lat < 51.06 && p.lon > 12.09 && p.lon < 18.86);
+const defaultModel = p => inCZ(p) ? "chmi_aladin_seamless" : "best_match";
 const $ = id => document.getElementById(id);
 const store = {
   get(k, d){ try{ const v = localStorage.getItem(k); return v ? JSON.parse(v) : d; }catch(e){ return d; } },
   set(k, v){ try{ localStorage.setItem(k, JSON.stringify(v)); }catch(e){} }
 };
-const state = { place: store.get("pocasi.place", null), model: store.get("pocasi.model", "best_match"), data:{}, loading:false, token:0 };
-if(!MODELS.some(m => m.id === state.model)) state.model = "best_match";
+const state = { place: store.get("pocasi.place", null), data:{}, loading:false, token:0, manual:false };
+state.model = defaultModel(state.place || DEFAULT_PLACE);
 
 const esc = s => String(s).replace(/[&<>"]/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
 const has = v => v !== null && v !== undefined && !Number.isNaN(v);
@@ -356,19 +388,30 @@ async function load(){
   if(token !== state.token) return;
   state.loading = false;
   state.updated = new Date();
-  // Models without their own probability borrow it from the mix.
   const bm = state.data.best_match;
+  // The default model may not cover this place. Fall back to the mix.
+  if(!state.manual && !(state.data[state.model] && state.data[state.model].rows) && bm && bm.rows) state.model = "best_match";
+  // Short models (ALADIN has 3 days) continue with the mix for the daily view.
+  if(bm && bm.rows) for(const m of MODELS){
+    const d = state.data[m.id];
+    if(!d || !d.rows || m.id === "best_match" || !d.slots.length) continue;
+    const last = d.slots[d.slots.length - 1], end = last.time;
+    const tail = bm.slots.filter(s => s.time > end && Date.parse(s.time + "Z") >= Date.parse(last.time + "Z") + last.span * 36e5);
+    if(tail.length){ d.slots = d.slots.concat(tail.map(s => ({...s, ext:true}))); d.extFrom = tail[0].time; }
+  }
+  // Models without their own probability borrow it from the mix.
   if(bm && bm.rows && bm.ppOwn){
     const idx = new Map(bm.slots.map((s, i) => [s.time, i]));
     for(const m of MODELS){
       const d = state.data[m.id];
       if(!d || !d.rows || d.ppOwn) continue;
       d.slots.forEach(s => {
+        if(s.ext) return;
         const i = idx.get(s.time); if(i === undefined) return;
         const v = bm.slots.slice(i, i + s.span).map(x => x.pp).filter(has);
         if(v.length) s.pp = Math.max(...v);
       });
-      d.ppBorrowed = true;
+      d.ppBorrowed = d.slots.some(s => !s.ext && has(s.pp));
     }
   }
   render();
@@ -410,7 +453,7 @@ function daily(d){
       code: halfCode(ss, mm >= 0.3 || (pp !== null && pp >= 50)) };
   };
   return [...map.values()].sort((a, b) => a.date < b.date ? -1 : 1)
-    .map(x => ({date:x.date, day:agg(x.d, true), night:agg(x.n, false)}))
+    .map(x => ({date:x.date, day:agg(x.d, true), night:agg(x.n, false), ext:x.d.concat(x.n).some(s => s.ext)}))
     .filter(x => x.day || x.night).slice(0, DAYS);
 }
 
@@ -514,12 +557,12 @@ function renderDaily(){
   el.innerHTML = list.map(x => {
     const dt = new Date(Date.parse(x.date + "T00:00Z")), mm = (x.day ? x.day.mm : 0) + (x.night ? x.night.mm : 0);
     const name = x.date === d.today ? "Dnes" : wd[dt.getUTCDay()];
-    return `<div class="dday"><div class="dn">${name} <span class="num">${dt.getUTCDate()}.</span></div>
+    return `<div class="dday${x.ext ? " ext" : ""}"><div class="dn">${name} <span class="num">${dt.getUTCDate()}.</span></div>
       <div class="halves">${half(x.day, true)}${half(x.night, false)}</div>
       <div class="mm num">${mm >= 0.05 ? mm.toFixed(1).replace(".", ",") + " mm" : ""}</div></div>`;
   }).join("");
   $("dnote").textContent = "Den je 6 až 18 h s nejvyšší teplotou, noc 18 až 6 h s nejnižší." +
-    (list.length < 5 ? " Tento model počítá jen " + list.length + " dny dopředu." : "");
+    (d.extFrom ? " Tento model počítá jen pár dní dopředu. Dny označené mix doplňuje směs modelů." : "");
 }
 
 function renderCmp(){
@@ -551,13 +594,14 @@ function notice(text, err, retry){
 
 function setPlace(p){
   state.place = p; store.set("pocasi.place", p);
+  state.model = defaultModel(p); state.manual = false;
   const rec = [p, ...store.get("pocasi.recent", []).filter(r => r.name !== p.name || r.sub !== p.sub)].slice(0, 5);
   store.set("pocasi.recent", rec);
-  state.resetScroll = true; notice(""); load();
+  state.resetScroll = true; notice(""); load(); radarCenter();
 }
 function selectModel(id){
   const d = state.data[id]; if(d && d.error) return;
-  state.model = id; store.set("pocasi.model", id); render();
+  state.model = id; state.manual = true; render();
 }
 
 /* Location search */
@@ -568,14 +612,37 @@ function showResults(list, hint){
     `<li><button type="button" data-i="${i}">${esc(p.name)}<small>${esc(p.sub || "")}</small></button></li>`).join("");
   ul._list = list; ul.hidden = !(list.length || hint);
 }
+const uniq = a => a.filter((v, i) => v && a.indexOf(v) === i);
+function photonPlace(f){
+  const p = f.properties || {}, c = (f.geometry && f.geometry.coordinates) || [];
+  const addr = p.street ? p.street + (p.housenumber ? " " + p.housenumber : "") : "";
+  let name, sub;
+  if(p.type === "house" || p.type === "street"){
+    name = addr || p.name;
+    sub = uniq([name !== p.name ? p.name : "", p.locality, p.district, p.city || p.county, p.countrycode !== "CZ" ? p.country : ""]);
+  }else{
+    name = p.name || p.district || p.city;
+    sub = uniq([p.locality !== name ? p.locality : "", p.district !== name ? p.district : "", p.city !== name ? p.city : "", p.state, p.country]);
+  }
+  return { name, sub: sub.filter(x => x !== name).join(", "), lat:c[1], lon:c[0], cc:p.countrycode };
+}
 async function search(q){
-  const seq = ++searchSeq;
+  const seq = ++searchSeq, ref = state.place || DEFAULT_PLACE;
+  let list = null;
   try{
-    const j = await getJSON("https://geocoding-api.open-meteo.com/v1/search?count=6&language=cs&format=json&name=" + encodeURIComponent(q));
-    if(seq !== searchSeq) return;
-    const list = (j.results || []).map(r => ({ name:r.name, sub:[r.admin1, r.country].filter(Boolean).join(", "), lat:r.latitude, lon:r.longitude }));
-    showResults(list, list.length ? "" : "Nic jsem nenašel. Zkuste jiný název.");
-  }catch(e){ if(seq === searchSeq) showResults([], "Hledání teď nefunguje. Zkuste to za chvíli."); }
+    const j = await getJSON("https://photon.komoot.io/api/?limit=10&q=" + encodeURIComponent(q) + "&lat=" + ref.lat.toFixed(3) + "&lon=" + ref.lon.toFixed(3));
+    list = (j.features || []).filter(f => (f.properties || {}).osm_value !== "administrative" || (f.properties || {}).type !== "other").map(photonPlace);
+  }catch(e){}
+  if(!list || !list.length){
+    try{
+      const j = await getJSON("https://geocoding-api.open-meteo.com/v1/search?count=6&language=cs&format=json&name=" + encodeURIComponent(q));
+      list = (j.results || []).map(r => ({ name:r.name, sub:[r.admin1, r.country].filter(Boolean).join(", "), lat:r.latitude, lon:r.longitude, cc:r.country_code }));
+    }catch(e){ if(!list){ if(seq === searchSeq) showResults([], "Hledání teď nefunguje. Zkuste to za chvíli."); return; } }
+  }
+  if(seq !== searchSeq) return;
+  const seen = new Set();
+  list = list.filter(p => { const k = p.name + "|" + p.sub; if(!p.name || !has(p.lat) || seen.has(k)) return false; seen.add(k); return true; }).slice(0, 7);
+  showResults(list, list.length ? "" : "Nic jsem nenašel. Zkuste jiný název nebo přidejte město.");
 }
 $("q").addEventListener("input", e => {
   clearTimeout(searchTimer);
@@ -601,10 +668,13 @@ function locate(quiet){
     const lat = pos.coords.latitude, lon = pos.coords.longitude;
     let name = "Moje poloha", sub = lat.toFixed(3) + "° s. š., " + lon.toFixed(3) + "° v. d.";
     try{
-      const j = await getJSON("https://api.bigdatacloud.net/data/reverse-geocode-client?latitude=" + lat.toFixed(4) + "&longitude=" + lon.toFixed(4) + "&localityLanguage=cs");
-      const n = j.city || j.locality; if(n){ name = n; sub = [j.principalSubdivision, j.countryName].filter(Boolean).join(", "); }
+      const j = await getJSON("https://photon.komoot.io/reverse?lat=" + lat.toFixed(5) + "&lon=" + lon.toFixed(5));
+      const r = (j.features && j.features[0] && j.features[0].properties) || {};
+      var cc = r.countrycode;
+      const n = r.district || r.city || r.locality || r.name;
+      if(n){ name = n; sub = uniq([r.locality !== n ? r.locality : "", r.city !== n ? r.city : "", r.countrycode !== "CZ" ? r.country : ""]).join(", ") || "Moje poloha"; }
     }catch(e){}
-    setPlace({name, sub, lat, lon});
+    setPlace({name, sub, lat, lon, cc});
   }, err => {
     if(quiet) return;
     notice(err.code === 1 ? "Přístup k poloze je zakázaný. Povolte ho v prohlížeči, nebo vyhledejte místo ručně."
@@ -614,11 +684,96 @@ function locate(quiet){
 $("geo").addEventListener("click", () => locate(false));
 $("models").addEventListener("click", e => { const b = e.target.closest("[data-m]"); if(b) selectModel(b.dataset.m); });
 $("cmp").addEventListener("click", e => { const r = e.target.closest("[data-m]"); if(r) selectModel(r.dataset.m); });
-$("refresh").addEventListener("click", () => { notice(""); load(); });
-document.addEventListener("visibilitychange", () => { if(!document.hidden && state.updated && Date.now() - state.updated > 30 * 60e3) load(); });
+$("refresh").addEventListener("click", () => { notice(""); load(); radarLoad(); });
+document.addEventListener("visibilitychange", () => { if(!document.hidden && state.updated && Date.now() - state.updated > 30 * 60e3){ load(); radarLoad(); } });
+
+
+/* Radar ČHMÚ */
+const RADAR = {
+  url: "https://opendata.chmi.cz/meteorology/weather/radar/composite/maxz/png_masked/pacz2gmaps3.z_max3d.",
+  bounds: [[48.047, 11.267], [52.167, 20.770]],
+  data: [[48.047, 11.267], [51.458, 19.624]],
+  frames: 19, step: 5 * 60e3
+};
+const radar = { map:null, base:null, labels:null, marker:null, layers:[], times:[], idx:0, timer:0, dark:null, seq:0 };
+const radarName = t => { const d = new Date(t), z = n => String(n).padStart(2, "0");
+  return RADAR.url + d.getUTCFullYear() + z(d.getUTCMonth() + 1) + z(d.getUTCDate()) + "." + z(d.getUTCHours()) + z(d.getUTCMinutes()) + ".0.png"; };
+const probe = url => new Promise(ok => { const im = new Image(); im.onload = () => ok(true); im.onerror = () => ok(false); im.src = url; });
+function isDark(){
+  const t = document.documentElement.getAttribute("data-theme");
+  return t ? t === "dark" : !!(window.matchMedia && matchMedia("(prefers-color-scheme: dark)").matches);
+}
+function radarTiles(){
+  if(!radar.map) return;
+  const dark = isDark(); if(dark === radar.dark) return; radar.dark = dark;
+  $("map").classList.toggle("dark", dark);
+  if(!radar.base) radar.base = L.tileLayer("https://tile.openstreetmap.org/{z}/{x}/{y}.png", {maxZoom:12,
+    attribution:'© <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>, radar © ČHMÚ'}).addTo(radar.map);
+}
+function radarCenter(){
+  if(!radar.map) return;
+  const p = state.place || DEFAULT_PLACE, ll = [p.lat, p.lon];
+  const inside = L.latLngBounds(RADAR.data).contains(ll);
+  radar.map.setView(inside ? ll : [49.8, 15.5], inside ? 8 : 6);
+  if(radar.marker) radar.marker.remove();
+  radar.marker = inside ? L.circleMarker(ll, {radius:6, weight:2, color:"#fff", fillColor:"#1f6fb5", fillOpacity:1, pane:"labels"}).addTo(radar.map) : null;
+  $("rnote").textContent = inside ? "Naměřené srážky za posledních 90 minut, snímek každých 5 minut."
+    : "Radar ČHMÚ pokrývá jen Česko a blízké okolí. Vybrané místo je mimo dosah.";
+}
+function radarShow(i){
+  if(!radar.layers.length) return;
+  radar.idx = i;
+  radar.layers.forEach((l, j) => l.setOpacity(j === i ? .75 : 0));
+  $("rslider").value = i;
+  const t = radar.times[i], ago = Math.round((Date.now() - t) / 60e3);
+  $("rtime").textContent = new Date(t).toLocaleTimeString("cs-CZ", {hour:"2-digit", minute:"2-digit"}) + (ago > 1 ? ", před " + ago + " min" : "");
+}
+function radarStop(){
+  clearTimeout(radar.timer); radar.timer = 0;
+  $("rplay").innerHTML = '<svg viewBox="0 0 24 24"><path d="M7 4.5v15l12-7.5z"/></svg>';
+  $("rplay").setAttribute("aria-label", "Přehrát posledních 90 minut");
+}
+function radarPlay(){
+  if(radar.timer){ radarStop(); return; }
+  $("rplay").innerHTML = '<svg viewBox="0 0 24 24"><path d="M6 4.5h4v15H6zM14 4.5h4v15h-4z"/></svg>';
+  $("rplay").setAttribute("aria-label", "Zastavit animaci");
+  let i = radar.idx >= radar.layers.length - 1 ? 0 : radar.idx;
+  const tick = () => { radarShow(i); const last = i === radar.layers.length - 1; i = last ? 0 : i + 1; radar.timer = setTimeout(tick, last ? 1500 : 400); };
+  tick();
+}
+async function radarLoad(){
+  if(!radar.map) return;
+  const seq = ++radar.seq;
+  radarStop();
+  let t = Math.floor(Date.now() / RADAR.step) * RADAR.step, found = 0;
+  for(let k = 0; k < 8 && !found; k++, t -= RADAR.step) if(await probe(radarName(t))) found = t;
+  if(seq !== radar.seq) return;
+  radar.layers.forEach(l => l.remove()); radar.layers = []; radar.times = [];
+  if(!found){ $("rtime").textContent = "nedostupný"; $("rnote").textContent = "Radarové snímky ČHMÚ se teď nepodařilo načíst. Zkuste Obnovit."; return; }
+  for(let k = RADAR.frames - 1; k >= 0; k--){
+    const tt = found - k * RADAR.step;
+    radar.times.push(tt);
+    radar.layers.push(L.imageOverlay(radarName(tt), RADAR.bounds, {opacity:0, pane:"radar", interactive:false}).addTo(radar.map));
+  }
+  $("rslider").max = radar.layers.length - 1;
+  radarShow(radar.layers.length - 1);
+}
+function radarInit(){
+  if(!window.L){ $("rtime").textContent = "nedostupný"; $("rnote").textContent = "Mapa se nenačetla. Zkontrolujte připojení a obnovte stránku."; return; }
+  radar.map = L.map("map", {zoomControl:true, scrollWheelZoom:false, minZoom:5, maxZoom:12, attributionControl:true});
+  radar.map.createPane("radar").style.zIndex = 350;
+  radar.map.createPane("labels").style.zIndex = 450;
+  radar.map.getPane("labels").style.pointerEvents = "none";
+  radarTiles(); radarCenter(); radarLoad();
+  if(window.matchMedia) matchMedia("(prefers-color-scheme: dark)").addEventListener("change", radarTiles);
+  new MutationObserver(radarTiles).observe(document.documentElement, {attributes:true, attributeFilter:["data-theme"]});
+}
+$("rplay").addEventListener("click", radarPlay);
+$("rslider").addEventListener("input", e => { radarStop(); radarShow(+e.target.value); });
 
 const firstRun = !state.place;
 load();
+radarInit();
 if(firstRun) locate(true);
 </script>
 </body>
