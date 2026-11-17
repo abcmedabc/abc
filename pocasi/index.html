@@ -13,7 +13,7 @@
 :root{
   --bg:#e9eef3; --card:#f8fafc; --ink:#14222e; --muted:#5a6b79; --line:#d3dce4;
   --accent:#1f6fb5; --rain:#2f7fd0; --rain-soft:#d5e5f5; --temp:#d9731a; --sun:#e2a21b;
-  --danger:#b3372f;
+  --danger:#b3372f; --ok:#2b7a3d; --ok-soft:#dcefe0; --warn:#946200; --warn-soft:#f6ebcf; --bad-soft:#f6dcda;
   --display:"Bricolage Grotesque","Segoe UI",system-ui,sans-serif;
   --body:"Instrument Sans","Segoe UI",system-ui,sans-serif;
   color-scheme:light;
@@ -22,13 +22,13 @@
   :root:not([data-theme="light"]){
     --bg:#0f1820; --card:#18242f; --ink:#e8eef3; --muted:#93a4b2; --line:#2a3a48;
     --accent:#6db4f0; --rain:#58a6ec; --rain-soft:#213a52; --temp:#f0a04e; --sun:#f2c14b;
-    --danger:#ef8078; color-scheme:dark;
+    --danger:#ef8078; --ok:#7fd193; --ok-soft:#1f3a28; --warn:#f0c463; --warn-soft:#3d3218; --bad-soft:#47221f; color-scheme:dark;
   }
 }
 :root[data-theme="dark"]{
   --bg:#0f1820; --card:#18242f; --ink:#e8eef3; --muted:#93a4b2; --line:#2a3a48;
   --accent:#6db4f0; --rain:#58a6ec; --rain-soft:#213a52; --temp:#f0a04e; --sun:#f2c14b;
-  --danger:#ef8078; color-scheme:dark;
+  --danger:#ef8078; --ok:#7fd193; --ok-soft:#1f3a28; --warn:#f0c463; --warn-soft:#3d3218; --bad-soft:#47221f; color-scheme:dark;
 }
 *{box-sizing:border-box}
 html,body{margin:0}
@@ -36,7 +36,7 @@ body{background:var(--bg);color:var(--ink);font-family:var(--body);font-size:16p
   -webkit-text-size-adjust:100%}
 main{max-width:720px;margin:0 auto;padding:10px 10px 28px;display:flex;flex-direction:column;gap:10px}
 /* Everything 35 % smaller except the map itself. */
-#locform,#notice,#now,#models,.hours,.daily,.radar>header,.rctl,.rleg,#rnote,.cmp,footer{zoom:.66}
+#locform,#notice,#now,#models,.hours,.daily,.rel,.radar>header,.rctl,.rleg,#rnote,.cmp,footer{zoom:.8}
 button,input{font:inherit;color:inherit}
 button{cursor:pointer}
 :focus-visible{outline:2px solid var(--accent);outline-offset:2px}
@@ -58,7 +58,7 @@ h2{font-family:var(--display);font-size:1.05rem;font-weight:700;margin:0}
 .results button{display:block;width:100%;text-align:left;border:0;background:none;padding:10px 10px;border-radius:8px;min-height:44px}
 .results button:hover,.results button:focus-visible{background:var(--rain-soft)}
 .results small{display:block;color:var(--muted)}
-.results .hint{padding:8px 10px;color:var(--muted);font-size:.85rem}
+.results .hint{padding:8px 10px;color:var(--muted);font-size:.95rem}
 
 /* Now */
 .now{padding:18px;display:grid;grid-template-columns:1fr auto;gap:4px 12px;align-items:center}
@@ -75,16 +75,17 @@ h2{font-family:var(--display);font-size:1.05rem;font-weight:700;margin:0}
 .outlook{grid-column:1/-1;margin-top:8px;padding-top:12px;border-top:1px solid var(--line);font-size:.98rem}
 
 /* Models */
-.models{display:flex;flex-wrap:wrap;gap:8px}
+.models{display:flex;align-items:center;gap:10px}
+.models label{font-weight:600}
+.models select{flex:1;min-width:0;height:44px;padding:0 12px;border-radius:10px;border:1px solid var(--line);background:var(--card);color:var(--ink);font:inherit;font-weight:600}
+.models span{color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:45%}
 .models::-webkit-scrollbar{display:none}
-.chip{flex:none;border:1px solid var(--line);background:var(--card);border-radius:20px;padding:7px 16px;min-height:44px;font-weight:600}
-.chip[aria-pressed="true"]{background:var(--accent);border-color:var(--accent);color:var(--card)}
-.chip:disabled{opacity:.45;cursor:not-allowed}
 
 /* Hourly strip */
 .hours{padding:14px 0 12px}
-.legend{display:flex;gap:14px;font-size:.8rem;color:var(--muted)}
+.legend{display:flex;gap:14px;font-size:.95rem;color:var(--muted)}
 .legend i{display:inline-block;width:18px;height:0;border-top:3px solid var(--temp);vertical-align:middle;margin-right:5px}
+.legend i.b{border:0;height:10px;width:14px;background:var(--temp);opacity:.25;border-radius:2px}
 .legend i.f{border-top-style:dashed;border-top-width:2px;border-color:var(--muted)}
 .scroll{overflow-x:auto;-webkit-overflow-scrolling:touch}
 .strip{--col:50px}
@@ -97,7 +98,7 @@ h2{font-family:var(--display);font-size:1.05rem;font-weight:700;margin:0}
 .sep{position:absolute;top:0;bottom:0;width:1px;background:var(--line)}
 .cols{display:flex;position:relative}
 .col{flex:none;width:var(--col);display:flex;flex-direction:column;align-items:center;gap:2px;padding:4px 0}
-.col .h{font-size:.82rem;color:var(--muted)}
+.col .h{font-size:.9rem;color:var(--muted)}
 .col.nowc .h{color:var(--ink);font-weight:600}
 .col .ico{width:26px;height:26px}
 .bar{width:22px;height:32px;border-radius:5px;background:var(--rain-soft);display:flex;align-items:flex-end;overflow:hidden}
@@ -105,9 +106,10 @@ h2{font-family:var(--display);font-size:1.05rem;font-weight:700;margin:0}
 .bar i{display:block;width:100%;background:var(--rain);border-radius:5px 5px 0 0}
 .col .pp{font-weight:600;font-size:.85rem;color:var(--rain)}
 .col .pp.low{color:var(--muted);font-weight:500}
-.col .mm{font-size:.68rem;color:var(--muted);min-height:1.2em}
+.col .mm{font-size:.8rem;color:var(--muted);min-height:1.2em}
 .curve{display:block;position:relative}
 .curve .t{fill:none;stroke:var(--temp);stroke-width:3;stroke-linejoin:round;stroke-linecap:round}
+.curve .b{fill:var(--temp);opacity:.16;stroke:none}
 .curve .f{fill:none;stroke:var(--muted);stroke-width:2;stroke-dasharray:4 5;stroke-linecap:round}
 .curve circle{fill:var(--card);stroke:var(--temp);stroke-width:2}
 .curve text{fill:var(--ink);font:600 14px var(--body);text-anchor:middle;font-variant-numeric:tabular-nums}
@@ -126,17 +128,29 @@ h2{font-family:var(--display);font-size:1.05rem;font-weight:700;margin:0}
 .half .ico{width:30px;height:30px}
 .half b{font-family:var(--display);font-size:1.3rem;font-weight:700;line-height:1.2}
 .half.n b{color:var(--muted);font-weight:500}
-.half .pp{font-size:.8rem;font-weight:600;color:var(--rain)}
+.half .pp{font-size:.9rem;font-weight:600;color:var(--rain)}
 .half .pp.low{color:var(--muted);font-weight:500}
-.dday.ext .dn::after{content:" · mix";color:var(--muted);font-weight:500;font-size:.75rem}
-.dday .mm{font-size:.72rem;color:var(--muted);min-height:1.2em;margin-top:2px}
-.rowlab{padding:6px 16px 0;font-size:.8rem;color:var(--muted)}
+.dday.ext .dn::after{content:" · mix";color:var(--muted);font-weight:500;font-size:.85rem}
+.dday .mm{font-size:.85rem;color:var(--muted);min-height:1.2em;margin-top:2px}
+.rowlab{padding:6px 16px 0;font-size:1rem;color:var(--muted)}
+
+/* Reliability */
+.rel{padding:14px 0 12px}
+.rel header{display:flex;justify-content:space-between;align-items:baseline;gap:12px;padding:0 16px 4px}
+.rel table{margin:0 16px;width:calc(100% - 32px)}
+.rel td{vertical-align:top}
+.pill{display:inline-block;padding:3px 10px;border-radius:12px;font-weight:600;font-size:.9rem}
+.pill.hi{background:var(--ok-soft);color:var(--ok)}
+.pill.mid{background:var(--warn-soft);color:var(--warn)}
+.pill.lo{background:var(--bad-soft);color:var(--danger)}
+#relsum{font-size:1rem;color:var(--muted)}
 
 /* Radar */
 .radar{padding:9px 0 8px;border-radius:10px}
 .radar header{display:flex;justify-content:space-between;align-items:baseline;gap:12px;padding:0 16px 8px}
-#rtime{font-size:.88rem;color:var(--muted)}
-#map{height:280px;position:relative;z-index:0;background:var(--bg)}
+#rtime{font-size:1rem;color:var(--muted)}
+#map.fut::after{content:"PŘEDPOVĚĎ";position:absolute;right:8px;top:8px;z-index:500;background:var(--card);color:var(--ink);font:600 11px var(--body);letter-spacing:.06em;padding:3px 7px;border-radius:6px;opacity:.9}
+#map{height:300px;position:relative;z-index:0;background:var(--bg)}
 .leaflet-container{font-family:var(--body)}
 .rme{display:grid!important;place-items:center}
 .rme svg{width:18px;height:18px;fill:none;stroke:#222;stroke-width:2;stroke-linecap:round}
@@ -146,28 +160,28 @@ h2{font-family:var(--display);font-size:1.05rem;font-weight:700;margin:0}
 .rctl button{flex:none;width:44px;height:44px;border-radius:50%;border:1px solid var(--line);background:var(--card);display:grid;place-items:center}
 .rctl button svg{width:18px;height:18px;fill:var(--ink)}
 .rctl input{flex:1;min-width:0;accent-color:var(--accent);height:44px}
-.rleg{display:flex;align-items:center;gap:8px;padding:6px 16px 0;font-size:.75rem;color:var(--muted)}
+.rleg{display:flex;align-items:center;gap:8px;padding:6px 16px 0;font-size:.95rem;color:var(--muted)}
 .rleg i{flex:1;max-width:220px;height:8px;border-radius:4px;background:linear-gradient(90deg,#3f00a8,#0000fc,#0070d0,#00a000,#00e000,#fcfc00,#fc8400,#fc0000,#a00000)}
 .rleg span{white-space:nowrap}
 
 /* Compare */
 .cmp{padding:16px}
-.cmp p{margin:4px 0 10px;font-size:.88rem;color:var(--muted)}
+.cmp p{margin:4px 0 10px;font-size:1rem;color:var(--muted)}
 .tw{overflow-x:auto}
 table{border-collapse:collapse;width:100%;font-size:.9rem}
 td[colspan]{text-align:left}
 th,td{padding:10px 6px;text-align:right;border-top:1px solid var(--line);white-space:nowrap}
-th{font-weight:500;color:var(--muted);font-size:.78rem;border-top:0;white-space:normal;vertical-align:bottom}
+th{font-weight:500;color:var(--muted);font-size:.9rem;border-top:0;white-space:normal;vertical-align:bottom}
 th:first-child,td:first-child{text-align:left}
 tbody tr{cursor:pointer}
 tbody tr.sel td:first-child{color:var(--accent);font-weight:600}
-td small{display:block;color:var(--muted);font-weight:400;font-size:.72rem;white-space:normal;line-height:1.2}
+td small{display:block;color:var(--muted);font-weight:400;font-size:.85rem;white-space:normal;line-height:1.2}
 td.r{color:var(--rain);font-weight:600}
 
 .msg{padding:14px 16px;border-radius:12px;background:var(--card);border:1px solid var(--line)}
 .msg.err{border-color:var(--danger);color:var(--danger)}
 .msg button{margin-top:8px;height:44px;padding:0 16px;border-radius:10px;border:1px solid currentColor;background:none}
-footer{font-size:.8rem;color:var(--muted);display:flex;justify-content:space-between;gap:12px;flex-wrap:wrap;align-items:center}
+footer{font-size:.95rem;color:var(--muted);display:flex;justify-content:space-between;gap:12px;flex-wrap:wrap;align-items:center}
 footer button{height:44px;padding:0 14px;border-radius:10px;border:1px solid var(--line);background:var(--card);color:var(--ink)}
 footer a{color:var(--accent)}
 
@@ -212,11 +226,11 @@ footer a{color:var(--accent)}
 
   <div id="notice"></div>
   <section class="card now" id="now" aria-live="polite"><div class="muted">Načítám předpověď…</div></section>
-  <div class="models" id="models" role="group" aria-label="Předpovědní model"></div>
+  <div class="models" id="models"><label for="msel">Model</label><select id="msel"></select><span id="msrc"></span></div>
 
   <section class="card hours">
     <header><h2>Hodinová</h2>
-      <div class="legend"><span><i></i>teplota</span><span><i class="f"></i>pocitová</span></div></header>
+      <div class="legend"><span><i></i>teplota</span><span><i class="f"></i>pocitová</span><span><i class="b"></i>rozptyl</span></div></header>
     <div class="scroll" id="scroll"><div class="strip" id="strip"></div></div>
     <div class="rowlab" id="ppnote"></div>
   </section>
@@ -225,6 +239,15 @@ footer a{color:var(--accent)}
     <header><h2>Denní</h2><div class="legend"><span>den / noc</span></div></header>
     <div class="scroll"><div class="dl" id="daily"></div></div>
     <div class="rowlab" id="dnote"></div>
+  </section>
+
+  <section class="card rel">
+    <header><h2>Spolehlivost</h2><span id="relsum"></span></header>
+    <div class="tw"><table>
+      <thead><tr><th>Den</th><th>Jistota</th><th>Max. teplota</th><th>Srážky</th></tr></thead>
+      <tbody id="rel"></tbody>
+    </table></div>
+    <div class="rowlab" id="relnote"></div>
   </section>
 
   <section class="card radar">
@@ -375,11 +398,26 @@ async function fetchMetno(p, offsetP){
   return finish(slots, offset);
 }
 
+const ENS_MODELS = "icon_seamless,ecmwf_ifs025";
+async function fetchEns(p){
+  const j = await getJSON("https://ensemble-api.open-meteo.com/v1/ensemble?latitude=" + p.lat.toFixed(4) + "&longitude=" + p.lon.toFixed(4) +
+    "&hourly=temperature_2m,precipitation&models=" + ENS_MODELS + "&forecast_days=" + DAYS + "&timezone=auto");
+  const h = j.hourly || {}, times = h.time || [];
+  const t = Object.keys(h).filter(k => k.startsWith("temperature_2m")).map(k => h[k]);
+  const pr = Object.keys(h).filter(k => k.startsWith("precipitation")).map(k => h[k]);
+  if(!t.length) throw new Error("Ensemble bez dat");
+  return { times, idx: new Map(times.map((x, i) => [x, i])), t, pr };
+}
+const quant = (a, q) => { if(!a.length) return null; const b = [...a].sort((x, y) => x - y), i = (b.length - 1) * q, lo = Math.floor(i); return b[lo] + (b[Math.ceil(i)] - b[lo]) * (i - lo); };
+
 async function load(){
   const p = state.place || DEFAULT_PLACE;
   const token = ++state.token;
   state.data = {}; state.loading = true; render();
   const jobs = {};
+  state.ens = null;
+  fetchEns(p).then(e => { if(token === state.token){ state.ens = e; render(); } })
+    .catch(e => { if(token === state.token){ state.ens = {error: e.message || "Chyba"}; render(); } });
   for(const m of MODELS) if(!m.metno) jobs[m.id] = fetchOM(m.id, p);
   const offsetP = jobs.best_match.then(d => d.offset).catch(() => -new Date().getTimezoneOffset() * 60);
   for(const m of MODELS) if(m.metno) jobs[m.id] = fetchMetno(p, offsetP);
@@ -391,7 +429,8 @@ async function load(){
   state.updated = new Date();
   const bm = state.data.best_match;
   // The default model may not cover this place. Fall back to the mix.
-  if(!state.manual && !(state.data[state.model] && state.data[state.model].rows) && bm && bm.rows) state.model = "best_match";
+  const okm = id => state.data[id] && state.data[id].rows;
+  if(!state.manual && !okm(state.model)) state.model = ["best_match", ...MODELS.map(m => m.id)].find(okm) || state.model;
   // Short models (ALADIN has 3 days) continue with the mix for the daily view.
   if(bm && bm.rows) for(const m of MODELS){
     const d = state.data[m.id];
@@ -476,13 +515,13 @@ function outlook(rows){
   const wet = r => (has(r.pp) && r.pp >= 50) || (has(r.mm) && r.mm >= 0.3);
   const i = rows.findIndex(wet);
   const maxPP = Math.max(-1, ...rows.filter(r => has(r.pp)).map(r => r.pp));
-  if(i < 0) return maxPP >= 0 ? `Do 48 hodin skoro bez srážek. Nejvyšší pravděpodobnost je ${Math.round(maxPP)} %.` : "Do 48 hodin skoro bez srážek.";
-  const what = isSnow(rows[i].code) ? "Sněžení" : "Srážky";
-  const pct = has(rows[i].pp) ? ` (${Math.round(rows[i].pp)} %)` : "";
-  if(i === 0) return `${what} jsou pravděpodobné už tuto hodinu${pct}.`;
+  if(i < 0) return maxPP >= 0 ? `Do 48 h sucho. Šance na srážky nejvýš ${Math.round(maxPP)} %.` : "Do 48 h sucho.";
+  const what = isSnow(rows[i].code) ? "Sníh" : "Déšť";
+  const pct = has(rows[i].pp) ? ` Šance ${Math.round(rows[i].pp)} %.` : "";
+  if(i === 0) return `${what} právě teď.${pct}`;
   let j = i; while(j < rows.length && wet(rows[j])) j++;
   const when = (rows[i].time.slice(0, 10) === rows[0].time.slice(0, 10) ? "dnes" : dayName(rows[i].time.slice(0, 10), rows[0].time.slice(0, 10)).toLowerCase());
-  return `${what} čekejte ${when} od ${rows[i].hr}:00${pct}, potrvají asi ${j - i} h.`;
+  return `${what} ${when} od ${rows[i].hr}:00, asi ${j - i} h.${pct}`;
 }
 
 function renderNow(){
@@ -506,10 +545,13 @@ function renderNow(){
 }
 
 function renderModels(){
-  $("models").innerHTML = MODELS.map(m => {
+  $("msel").innerHTML = MODELS.map(m => {
     const d = state.data[m.id], bad = d && d.error;
-    return `<button type="button" class="chip" data-m="${m.id}" aria-pressed="${m.id === state.model}" title="${esc(m.name + ", " + m.src + (bad ? ", teď nedostupný" : ""))}" ${bad ? "disabled" : ""}>${esc(m.short || m.name)}</button>`;
+    return `<option value="${m.id}" ${bad ? "disabled" : ""}>${esc(m.name)}${bad ? " (nedostupný)" : ""}</option>`;
   }).join("");
+  $("msel").value = state.model;
+  const m = MODELS.find(x => x.id === state.model);
+  $("msrc").textContent = m ? m.src : "";
 }
 
 function renderStrip(){
@@ -519,7 +561,10 @@ function renderStrip(){
   const segs = [];
   rows.forEach(r => { const k = r.time.slice(0, 10); const s = segs[segs.length - 1]; if(s && s.k === k) s.n++; else segs.push({k, n:1}); });
   const days = segs.map(s => `<div style="width:${s.n * COL}px"><span>${dayName(s.k, d.today)}</span></div>`).join("");
-  const vals = rows.flatMap(r => [r.t, r.f]).filter(has);
+  const E = state.ens && state.ens.t ? state.ens : null;
+  const band = rows.map(r => { if(!E) return null; const k = E.idx.get(r.time); if(k === undefined) return null;
+    const v = E.t.map(m => m[k]).filter(has); return v.length ? [quant(v, .1), quant(v, .9)] : null; });
+  const vals = rows.flatMap((r, i) => [r.t, r.f].concat(band[i] || [])).filter(has);
   const lo = Math.min(...vals), hi = Math.max(...vals), span = Math.max(hi - lo, 4);
   const y = v => 24 + (1 - (v - lo) / span) * (H - 24 - 20);
   const x = i => i * COL + COL / 2;
@@ -529,7 +574,11 @@ function renderStrip(){
     const yt = y(r.t), yf = has(r.f) ? y(r.f) : yt;
     marks += `<circle cx="${x(i)}" cy="${yt.toFixed(1)}" r="3.5"/><text x="${x(i)}" y="${(Math.min(yt, yf) - 8).toFixed(1)}">${deg(r.t)}</text>`;
     if(has(r.f)) marks += `<text class="ft" x="${x(i)}" y="${(Math.max(yt, yf) + 16).toFixed(1)}">${deg(r.f)}</text>`; });
-  const curve = `<svg class="curve" width="${W}" height="${H}" viewBox="0 0 ${W} ${H}" role="img" aria-label="Křivka teploty a pocitové teploty"><path class="f" d="${path("f")}"/><path class="t" d="${path("t")}"/>${marks}</svg>`;
+  let bandPath = "";
+  { let up = [], dn = [];
+    const flush = () => { if(up.length > 1) bandPath += "M" + up.join("L") + "L" + dn.reverse().join("L") + "Z"; up = []; dn = []; };
+    band.forEach((b, i) => { if(b){ up.push(x(i) + " " + y(b[1]).toFixed(1)); dn.push(x(i) + " " + y(b[0]).toFixed(1)); } else flush(); }); flush(); }
+  const curve = `<svg class="curve" width="${W}" height="${H}" viewBox="0 0 ${W} ${H}" role="img" aria-label="Křivka teploty a pocitové teploty"><path class="b" d="${bandPath}"/><path class="f" d="${path("f")}"/><path class="t" d="${path("t")}"/>${marks}</svg>`;
   let top = "", bot = "", seps = "";
   rows.forEach((r, i) => {
     const pp = has(r.pp) ? Math.round(r.pp) : null, cls = i === 0 ? " nowc" : "";
@@ -560,7 +609,61 @@ function renderDaily(){
       <div class="halves">${half(x.day, true)}${half(x.night, false)}</div>
       <div class="mm num">${mm >= 0.05 ? mm.toFixed(1).replace(".", ",") + " mm" : ""}</div></div>`;
   }).join("");
-  $("dnote").textContent = "Den 6 až 18 h max., noc 18 až 6 h min." + (d.extFrom ? " Mix: za hranou modelu." : "");
+  $("dnote").textContent = "Den 6 až 18 h, noc 18 až 6 h." + (d.extFrom ? " Mix: za hranou modelu." : "");
+}
+
+/* Reliability: the ensemble's own spread plus agreement between the models */
+function reliability(){
+  const d = current(); if(!d) return [];
+  const E = state.ens && state.ens.t ? state.ens : null;
+  const dates = daily(d).map(x => x.date);
+  return dates.map(date => {
+    const r = {date};
+    if(E){
+      const ks = E.times.map((t, i) => t.slice(0, 10) === date ? i : -1).filter(i => i >= 0);
+      if(ks.length >= 18){
+        const mxs = E.t.map(m => Math.max(...ks.map(k => m[k]).filter(has))).filter(v => isFinite(v));
+        const sm = E.pr.map(m => ks.reduce((a, k) => a + (has(m[k]) ? m[k] : 0), 0));
+        r.eLo = quant(mxs, .1); r.eHi = quant(mxs, .9); r.eN = sm.length;
+        r.eWet = sm.filter(v => v >= 1).length / sm.length;
+      }
+    }
+    const mm = [];
+    for(const m of MODELS){
+      const md = state.data[m.id]; if(!md || !md.slots) continue;
+      const ss = md.slots.filter(s => !s.ext && s.time.slice(0, 10) === date);
+      if(ss.reduce((a, s) => a + s.span, 0) < 18) continue;
+      mm.push({ max: Math.max(...ss.map(s => s.tmax)), wet: ss.reduce((a, s) => a + (has(s.mm) ? s.mm : 0), 0) >= 1 });
+    }
+    if(mm.length >= 3){
+      r.mLo = Math.min(...mm.map(x => x.max)); r.mHi = Math.max(...mm.map(x => x.max));
+      r.mN = mm.length; r.mWet = mm.filter(x => x.wet).length;
+    }
+    const pts = [];
+    if(has(r.eLo)){ const sp = r.eHi - r.eLo; pts.push(sp <= 2.5 ? 2 : sp <= 5 ? 1 : 0); const c = Math.abs(2 * r.eWet - 1); pts.push(c >= .7 ? 2 : c >= .4 ? 1 : 0); }
+    if(has(r.mLo)){ const sp = r.mHi - r.mLo; pts.push(sp <= 2 ? 2 : sp <= 4 ? 1 : 0); const a = Math.max(r.mWet, r.mN - r.mWet) / r.mN; pts.push(a >= .85 ? 2 : a >= .65 ? 1 : 0); }
+    if(pts.length){ const sc = pts.reduce((a, b) => a + b, 0) / (2 * pts.length); r.level = sc >= .75 ? "hi" : sc >= .45 ? "mid" : "lo"; }
+    return r;
+  }).filter(r => r.level);
+}
+function renderRel(){
+  const rows = reliability(), el = $("rel"), d = current();
+  const LV = {hi:"Vysoká", mid:"Střední", lo:"Nízká"}, wd = ["Ne","Po","Út","St","Čt","Pá","So"];
+  if(!rows.length){ el.innerHTML = `<tr><td colspan="4" class="muted">${state.loading || !state.ens ? "Načítám…" : "Málo dat."}</td></tr>`; $("relsum").textContent = ""; $("relnote").textContent = ""; return; }
+  const rng = (a, b) => Math.round(a) === Math.round(b) ? deg(a) : deg(a).slice(0, -1) + " až " + deg(b);
+  el.innerHTML = rows.map(r => {
+    const dt = new Date(Date.parse(r.date + "T00:00Z"));
+    const day = r.date === d.today ? "Dnes" : wd[dt.getUTCDay()] + " " + dt.getUTCDate() + ".";
+    const t = has(r.eLo) ? rng(r.eLo, r.eHi) : rng(r.mLo, r.mHi);
+    const tSub = has(r.eLo) && has(r.mLo) ? `<small>modely ${rng(r.mLo, r.mHi)}</small>` : "";
+    const w = has(r.eWet) ? Math.round(r.eWet * 100) + " %" : r.mWet + " z " + r.mN;
+    const wSub = has(r.eWet) && has(r.mLo) ? `<small>modely ${r.mWet} z ${r.mN}</small>` : "";
+    return `<tr><td>${day}</td><td><span class="pill ${r.level}">${LV[r.level]}</span></td><td class="num">${t}${tSub}</td><td class="num">${w}${wSub}</td></tr>`;
+  }).join("");
+  const firstLow = rows.find(r => r.level !== "hi");
+  $("relsum").textContent = !firstLow ? "Všechny dny jisté" : firstLow === rows[0] ? "Nejistá už dnes" : "Nejistá od " + wd[new Date(Date.parse(firstLow.date + "T00:00Z")).getUTCDay()];
+  const n = state.ens && state.ens.t ? state.ens.t.length : 0;
+  $("relnote").textContent = (n ? `Rozsah a šance srážek z ${n} běhů ICON a ECMWF. ` : "") + "Srážky: aspoň 1 mm za den. Modely: kolik z nich je čeká.";
 }
 
 function renderCmp(){
@@ -579,7 +682,7 @@ function renderCmp(){
 }
 
 function render(){
-  renderNow(); renderModels(); renderStrip(); renderDaily(); renderCmp();
+  renderNow(); renderModels(); renderStrip(); renderDaily(); renderRel(); renderCmp();
   const all = MODELS.every(m => state.data[m.id] && state.data[m.id].error);
   if(all && !state.loading) notice("Předpověď se nepodařilo načíst (" + state.data.best_match.error + "). Zkontrolujte připojení a zkuste to znovu.", true, true);
   $("upd").textContent = state.updated ? "Aktualizováno " + state.updated.toLocaleTimeString("cs-CZ", {hour:"2-digit", minute:"2-digit"}) : "";
@@ -681,7 +784,7 @@ function locate(quiet){
   }, {timeout:10000, maximumAge:600000});
 }
 $("geo").addEventListener("click", () => locate(false));
-$("models").addEventListener("click", e => { const b = e.target.closest("[data-m]"); if(b) selectModel(b.dataset.m); });
+$("msel").addEventListener("change", e => selectModel(e.target.value));
 $("cmp").addEventListener("click", e => { const r = e.target.closest("[data-m]"); if(r) selectModel(r.dataset.m); });
 $("refresh").addEventListener("click", () => { notice(""); load(); radarLoad(); });
 document.addEventListener("visibilitychange", () => { if(!document.hidden && state.updated && Date.now() - state.updated > 30 * 60e3){ load(); radarLoad(); } });
@@ -692,11 +795,11 @@ const RADAR = {
   url: "https://opendata.chmi.cz/meteorology/weather/radar/composite/maxz/png_masked/pacz2gmaps3.z_max3d.",
   bounds: [[48.047, 11.267], [52.167, 20.770]],
   data: [[48.047, 11.267], [51.458, 19.624]],
-  frames: 10, step: 10 * 60e3, poll: 5 * 60e3
+  frames: 10, ahead: 6, step: 10 * 60e3, poll: 5 * 60e3
 };
 const DWD = {
   url: "https://maps.dwd.de/geoserver/dwd/wms?service=WMS&version=1.1.1&request=GetMap&layers=dwd:Niederschlagsradar&styles=&format=image/png&transparent=true&srs=EPSG:3857",
-  bounds: [[46.5, 5.0], [55.5, 19.0]], w: 900
+  bounds: [[46.5, 5.0], [55.5, 19.0]], w: 900, cell: 6
 };
 const radar = { map:null, base:null, place:null, me:null, frames:[], blobs:[], idx:0, timer:0, dark:null, seq:0 };
 const radarName = t => { const d = new Date(t), z = n => String(n).padStart(2, "0");
@@ -704,6 +807,8 @@ const radarName = t => { const d = new Date(t), z = n => String(n).padStart(2, "
 const probe = url => new Promise(ok => { const im = new Image(); im.onload = () => ok(true); im.onerror = () => ok(false); im.src = url; });
 const mx = lon => lon * 20037508.34 / 180;
 const my = lat => Math.log(Math.tan((90 + lat) * Math.PI / 360)) * 6378137;
+const ilon = x => x / 20037508.34 * 180;
+const ilat = y => (2 * Math.atan(Math.exp(y / 6378137)) - Math.PI / 2) * 180 / Math.PI;
 async function dwdImage(t){
   const [[la1, lo1], [la2, lo2]] = DWD.bounds, x1 = mx(lo1), x2 = mx(lo2), y1 = my(la1), y2 = my(la2);
   const h = Math.round(DWD.w * (y2 - y1) / (x2 - x1));
@@ -712,13 +817,41 @@ async function dwdImage(t){
   const bmp = await createImageBitmap(await r.blob());
   const c = document.createElement("canvas"); c.width = bmp.width; c.height = bmp.height;
   const g = c.getContext("2d"); g.drawImage(bmp, 0, 0);
-  const im = g.getImageData(0, 0, c.width, c.height), a = im.data;
-  // Drop the grey veil outside coverage (semi-transparent) and the magenta coverage border.
-  for(let i = 0; i < a.length; i += 4) if(a[i + 3] < 250 || (a[i] > 190 && a[i + 1] < 100 && a[i + 2] > 190)) a[i + 3] = 0;
+  const im = g.getImageData(0, 0, c.width, c.height), a = im.data, W = c.width;
+  const gw = Math.ceil(W / DWD.cell), gh = Math.ceil(c.height / DWD.cell), mask = new Uint8Array(gw * gh);
+  // Drop the grey veil outside coverage (semi-transparent) and the magenta coverage border. Keep a coarse rain mask.
+  for(let i = 0, n = 0; i < a.length; i += 4, n++){
+    if(a[i + 3] < 250 || (a[i] > 190 && a[i + 1] < 100 && a[i + 2] > 190)) a[i + 3] = 0;
+    else mask[((n / W | 0) / DWD.cell | 0) * gw + ((n % W) / DWD.cell | 0)] = 1;
+  }
   g.putImageData(im, 0, 0);
   const blob = await new Promise(ok => c.toBlob(ok));
   if(!blob) return null;
-  const u = URL.createObjectURL(blob); radar.blobs.push(u); return u;
+  const u = URL.createObjectURL(blob); radar.blobs.push(u);
+  return { url:u, mask, gw, gh, mppx:(x2 - x1) / W * DWD.cell, mppy:(y2 - y1) / c.height * DWD.cell };
+}
+// Best shift of rain mask a onto b (grid cells), from DWD analysis now vs DWD forecast +60 min.
+function motion(a, b){
+  if(!a || !b) return null;
+  const {gw, gh} = a, R = 16;
+  let na = 0; for(let i = 0; i < a.mask.length; i++) na += a.mask[i];
+  let nb = 0; for(let i = 0; i < b.mask.length; i++) nb += b.mask[i];
+  if(na < 40 || nb < 40) return null;
+  let best = -1, bx = 0, by = 0;
+  for(let dy = -R; dy <= R; dy++) for(let dx = -R; dx <= R; dx++){
+    let hit = 0;
+    for(let y = Math.max(0, -dy); y < Math.min(gh, gh - dy); y++){
+      const ra = y * gw, rb = (y + dy) * gw + dx;
+      for(let x = Math.max(0, -dx); x < Math.min(gw, gw - dx); x++) hit += a.mask[ra + x] & b.mask[rb + x];
+    }
+    if(hit > best){ best = hit; bx = dx; by = dy; }
+  }
+  if(best / Math.min(na, nb) < .3) return null;
+  return { dx: bx * a.mppx, dy: -by * a.mppy };   // metres per 60 min, north up
+}
+function shifted(bounds, mv, f){
+  const [[la1, lo1], [la2, lo2]] = bounds;
+  return [[ilat(my(la1) + mv.dy * f), ilon(mx(lo1) + mv.dx * f)], [ilat(my(la2) + mv.dy * f), ilon(mx(lo2) + mv.dx * f)]];
 }
 function isDark(){
   const t = document.documentElement.getAttribute("data-theme");
@@ -745,7 +878,14 @@ function radarCenter(){
   const p = state.place || DEFAULT_PLACE, ll = [p.lat, p.lon], ok = covered(ll);
   radar.map.setView(ok ? ll : [50.5, 12.5], ok ? 8 : 5);
   radarMarkers();
-  $("rnote").textContent = (ok ? "Posledních 90 min. ČHMÚ, mimo jeho dosah DWD." : "Místo je mimo dosah radarů ČHMÚ a DWD.") + " Červená: předpověď, modrá: vy.";
+  radar.ok = ok; radarNote();
+}
+function radarNote(){
+  const fut = radar.frames.some(f => f.future);
+  $("rnote").textContent = !radar.ok ? "Místo je mimo dosah radarů ČHMÚ a DWD." :
+    "Zpět 90 min" + (fut ? ", dopředu 60 min." : ".") + " Česko: ČHMÚ. Jinde: DWD." +
+    (fut ? (radar.mv ? " Předpověď pro Česko je jen posun posledního snímku." : " Předpověď je jen v Německu.") : "") +
+    " Červená: předpověď. Modrá: vy.";
 }
 function getMe(then, quiet){
   if(!navigator.geolocation){ if(!quiet) notice("Tento prohlížeč polohu neumí."); return; }
@@ -764,10 +904,12 @@ function centerMe(){
 function radarShow(i){
   if(!radar.frames.length) return;
   radar.idx = i;
-  radar.frames.forEach((f, j) => { f.cz.setOpacity(j === i ? .75 : 0); if(f.de) f.de.setOpacity(j === i ? .7 : 0); });
+  radar.frames.forEach((f, j) => { if(f.cz) f.cz.setOpacity(j === i ? (f.future ? .6 : .75) : 0); if(f.de) f.de.setOpacity(j === i ? (f.future ? .6 : .7) : 0); });
   $("rslider").value = i;
-  const t = radar.frames[i].t, ago = Math.round((Date.now() - t) / 60e3);
-  $("rtime").textContent = new Date(t).toLocaleTimeString("cs-CZ", {hour:"2-digit", minute:"2-digit"}) + (ago > 1 ? ", před " + ago + " min" : "");
+  const f = radar.frames[i], hm = new Date(f.t).toLocaleTimeString("cs-CZ", {hour:"2-digit", minute:"2-digit"});
+  const rel = f.future ? "+" + Math.round((f.t - radar.now) / 60e3) + " min, předpověď" : (radar.now - f.t > 60e3 ? "−" + Math.round((radar.now - f.t) / 60e3) + " min" : "poslední snímek");
+  $("rtime").textContent = hm + ", " + rel;
+  $("map").classList.toggle("fut", !!f.future);
 }
 function radarStop(){
   clearTimeout(radar.timer); radar.timer = 0;
@@ -789,21 +931,44 @@ async function radarLoad(){
   let t = Math.floor(Date.now() / RADAR.poll) * RADAR.poll, found = 0;
   for(let k = 0; k < 8 && !found; k++, t -= RADAR.poll) if(await probe(radarName(t))) found = t;
   if(seq !== radar.seq) return;
-  radar.frames.forEach(f => { f.cz.remove(); if(f.de) f.de.remove(); }); radar.frames = [];
+  radar.frames.forEach(f => { if(f.cz) f.cz.remove(); if(f.de) f.de.remove(); }); radar.frames = [];
   radar.blobs.forEach(u => URL.revokeObjectURL(u)); radar.blobs = [];
   if(!found){ $("rtime").textContent = "nedostupný"; $("rnote").textContent = "Radarové snímky se teď nepodařilo načíst. Zkuste Obnovit."; return; }
   for(let k = RADAR.frames - 1; k >= 0; k--){
     const tt = found - k * RADAR.step;
     radar.frames.push({ t:tt, de:null, cz:L.imageOverlay(radarName(tt), RADAR.bounds, {opacity:0, pane:"radar", interactive:false}).addTo(radar.map) });
   }
+  radar.now = found;
+  const nowIdx = radar.frames.length - 1;
+  for(let k = 1; k <= RADAR.ahead; k++) radar.frames.push({ t: found + k * RADAR.step, future:true, cz:null, de:null });
   $("rslider").max = radar.frames.length - 1;
-  radarShow(radar.frames.length - 1);
-  // DWD frames arrive later; each is added when ready.
-  radar.frames.forEach(f => dwdImage(f.t).then(u => {
-    if(!u || seq !== radar.seq) return;
-    f.de = L.imageOverlay(u, DWD.bounds, {opacity:0, pane:"radarde", interactive:false}).addTo(radar.map);
+  radarShow(nowIdx);
+  // DWD frames (past and forecast) arrive later; each is added when ready.
+  const jobs = radar.frames.map(f => dwdImage(f.t).then(img => {
+    if(!img || seq !== radar.seq) return null;
+    f.de = L.imageOverlay(img.url, DWD.bounds, {opacity:0, pane:"radarde", interactive:false}).addTo(radar.map);
     radarShow(radar.idx);
-  }).catch(() => {}));
+    return img;
+  }).catch(() => null));
+  // Czech forecast: move the latest ČHMÚ image the way DWD expects rain to move.
+  const imgs = await Promise.all(jobs);
+  if(seq !== radar.seq) return;
+  let ia = -1, ib = -1;
+  imgs.forEach((im, j) => { if(!im) return; if(j <= nowIdx) ia = j; else ib = j; });
+  let mv = ia >= 0 && ib >= 0 ? motion(imgs[ia], imgs[ib]) : null;
+  if(mv){ const k = 3600e3 / (radar.frames[ib].t - radar.frames[ia].t); mv = {dx: mv.dx * k, dy: mv.dy * k}; }
+  radar.frames.forEach(f => {
+    if(!f.future || !mv) return;
+    f.cz = L.imageOverlay(radarName(found), shifted(RADAR.bounds, mv, (f.t - found) / 3600e3), {opacity:0, pane:"radar", interactive:false}).addTo(radar.map);
+  });
+  radarShow(radar.idx);
+  if(!mv && !radar.frames.some(f => f.future && f.de)){
+    radar.frames = radar.frames.filter(f => !f.future);
+    $("rslider").max = radar.frames.length - 1;
+    if(radar.idx > radar.frames.length - 1) radarShow(radar.frames.length - 1);
+  }
+  radar.mv = mv;
+  radarNote();
 }
 function radarInit(){
   if(!window.L){ $("rtime").textContent = "nedostupný"; $("rnote").textContent = "Mapa se nenačetla. Zkontrolujte připojení a obnovte stránku."; return; }
