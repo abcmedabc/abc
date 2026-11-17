@@ -165,6 +165,8 @@ h2{font-family:var(--display);font-size:1.05rem;font-weight:700;margin:0}
 .radar{padding:9px 0 8px;border-radius:10px}
 .radar header{display:flex;justify-content:space-between;align-items:baseline;gap:12px;padding:0 16px 8px}
 #rtime{font-size:1rem;color:var(--muted)}
+#rload{flex:1;text-align:center;font-size:.9rem;color:var(--muted);white-space:nowrap}
+#rload b{color:var(--ink);font-weight:600}
 #map.fut::after{content:attr(data-fut);position:absolute;right:8px;top:8px;z-index:500;background:var(--card);color:var(--ink);font:600 11px var(--body);letter-spacing:.06em;padding:3px 7px;border-radius:6px;opacity:.9}
 #map{height:300px;position:relative;z-index:0;background:var(--bg)}
 .leaflet-container{font-family:var(--body)}
@@ -272,7 +274,7 @@ footer a{color:var(--accent)}
   </details>
 
   <section class="card radar">
-    <header><h2>Radar</h2><span id="rtime" class="num">Načítám…</span></header>
+    <header><h2>Radar</h2><span id="rload" class="num" hidden></span><span id="rtime" class="num">Načítám…</span></header>
     <div id="map" role="img" aria-label="Mapa srážek z radaru ČHMÚ"></div>
     <div class="rctl">
       <button type="button" id="rplay" aria-label="Přehrát"><svg viewBox="0 0 24 24"><path d="M7 4.5v15l12-7.5z"/></svg></button>
@@ -975,6 +977,12 @@ function radarPaint(){
   $("rkey").hidden = a < 0;
   $("rkey2").hidden = b < 0;
 }
+function radarProg(){
+  const p = radar.prog, el = $("rload");
+  if(!p){ el.hidden = true; return; }
+  el.hidden = p.cz >= p.czN && p.de >= p.deN;
+  el.innerHTML = `ČHMÚ <b>${p.cz}/${p.czN}</b> · DWD <b>${p.de}/${p.deN}</b>`;
+}
 function radarShow(i){
   if(!radar.frames.length) return;
   radar.idx = i;
@@ -1008,10 +1016,17 @@ async function radarLoad(){
   radar.frames.forEach(f => { if(f.cz) f.cz.remove(); if(f.de) f.de.remove(); }); radar.frames = [];
   radar.blobs.forEach(u => URL.revokeObjectURL(u)); radar.blobs = [];
   if(!found){ $("rtime").textContent = "nedostupný"; $("rnote").textContent = "Radarové snímky se teď nepodařilo načíst. Zkuste Obnovit."; return; }
+  radar.prog = {cz:0, czN:RADAR.frames, de:0, deN:0, seq};
   for(let k = RADAR.frames - 1; k >= 0; k--){
     const tt = found - k * RADAR.step;
-    radar.frames.push({ t:tt, de:null, cz:L.imageOverlay(radarName(tt), RADAR.bounds, {opacity:0, pane:"radar", interactive:false}).addTo(radar.map) });
+    radar.frames.push({ t:tt, de:null, cz:L.imageOverlay(radarName(tt), RADAR.bounds, {opacity:0, pane:"radar", interactive:false}) });
   }
+  // Add newest first so the latest ČHMÚ image starts loading first.
+  [...radar.frames].reverse().forEach(f => {
+    let done = false;
+    const tick = () => { if(done || radar.prog.seq !== seq) return; done = true; radar.prog.cz++; radarProg(); };
+    f.cz.once("load", tick).once("error", tick).addTo(radar.map);
+  });
   radar.now = found;
   const nowIdx = radar.frames.length - 1;
   for(let k = 1; k <= RADAR.ahead; k++) radar.frames.push({ t: found + k * RADAR.step, future:true, rough: k * RADAR.step > 3600e3, cz:null, de:null });
@@ -1034,7 +1049,12 @@ async function radarLoad(){
       if(!last || f.t > last.t) last = {data:out, W:A.W, H:A.H, mpx:A.mpx, mpy:A.mpy, t:f.t};
     }
   };
-  const order = [nowIdx - 1, fut1, nowIdx, ...radar.frames.map((_, j) => j)].filter((j, k, a) => j >= 0 && a.indexOf(j) === k);
+  // DWD order: the frame nearest now first, then +60 min (needed for motion), then outwards from now, past before future.
+  const usable = j => radar.frames[j].t - Date.now() <= 115 * 60e3;
+  const near = radar.frames.map((_, j) => j).filter(usable)
+    .sort((a, b) => Math.abs(a - nowIdx) - Math.abs(b - nowIdx) || a - b);
+  const order = [nowIdx, usable(fut1) ? fut1 : -1, ...near].filter((j, k, a) => j >= 0 && a.indexOf(j) === k);
+  radar.prog.deN = order.length; radarProg();
   const tryMotion = () => {
     if(radar.mv || seq !== radar.seq) return;
     let ia = -1, ib = -1;
@@ -1055,8 +1075,10 @@ async function radarLoad(){
   };
   const fetchOne = j => {
     const f = radar.frames[j];
-    return (f.t - Date.now() > 115 * 60e3 ? Promise.resolve(null) : dwdImage(f.t)).catch(() => null).then(img => {
-      if(!img || seq !== radar.seq) return;
+    return dwdImage(f.t).catch(() => null).then(img => {
+      if(seq !== radar.seq) return;
+      radar.prog.de++; radarProg();
+      if(!img) return;
       imgs[j] = img;
       f.de = L.imageOverlay(img.url, DWD.bounds, {opacity:0, pane:"radarde", interactive:false}).addTo(radar.map);
       if(f.future) pending.push(j);
