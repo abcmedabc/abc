@@ -130,7 +130,8 @@ h1 .a { color: var(--jitrnicka); } h1 .b { color: var(--jelitko); }
 .learn-h { display: inline-flex; align-items: center; gap: 8px; font-size: 14px; min-width: 0; max-width: 100%; color: var(--muted); cursor: pointer; }
 .learn-h input { width: 18px; height: 18px; accent-color: var(--ink); }
 .carbox { flex-basis: 100%; display: flex; flex-wrap: wrap; gap: 8px 18px; padding: 10px 12px; border: 1px solid var(--line, currentColor); border-radius: 10px; min-width: 0; box-sizing: border-box; }
-.carbox b { flex-basis: 100%; color: var(--ink); }
+.carbox-d { flex-basis: 100%; min-width: 0; }
+.learn-sum { font-weight: 400; color: var(--muted); }
 .carbox label.sel { flex-wrap: wrap; }
 .carbox select { font: inherit; flex: 1 1 180px; min-width: 0; max-width: 100%; }
 .carkey { flex-basis: 100%; font-size: 13px; }
@@ -428,30 +429,29 @@ body.songs-on .wrap { visibility: hidden; }
   <div class="opts">
     <label for="opt-dirs"><input type="checkbox" id="opt-dirs" checked> Číst scénické poznámky</label>
     <label for="opt-stop"><input type="checkbox" id="opt-stop"> Zastavit u hudby</label>
-    <div class="carbox" id="musicbox">
-      <b>Hudba</b>
+    <details class="sub carbox-d" id="musicbox"><summary class="opts-t">Hudba</summary><div class="carbox">
       <label for="opt-music" class="sel">Písničky <select id="opt-music"><option value="full">nahrávka – celá</option><option value="intro">nahrávka – jen začátek</option><option value="say">jen scénická poznámka („Hudba: …“)</option><option value="skip">přeskočit</option></select></label>
       <span class="carkey">U každé písničky ve scénáři jde nastavení změnit (rozbalovací menu u názvu).</span>
       <label for="opt-musiclen" class="learn-x" id="musiclenRow"><span>Délka začátku písničky</span><input type="range" id="opt-musiclen" min="5" max="90" step="5" value="20"><output id="musiclenVal">20 s</output></label>
       <details class="lytool"><summary>Načasovat texty písniček</summary><div id="lyList">Načítám…</div></details>
       <span class="carkey" id="musicInfo">Nahraná hudba: zatím žádná – písničky bez nahrávky se jen přečtou.</span>
-    </div>
+    </div></details>
     <label for="opt-fx"><input type="checkbox" id="opt-fx"> Zvuky · chrochtání, zívání…</label>
     <label for="opt-car"><input type="checkbox" id="opt-car"> Do auta · hraje na pozadí i se zamčeným telefonem, play/pauza z volantu, ztlumí Spotify, displej nezhasíná</label>
-    <div class="carbox" id="carbox">
-      <b>Displej v autě</b>
+    <details class="sub carbox-d" id="carbox"><summary class="opts-t">Displej v autě</summary><div class="carbox">
       <label for="opt-carmode" class="sel">Co ukazovat <select id="opt-carmode"><option value="piece">čtený text po kouscích</option><option value="line">začátek repliky</option><option value="who">jen postavu a pozici</option></select></label>
       <label for="opt-carlen" class="learn-x"><span>Délka textu (kolik znaků se vejde na displej)</span><input type="range" id="opt-carlen" min="12" max="50" step="1" value="25"><output id="carlenVal">25</output></label>
       <label for="opt-carlead" class="learn-x"><span>Zpoždění textu (když je text na displeji dřív než hlas)</span><input type="range" id="opt-carlead" min="0" max="4" step="0.25" value="0.5"><output id="carleadVal">0,5 s</output></label>
       <label for="opt-carswap"><input type="checkbox" id="opt-carswap"> Prohodit řádky (text na druhý řádek, postava na první)</label>
       <label for="opt-cartoggle"><input type="checkbox" id="opt-cartoggle"> Tlačítko ▶ v autě přepíná play i pauzu (pro auta, která pauzu neposílají)</label>
       <span class="carkey">Poslední tlačítko z auta: <b id="carKey">zatím žádné</b></span>
-    </div>
+    </div></details>
     <label for="opt-silent"><input type="checkbox" id="opt-silent"> Tichý režim · jen čtení scénáře</label>
     <label for="opt-studio" id="studio-wrap" hidden><input type="checkbox" id="opt-studio" checked> Nahrané hlasy Google</label>
   </div>
   </details>
 
+  <details class="opts-box sub" id="learnDet"><summary class="opts-t"><span>Učení role <span class="learn-sum" id="learnSum"></span></span></summary>
   <div class="learn" id="learnbox">
     <label for="learnSel" class="learn-l"><span>Učím se roli</span>
       <select id="learnSel"><option value="">— nikdo, hraje celá hra —</option></select>
@@ -462,6 +462,8 @@ body.songs-on .wrap { visibility: hidden; }
     <label for="opt-extra" class="learn-x"><span>Víc času na mou repliku</span><input type="range" id="opt-extra" min="0" max="100" step="10" value="0"><output id="extraVal">+0 %</output></label>
     <p class="learn-p" id="learnHint" hidden>Tvoje repliky ani scénické poznámky k tvé postavě se nečtou (ostatní poznámky ano). Místo tvé repliky je pauza stejně dlouhá jako replika. Když potřebuješ víc času, klepni během ní na svou repliku – hra počká, dokud na ni neklepneš znovu (nebo na ▶ či na další repliku).</p>
   </div>
+
+  </details>
 
   <div class="notice" id="notice" hidden></div>
 
@@ -1272,6 +1274,7 @@ function applyLearn() {
   const box = document.getElementById("learnbox");
   box.classList.toggle("on", !!opts.learn); box.setAttribute("style", opts.learn ? style(opts.learn) : "");
   document.getElementById("learnHint").hidden = !opts.learn;
+  document.getElementById("learnSum").textContent = opts.learn && ROLES[opts.learn] ? "· " + ROLES[opts.learn].name : "";
   document.body.classList.toggle("hide-mine", !!opts.learn && opts.hideMine);
   document.querySelectorAll(".line").forEach(li => li.classList.toggle("mine", !!opts.learn && li.dataset.who === opts.learn));
   if (ACTS[actId]) lines().forEach(L => L.el && L.el.classList.toggle("mine-stage", L.kind === "stage" && myStage(L, L.segs[0])));
@@ -2637,7 +2640,7 @@ function lyFollow(L, pos) {   // highlight the line being sung, send it to the c
   }
   if (txt !== metaText) { metaKey = "♪" + txt; metaText = txt; metaMine = false; setMeta(); }
   svFollow(L, k);
-  if (k >= 0 && el && !opts.songMode) { const sp = el.querySelector(`.ly[data-l="${k}"]`); if (sp) { const r = sp.getBoundingClientRect(); if (r.bottom > visBottom() || r.top < 70) (progScroll = performance.now(), window).scrollBy({ top: r.top - innerHeight * 0.33, behavior: "smooth" }); } }
+  if (k >= 0 && el && !opts.songMode && !freeScroll) { const sp = el.querySelector(`.ly[data-l="${k}"]`); if (sp) { const r = sp.getBoundingClientRect(); if (r.bottom > visBottom() || r.top < 70) (progScroll = performance.now(), window).scrollBy({ top: r.top - innerHeight * 0.33, behavior: "smooth" }); } }
 }
 async function playMusic(src, t, len, L, from = 0) {
   const FADE = 2;
@@ -2764,6 +2767,12 @@ function setMeta() {
 // follow the voice inside a long line: keep the sentence being read on screen, not just the start of the line
 let follow = null, followSpan = null;
 var progScroll = 0;   // time of the last scroll made by the page (not by the user)
+// scrolling by hand while it plays pauses the auto-scroll; it comes back once the reading reaches the visible part, or on any tap
+var freeScroll = false;
+["wheel", "touchmove"].forEach(ev => addEventListener(ev, () => { if (playing) freeScroll = true; }, { passive: true }));
+addEventListener("keydown", e => { if (playing && /^(ArrowUp|ArrowDown|PageUp|PageDown|Home|End)$/.test(e.key)) freeScroll = true; });
+addEventListener("click", () => { freeScroll = false; }, true);
+const inView = (top, bottom) => top < visBottom() && bottom > 60;
 function visBottom() {   // lowest y where text is still readable: just above the player bar
   const b = document.querySelector(".bar");
   const t = b && b.getClientRects().length ? b.getBoundingClientRect().top : innerHeight;
@@ -2776,6 +2785,7 @@ setInterval(() => {
   const f = Math.min(1, Math.max(0, follow.el ? (follow.el.currentTime - follow.s0) * 1000 / Math.max(1, follow.dur) : (performance.now() - follow.t0) / Math.max(1, follow.dur)));
   carSentence(sp, f, follow.dur);
   const r = sp.getBoundingClientRect(), y = r.top + f * r.height, bottom = visBottom() - 30;
+  if (freeScroll) { if (y >= 70 && y <= bottom) freeScroll = false; return; }   // the reading has caught up with what is on screen
   if (y > bottom || y < 70) (progScroll = performance.now(), window).scrollBy({ top: y - innerHeight * 0.33, behavior: matchMedia("(prefers-reduced-motion: reduce)").matches ? "auto" : "smooth" });
 }, 400);
 function lineIntoView(L) {   // keep the active line between the top and the player bar
@@ -2791,7 +2801,8 @@ function setActive(i, scroll = true) {
   const LS = lines(), A = ACTS[actId];
   LS.forEach(L => L.el.classList.toggle("active", L.i === i));
   const L = LS[i];
-  if (L && scroll) { lineIntoView(L); setTimeout(() => { if (L.el.classList.contains("active")) lineIntoView(L); }, 700); }   // again once the active line has finished growing
+  if (L && scroll && freeScroll) { const r = L.el.getBoundingClientRect(); if (inView(r.top, r.bottom)) freeScroll = false; }
+  else if (L && scroll) { lineIntoView(L); setTimeout(() => { if (L.el.classList.contains("active") && !freeScroll) lineIntoView(L); }, 700); }   // again once the active line has finished growing
   const shown = L || LS[cur];
   document.getElementById("now").textContent = L ? label(L) : (playing ? "…" : `${A.title}${A.name ? " · " + A.name : ""}`);
   document.getElementById("pos").textContent = `J${actId}/${(L ? i : cur) + 1}`;
@@ -2955,7 +2966,8 @@ function svFollow(L, k) {   // called from lyFollow: highlight in the song view 
   const c = box.querySelector("span.cur");
   if (c) {   // keep the sung line on screen, but never scroll past the song title while the line fits below it
     const V = document.getElementById("songView"), H = document.getElementById("svHead"), r = c.getBoundingClientRect();
-    if (r.top < 0 || r.bottom > visBottom()) {
+    if (freeScroll) { if (inView(r.top, r.bottom)) freeScroll = false; }
+    else if (r.top < 0 || r.bottom > visBottom()) {
       const want = V.scrollTop + r.top - innerHeight * 0.35, title = H.offsetTop - 8;
       (progScroll = performance.now(), V).scrollTo({ top: Math.max(title, want), behavior: "smooth" });
     }
