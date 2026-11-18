@@ -317,13 +317,10 @@ li.cue.has-music .cue-title > span:not(.track):not(.eq)::after { content: " ▶"
 .songnav span { flex: 1 1 120px; font-weight: 700; color: var(--ink); min-width: 0; }
 .songnav button { font: inherit; font-size: 14px; padding: 8px 12px; border-radius: 10px; border: 1px solid var(--line, currentColor); background: transparent; color: var(--ink); }
 .modebar { display: flex; flex-direction: column; align-items: flex-start; gap: 10px; margin: 4px 0 14px; }
-.mv-list { display: flex; flex-direction: column; gap: 6px; }
-.mv-item { display: flex; gap: 10px; align-items: baseline; width: 100%; box-sizing: border-box; text-align: left; font: inherit; font-size: 16px; padding: 10px 12px; border-radius: 12px; border: 1px solid var(--line); background: var(--surface); color: var(--ink); cursor: pointer; }
-.mv-item b { flex: none; min-width: 5.5ch; font-family: var(--display); color: var(--muted); font-variant-numeric: tabular-nums; }
-.mv-item span { flex: 1 1 auto; min-width: 0; }
-.mv-item small { flex: none; color: var(--muted); font-variant-numeric: tabular-nums; }
-.mv-item.cur { border: 2px solid var(--jitrnicka); background: var(--jitrnicka-tint, var(--surface)); font-weight: 700; }
-.songview.music .sv-lyrics { min-height: 0; padding: 2px 4px 12px 14px; }
+body.music-on #prev, body.music-on #next, body.music-on #pos { display: none; }
+#script li.mus-sel { outline: 3px solid var(--jitrnicka); outline-offset: 4px; border-radius: 12px; }
+#script li.mus-play { outline: 3px solid var(--jitrnicka); outline-offset: 4px; border-radius: 12px; background: var(--jitrnicka-tint, transparent); }
+button.modebtn[aria-pressed="true"] { background: var(--jitrnicka); color: var(--surface); }
 button.modebtn { font: 700 15px var(--display); padding: 10px 18px; border-radius: 999px; border: 2px solid var(--jitrnicka); background: var(--jitrnicka-tint, transparent); color: var(--ink); cursor: pointer; }
 .songview { position: fixed; inset: 0; z-index: 15; background: var(--bg); overflow-y: auto; padding-top: env(safe-area-inset-top, 0px);
   padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px)); padding-bottom: 170px; }
@@ -499,7 +496,6 @@ body.songs-on .wrap { visibility: hidden; }
     <div class="sv-timer" id="svTimer" hidden></div>
     <div class="sv-now" id="svHead" title="Pustit písničku"><span id="svName">—</span><small id="svRep"></small></div>
     <div class="sv-lyrics" id="svLyrics" title="Ťukni na řádek – písnička hraje od něj"></div>
-    <div class="mv-list" id="mvList" hidden></div>
     <button type="button" class="modebtn sv-back" id="svNextBtn">Další písnička ⏭</button>
   </div>
 </section>
@@ -1599,7 +1595,7 @@ fetch("music.json", { cache: "no-store" }).then(r => r.ok ? r.json() : {}).then(
   ORDER.forEach(id => ACTS[id].lines.forEach(L => { if (L.kind === "cue" && L.track) { all.add(cueKey(L)); if (music[cueKey(L)]) have.add(cueKey(L)); } }));
   const el = document.getElementById("musicInfo");
   if (el && have.size) el.textContent = `Nahraná hudba a zvuky: ${have.size} z ${all.size} – ostatní se jen přečtou nebo zahrají vygenerovaným zvukem.`;
-  buildFxRec(); buildLyList(); if (musicOnly) musicShow(musicIdx);
+  buildFxRec(); buildLyList(); if (musicOnly) { _mp = null; musicFromScroll(); }
   document.querySelectorAll("#script li.cue, #script li.stage").forEach(li => markMusic(li));
 }).catch(() => {});
 function markMusic(li) {
@@ -2611,7 +2607,7 @@ async function lyTimer(L, P = document.getElementById("lyPanel")) {   // play th
       buildLyList(); if (lyEl) lyEl.pause();
       P.innerHTML = `<p>${all ? (sent ? `Uloženo pro všechny – ${esc(L.title)}.` : `Pro všechny se uložit nepodařilo (nejsi přihlášený?), uloženo jen tady – ${esc(L.title)}.`) : `Uloženo v tomto prohlížeči – ${esc(L.title)}.`}</p><div class="row"><button type="button" data-a="close">Zavřít</button></div>`;
       P.querySelector("[data-a=close]").addEventListener("click", () => { P.hidden = true; });
-      if (document.body.classList.contains("songs-on")) { document.getElementById("svLyrics").dataset.k = ""; if (musicOnly) musicShow(musicIdx); else songShow(songIdx); }
+      if (document.body.classList.contains("songs-on")) { document.getElementById("svLyrics").dataset.k = ""; songShow(songIdx); }
       return;
     }
     else if (a === "test") {
@@ -2648,7 +2644,7 @@ function lyFollow(L, pos) {   // highlight the line being sung, send it to the c
   }
   if (txt !== metaText) { metaKey = "♪" + txt; metaText = txt; metaMine = false; setMeta(); }
   svFollow(L, k);
-  if (k >= 0 && el && !opts.songMode && !freeScroll) { const sp = el.querySelector(`.ly[data-l="${k}"]`); if (sp) { const r = sp.getBoundingClientRect(); if (r.bottom > visBottom() || r.top < 70) (progScroll = performance.now(), window).scrollBy({ top: r.top - innerHeight * 0.33, behavior: "smooth" }); } }
+  if (k >= 0 && el && !opts.songMode && !musicOnly && !freeScroll) { const sp = el.querySelector(`.ly[data-l="${k}"]`); if (sp) { const r = sp.getBoundingClientRect(); if (r.bottom > visBottom() || r.top < 70) (progScroll = performance.now(), window).scrollBy({ top: r.top - innerHeight * 0.33, behavior: "smooth" }); } }
 }
 async function playMusic(src, t, len, L, from = 0) {
   const FADE = 2;
@@ -2986,8 +2982,8 @@ const TIMER_ICON = '<svg viewBox="0 0 24 24" aria-hidden="true"><path fill="curr
 function songBar(on) {   // bottom bar: outer arrows = previous / next song, the settings button opens the song timing
   const sb = document.getElementById("setBtn");
   sb.innerHTML = on ? TIMER_ICON : SET_ICON; sb.setAttribute("aria-label", on ? "Načasování písničky" : "Nastavení"); sb.title = sb.getAttribute("aria-label");
-  sb.hidden = on && musicOnly;   // just the music: only previous / next
-  const what = musicOnly ? ["Předchozí skladba", "Další skladba"] : ["Předchozí písnička", "Další písnička"];
+  if (on && musicOnly) { sb.innerHTML = "✕"; sb.setAttribute("aria-label", "Ukončit přehrávání hudby"); sb.title = sb.getAttribute("aria-label"); }   // just the music: the button ends the mode
+  const what = musicOnly ? ["Předchozí hudba", "Další hudba"] : ["Předchozí písnička", "Další písnička"];
   ["actPrev", "actNext"].forEach(id => { const b = document.getElementById(id); b.disabled = on ? false : b.disabled; b.title = on ? (id === "actPrev" ? what[0] : what[1]) : (id === "actPrev" ? "Předchozí jednání" : "Další jednání"); b.setAttribute("aria-label", b.title); });
   if (!on) { document.getElementById("actPrev").disabled = !prevAct(); document.getElementById("actNext").disabled = !nextAct(); }
 }
@@ -3027,72 +3023,99 @@ function svTop() {   // the song title at the top of the view as soon as the son
   (progScroll = performance.now(), V).scrollTo({ top: Math.max(0, H.offsetTop - 8), behavior: matchMedia("(prefers-reduced-motion: reduce)").matches ? "auto" : "smooth" });
 }
 function songStep(d) {
-  if (musicOnly) { if (playing) musicLoop(musicIdx + d); else musicShow(musicIdx + d); return; }
+  if (musicOnly) { musicStep(d); return; }
   songRep = 0; if (playing) songLoop(songIdx + d); else songShow(songIdx + d);
 }
-// ---------- just the music: every recording (songs, effects, the elephant's voice) one after another, scrolling only by hand ----------
-let musicOnly = false, musicIdx = 0;
-const mmss = s => s ? `${Math.floor(s / 60)}:${String(Math.round(s % 60)).padStart(2, "0")}` : "";
-function musicList() {   // one item per recording (01 and 09, 03 and 10 are the same file), in track order
-  const by = new Map(), cues = {};
-  ORDER.forEach(id => ACTS[id].lines.forEach(L => { if (L.kind === "cue" && L.track) { const k = cueKey(L); if (!cues[k] || (!cues[k].lyrics && L.lyrics)) cues[k] = L; } }));
-  Object.keys(music).filter(k => /^t\d+$/.test(k) && music[k] && music[k].src).sort((a, b) => a.slice(1) - b.slice(1)).forEach(k => {
-    const m = music[k]; let it = by.get(m.src);
-    if (!it) { it = { src: m.src, m, keys: [] }; by.set(m.src, it); }
-    it.keys.push(k);
-  });
-  return [...by.values()].map(it => {
-    const Ls = it.keys.map(k => cues[k]).filter(Boolean);
-    return { ...it, L: Ls.find(L => L.lyrics) || null, num: it.keys.map(k => k.slice(1)).join(" / "), title: it.m.title || it.keys[0] };
-  });
+// ---------- just the music: the whole script stays on screen and scrolls only by hand; ▶ plays the next music / sound recording ----------
+let musicOnly = false, musicSel = -1, musicFixed = false, _mp = null;
+function musicPoints() {   // every place in the script that has a recording, in script order
+  const n = Object.keys(music).length;
+  if (_mp && _mp.n === n) return _mp.list;
+  const list = [];
+  ORDER.forEach(id => ACTS[id].lines.forEach((L, i) => {
+    const m = L.kind === "cue" ? (musicFor(L) || ambFor(L)) : null;
+    if (m && m.src) list.push({ act: id, i, L, m, src: m.src, title: `${L.track ? +L.track + " " : ""}${L.title || m.title || ""}`.trim() });
+  }));
+  _mp = { n, list }; return list;
 }
-function musicShow(k) {
-  const list = musicList(), box = document.getElementById("mvList"), ly = document.getElementById("svLyrics");
-  songBar(true);
-  if (!list.length) { box.innerHTML = `<p class="notext">Hudba se načítá…</p>`; box.dataset.n = ""; ly.hidden = true; return null; }
-  musicIdx = ((k % list.length) + list.length) % list.length;
-  const it = list[musicIdx];
-  if (box.dataset.n !== String(list.length)) {
-    box.innerHTML = list.map((x, i) => `<button type="button" class="mv-item" data-i="${i}"><b>${esc(x.num)}</b><span>${esc(x.title)}</span><small>${mmss(x.m.dur)}</small></button>`).join("");
-    box.dataset.n = list.length;
+function musicMark() {   // highlight the chosen place, its title in the bar
+  document.querySelectorAll("#script .mus-sel").forEach(x => x.classList.remove("mus-sel"));
+  if (!playing) document.querySelectorAll("#script .mus-play").forEach(x => x.classList.remove("mus-play"));
+  const list = musicPoints(), p = list[musicSel];
+  if (!p) { if (!playing) document.getElementById("now").textContent = list.length ? "Dál už žádná hudba" : "Hudba se načítá…"; return null; }
+  if (p.L.el && p.L.el.isConnected) p.L.el.classList.add("mus-sel");
+  if (!playing) document.getElementById("now").textContent = "▶ " + p.title;
+  return p;
+}
+function musicFromScroll() {   // ▶ plays the next music below the top quarter of the screen
+  if (!musicOnly || playing || musicFixed) return;
+  const list = musicPoints(), y = innerHeight * 0.25, ai = ORDER.indexOf(actId);
+  let k = -1;
+  for (let j = 0; j < list.length; j++) {
+    const p = list[j], pa = ORDER.indexOf(p.act);
+    if (pa < ai) continue;
+    if (pa > ai) { k = j; break; }
+    const el = p.L.el; if (!el || !el.isConnected) continue;
+    if (el.getBoundingClientRect().bottom > y) { k = j; break; }
   }
-  box.querySelectorAll(".mv-item").forEach(b => { const on = +b.dataset.i === musicIdx; b.classList.toggle("cur", on); if (on) b.setAttribute("aria-current", "true"); else b.removeAttribute("aria-current"); });
-  if (it.L) { if (ly.dataset.k !== it.src) { svLyrics(it.L); ly.dataset.k = it.src; } box.querySelector(`.mv-item[data-i="${musicIdx}"]`).after(ly); ly.hidden = false; }
-  else { ly.hidden = true; ly.dataset.k = ""; }
-  if (!playing) document.getElementById("now").textContent = it.title;
-  return it;
+  musicSel = k; musicMark();
 }
-async function musicLoop(k, from = 0) {   // from the chosen recording to the end of the list
+let _mfT = 0;
+addEventListener("scroll", () => {
+  if (!musicOnly || performance.now() - progScroll < 1200) return;   // only the reader's own scrolling
+  musicFixed = false; cancelAnimationFrame(_mfT); _mfT = requestAnimationFrame(musicFromScroll);
+}, { passive: true });
+function musicStep(d) {   // the bottom arrows: previous / next music (shows where it is in the script)
+  const list = musicPoints(); if (!list.length) return;
+  const was = playing;
+  if (was) stop();
+  musicSel = Math.max(0, Math.min(list.length - 1, musicSel < 0 ? (d > 0 ? 0 : list.length - 1) : musicSel + d));
+  musicFixed = true;
+  const p = list[musicSel];
+  if (p.act !== actId) showAct(p.act, false);
+  musicMark();
+  if (p.L.el) { progScroll = performance.now(); p.L.el.scrollIntoView({ block: "center", behavior: matchMedia("(prefers-reduced-motion: reduce)").matches ? "auto" : "smooth" }); }
+  if (was) musicPlay();
+}
+async function musicPlay(from = 0) {   // plays the chosen recording once, then the next one is ready for ▶
+  const p = musicMark(); if (!p) return;
   stop(true);
-  const t = ++token;
-  playing = true; renderBtn();
-  for (;;) {
-    const it = musicShow(k); if (!it) { playing = false; renderBtn(); return; }
-    document.getElementById("now").textContent = it.title;
-    metaKey = "♪" + it.title; metaText = "♪ " + it.title; metaMine = false; setMeta();
-    await playMusic(it.src, t, null, it.L, from); from = 0;
-    if (t !== token) return;
-    if (it.L) svFollow(it.L, -1);
-    if (musicIdx + 1 >= musicList().length) { playing = false; renderBtn(); document.getElementById("now").textContent = "Konec hudby"; return; }
-    k = musicIdx + 1;
-    await wait(1200);
-    if (t !== token) return;
-  }
+  const t = ++token, me = musicSel;
+  playing = true; renderBtn(); musicFixed = true;   // scrolling during the music clears this: then the next one is picked by where the reader is
+  document.getElementById("now").textContent = "♫ " + p.title;
+  metaKey = "♪" + p.title; metaText = "♪ " + p.title; metaMine = false; setMeta();
+  if (p.L.el && p.L.el.isConnected) p.L.el.classList.add("mus-play");
+  await playMusic(p.src, t, null, p.L.lyrics ? p.L : null, from);
+  if (t !== token) return;
+  playing = false; renderBtn();
+  if (!musicFixed) { musicFromScroll(); if (musicSel !== me) return; }
+  if (musicSel < musicPoints().length - 1) musicSel++;
+  musicFixed = true; musicMark();
 }
-function songModeSet(on, mus = false) {
+function musicModeSet(on) {
   if (playing) stop();
-  musicOnly = on && mus;
-  {
-    const V = document.getElementById("songView"), ly = document.getElementById("svLyrics");
-    V.classList.toggle("music", musicOnly);
-    document.getElementById("svTitle").textContent = musicOnly ? "♫ Jen přehrávání hudby" : "♪ Učení písniček";
-    V.setAttribute("aria-label", musicOnly ? "Jen přehrávání hudby" : "Učení písniček");
-    ["svPick", "svHead", "svNextBtn"].forEach(id => { document.getElementById(id).hidden = musicOnly; });
-    document.getElementById("mvList").hidden = !musicOnly;
-    if (!musicOnly) { document.getElementById("svHead").after(ly); ly.hidden = false; }
-    ly.dataset.k = "";
-    if (on && musicOnly) { document.body.classList.add("songs-on"); V.hidden = false; document.getElementById("svTimer").hidden = true; opts.songMode = true; saveOpts(); musicShow(musicIdx); V.scrollTop = 0; return; }
-  }
+  if (on && opts.songMode) songModeSet(false);
+  musicOnly = on; musicFixed = false;
+  document.body.classList.toggle("music-on", on);
+  const b = document.getElementById("musicOpen"); b.textContent = on ? "✕ Ukončit přehrávání hudby" : "♫ Jen přehrávání hudby"; b.setAttribute("aria-pressed", on ? "true" : "false");
+  songBar(on);
+  if (on) { musicSel = -1; musicFromScroll(); }
+  else { musicMark(); document.querySelectorAll("#script .mus-sel, #script .mus-play").forEach(x => x.classList.remove("mus-sel", "mus-play")); document.getElementById("now").textContent = "Připraveno"; }
+}
+document.getElementById("script").addEventListener("click", e => {   // music mode: a tap in the script picks the next music; a tap on the music plays it
+  if (!musicOnly || e.target.closest("select, button, a, input, summary, label")) return;
+  const li = e.target.closest("#script > li"); if (!li || !li._L) return;
+  e.stopPropagation(); e.preventDefault(); unlock();
+  const list = musicPoints(), L = li._L, ai = ORDER.indexOf(actId), at = lines().indexOf(L);
+  const k = list.findIndex(p => ORDER.indexOf(p.act) > ai || (p.act === actId && p.i >= at)); if (k < 0) return;
+  musicSel = k; musicFixed = true;
+  if (list[k].L !== L) { if (playing) stop(); musicMark(); return; }
+  const sp = e.target.closest(".ly"), tm = sp && L.lyrics ? lyTimes(L) : null, from = tm ? tm[+sp.dataset.l] : null;
+  musicPlay(from != null ? Math.max(0, from - 0.6) : 0);
+}, true);
+function songModeSet(on) {
+  if (playing) stop();
+  if (on && musicOnly) musicModeSet(false);
   opts.songMode = on; saveOpts();
   document.body.classList.toggle("songs-on", on);
   document.getElementById("songView").hidden = !on;
@@ -3101,6 +3124,7 @@ function songModeSet(on, mus = false) {
   else { songBar(false); document.getElementById("now").textContent = "Připraveno"; const L = lines()[cur]; if (L && L.el) L.el.scrollIntoView({ block: "center" }); }
 }
 function step(d) {
+  if (musicOnly) { unlock(); musicStep(d); return; }
   if (opts.songMode) { if (!opts.silent) unlock(); songStep(d); return; }
   if (!opts.silent) unlock();
   const was = playing;
@@ -3170,29 +3194,30 @@ $play.addEventListener("click", () => {
   if (opts.silent) return;
   unlock();
   if (holding) { releaseHold(); return; }
-  if (playing) { stop(); const it = opts.songMode && (musicOnly ? musicList()[musicIdx] : songList()[songIdx]); document.getElementById("now").textContent = it ? (it.title || it.L.title) : "Pozastaveno"; }
-  else if (opts.songMode) { if (musicOnly) musicLoop(musicIdx); else songLoop(songIdx); }
+  if (playing && musicOnly) { stop(); musicMark(); }
+  else if (playing) { stop(); const it = opts.songMode && songList()[songIdx]; document.getElementById("now").textContent = it ? it.L.title : "Pozastaveno"; }
+  else if (musicOnly) musicPlay();
+  else if (opts.songMode) songLoop(songIdx);
   else { normCur(); playFrom(cur); }
 });
 document.getElementById("songsOpen").addEventListener("click", () => songModeSet(true));
-document.getElementById("musicOpen").addEventListener("click", () => songModeSet(true, true));
-document.getElementById("mvList").addEventListener("click", e => { const b = e.target.closest(".mv-item"); if (!b) return; unlock(); musicLoop(+b.dataset.i); });
+document.getElementById("musicOpen").addEventListener("click", () => musicModeSet(!musicOnly));
 document.getElementById("songsClose").addEventListener("click", () => songModeSet(false));
 document.getElementById("svNextBtn").addEventListener("click", () => { unlock(); songStep(1); });
 document.getElementById("svHead").addEventListener("click", () => { unlock(); songLoop(songIdx); });
 document.getElementById("svLyrics").addEventListener("click", e => {   // a tapped line: the song plays from that line (when the lyrics are timed)
   unlock();
-  const sp = e.target.closest("span[data-l]"), it = musicOnly ? musicList()[musicIdx] : songList()[songIdx];
-  const tm = sp && it && it.L ? lyTimes(it.L) : null, at = tm ? tm[+sp.dataset.l] : null;
-  if (musicOnly) musicLoop(musicIdx, at != null ? Math.max(0, at - 0.6) : 0);
-  else songLoop(songIdx, at != null ? Math.max(0, at - 0.6) : 0);
+  const sp = e.target.closest("span[data-l]"), it = songList()[songIdx];
+  const tm = sp && it ? lyTimes(it.L) : null, at = tm ? tm[+sp.dataset.l] : null;
+  songLoop(songIdx, at != null ? Math.max(0, at - 0.6) : 0);
 });
 document.getElementById("prev").addEventListener("click", () => step(-1));
 document.getElementById("next").addEventListener("click", () => step(1));
-document.getElementById("actPrev").addEventListener("click", () => { if (opts.songMode) { unlock(); songStep(-1); return; } const p = prevAct(); if (p) { unlock(); chooseAct(p); } });
-document.getElementById("actNext").addEventListener("click", () => { if (opts.songMode) { unlock(); songStep(1); return; } const x = nextAct(); if (x) { unlock(); chooseAct(x); } });
+document.getElementById("actPrev").addEventListener("click", () => { if (musicOnly) { unlock(); musicStep(-1); return; } if (opts.songMode) { unlock(); songStep(-1); return; } const p = prevAct(); if (p) { unlock(); chooseAct(p); } });
+document.getElementById("actNext").addEventListener("click", () => { if (musicOnly) { unlock(); musicStep(1); return; } if (opts.songMode) { unlock(); songStep(1); return; } const x = nextAct(); if (x) { unlock(); chooseAct(x); } });
 document.getElementById("setBtn").addEventListener("click", e => {
-  if (!opts.songMode || musicOnly) return;
+  if (musicOnly) { e.stopImmediatePropagation(); musicModeSet(false); return; }
+  if (!opts.songMode) return;
   e.stopImmediatePropagation();   // song view: the timing of the current song
   const it = songList()[songIdx]; if (!it) return;
   const P = document.getElementById("svTimer");
@@ -3239,7 +3264,7 @@ renderBtn();
 buildCast(); showNotice();
 const bootHash = fromHash();
 showAct((bootHash || {}).act || ORDER[0], false);
-const songsFromLink = (h = fromHash()) => songModeSet(true, !!(h && h.music));
+const songsFromLink = (h = fromHash()) => { if (h && h.music) musicModeSet(true); else songModeSet(true); };
 if (bootHash && bootHash.songs) setTimeout(() => songsFromLink(bootHash), 600);   // after music.json has arrived; otherwise the script view is the default
 else if (opts.songMode) { opts.songMode = false; saveOpts(); }
 if (bootHash && bootHash.line) setTimeout(() => goHash(true, bootHash), 300);
