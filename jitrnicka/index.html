@@ -316,7 +316,14 @@ li.cue.has-music .cue-title > span:not(.track):not(.eq)::after { content: " ▶"
 .songnav { flex-basis: 100%; display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
 .songnav span { flex: 1 1 120px; font-weight: 700; color: var(--ink); min-width: 0; }
 .songnav button { font: inherit; font-size: 14px; padding: 8px 12px; border-radius: 10px; border: 1px solid var(--line, currentColor); background: transparent; color: var(--ink); }
-.modebar { display: flex; gap: 10px; flex-wrap: wrap; margin: 4px 0 14px; }
+.modebar { display: flex; flex-direction: column; align-items: flex-start; gap: 10px; margin: 4px 0 14px; }
+.mv-list { display: flex; flex-direction: column; gap: 6px; }
+.mv-item { display: flex; gap: 10px; align-items: baseline; width: 100%; box-sizing: border-box; text-align: left; font: inherit; font-size: 16px; padding: 10px 12px; border-radius: 12px; border: 1px solid var(--line); background: var(--surface); color: var(--ink); cursor: pointer; }
+.mv-item b { flex: none; min-width: 5.5ch; font-family: var(--display); color: var(--muted); font-variant-numeric: tabular-nums; }
+.mv-item span { flex: 1 1 auto; min-width: 0; }
+.mv-item small { flex: none; color: var(--muted); font-variant-numeric: tabular-nums; }
+.mv-item.cur { border: 2px solid var(--jitrnicka); background: var(--jitrnicka-tint, var(--surface)); font-weight: 700; }
+.songview.music .sv-lyrics { min-height: 0; padding: 2px 4px 12px 14px; }
 button.modebtn { font: 700 15px var(--display); padding: 10px 18px; border-radius: 999px; border: 2px solid var(--jitrnicka); background: var(--jitrnicka-tint, transparent); color: var(--ink); cursor: pointer; }
 .songview { position: fixed; inset: 0; z-index: 15; background: var(--bg); overflow-y: auto; padding-top: env(safe-area-inset-top, 0px);
   padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px)); padding-bottom: 170px; }
@@ -421,7 +428,7 @@ body.songs-on .wrap { visibility: hidden; }
     <h1><span class="b">Jelítko</span> a <span class="a">Jitrnička</span></h1>
     <p class="lead">Stiskni přehrát a hra poběží jednání za jednáním až do konce. Ťuknutím na repliku začneš od ní.</p>
   </header>
-  <div class="modebar"><button type="button" class="modebtn" id="songsOpen">♪ Učení písniček</button></div>
+  <div class="modebar"><button type="button" class="modebtn" id="songsOpen">♪ Učení písniček</button><button type="button" class="modebtn" id="musicOpen">♫ Jen přehrávání hudby</button></div>
 
   <div class="acts" role="tablist" id="acts"></div>
 
@@ -487,11 +494,12 @@ body.songs-on .wrap { visibility: hidden; }
 
 <section class="songview" id="songView" hidden aria-label="Učení písniček">
   <div class="sv-in">
-    <div class="sv-top"><h2>♪ Učení písniček</h2><button type="button" class="modebtn" id="songsClose">Učení scénáře</button></div>
+    <div class="sv-top"><h2 id="svTitle">♪ Učení písniček</h2><button type="button" class="modebtn" id="songsClose">Učení scénáře</button></div>
     <details class="sv-pick" id="svPick"><summary>Vybrat písničky <span id="svCount"></span></summary><div id="svList"></div></details>
     <div class="sv-timer" id="svTimer" hidden></div>
     <div class="sv-now" id="svHead" title="Pustit písničku"><span id="svName">—</span><small id="svRep"></small></div>
     <div class="sv-lyrics" id="svLyrics" title="Ťukni na řádek – písnička hraje od něj"></div>
+    <div class="mv-list" id="mvList" hidden></div>
     <button type="button" class="modebtn sv-back" id="svNextBtn">Další písnička ⏭</button>
   </div>
 </section>
@@ -1591,7 +1599,7 @@ fetch("music.json", { cache: "no-store" }).then(r => r.ok ? r.json() : {}).then(
   ORDER.forEach(id => ACTS[id].lines.forEach(L => { if (L.kind === "cue" && L.track) { all.add(cueKey(L)); if (music[cueKey(L)]) have.add(cueKey(L)); } }));
   const el = document.getElementById("musicInfo");
   if (el && have.size) el.textContent = `Nahraná hudba a zvuky: ${have.size} z ${all.size} – ostatní se jen přečtou nebo zahrají vygenerovaným zvukem.`;
-  buildFxRec(); buildLyList();
+  buildFxRec(); buildLyList(); if (musicOnly) musicShow(musicIdx);
   document.querySelectorAll("#script li.cue, #script li.stage").forEach(li => markMusic(li));
 }).catch(() => {});
 function markMusic(li) {
@@ -2603,7 +2611,7 @@ async function lyTimer(L, P = document.getElementById("lyPanel")) {   // play th
       buildLyList(); if (lyEl) lyEl.pause();
       P.innerHTML = `<p>${all ? (sent ? `Uloženo pro všechny – ${esc(L.title)}.` : `Pro všechny se uložit nepodařilo (nejsi přihlášený?), uloženo jen tady – ${esc(L.title)}.`) : `Uloženo v tomto prohlížeči – ${esc(L.title)}.`}</p><div class="row"><button type="button" data-a="close">Zavřít</button></div>`;
       P.querySelector("[data-a=close]").addEventListener("click", () => { P.hidden = true; });
-      if (document.body.classList.contains("songs-on")) { document.getElementById("svLyrics").dataset.k = ""; songShow(songIdx); }
+      if (document.body.classList.contains("songs-on")) { document.getElementById("svLyrics").dataset.k = ""; if (musicOnly) musicShow(musicIdx); else songShow(songIdx); }
       return;
     }
     else if (a === "test") {
@@ -2964,7 +2972,7 @@ function svFollow(L, k) {   // called from lyFollow: highlight in the song view 
   const box = document.getElementById("svLyrics");
   box.querySelectorAll("span[data-l]").forEach(sp => { const n = +sp.dataset.l; sp.classList.toggle("cur", n === k); sp.classList.toggle("done", k >= 0 && n < k); });
   const c = box.querySelector("span.cur");
-  if (c) {   // keep the sung line on screen, but never scroll past the song title while the line fits below it
+  if (c && !musicOnly) {   // keep the sung line on screen (the music-only view scrolls only by hand), but never scroll past the song title while the line fits below it
     const V = document.getElementById("songView"), H = document.getElementById("svHead"), r = c.getBoundingClientRect();
     if (freeScroll) { if (inView(r.top, r.bottom)) freeScroll = false; }
     else if (r.top < 0 || r.bottom > visBottom()) {
@@ -2978,7 +2986,9 @@ const TIMER_ICON = '<svg viewBox="0 0 24 24" aria-hidden="true"><path fill="curr
 function songBar(on) {   // bottom bar: outer arrows = previous / next song, the settings button opens the song timing
   const sb = document.getElementById("setBtn");
   sb.innerHTML = on ? TIMER_ICON : SET_ICON; sb.setAttribute("aria-label", on ? "Načasování písničky" : "Nastavení"); sb.title = sb.getAttribute("aria-label");
-  ["actPrev", "actNext"].forEach(id => { const b = document.getElementById(id); b.disabled = on ? false : b.disabled; b.title = on ? (id === "actPrev" ? "Předchozí písnička" : "Další písnička") : (id === "actPrev" ? "Předchozí jednání" : "Další jednání"); b.setAttribute("aria-label", b.title); });
+  sb.hidden = on && musicOnly;   // just the music: only previous / next
+  const what = musicOnly ? ["Předchozí skladba", "Další skladba"] : ["Předchozí písnička", "Další písnička"];
+  ["actPrev", "actNext"].forEach(id => { const b = document.getElementById(id); b.disabled = on ? false : b.disabled; b.title = on ? (id === "actPrev" ? what[0] : what[1]) : (id === "actPrev" ? "Předchozí jednání" : "Další jednání"); b.setAttribute("aria-label", b.title); });
   if (!on) { document.getElementById("actPrev").disabled = !prevAct(); document.getElementById("actNext").disabled = !nextAct(); }
 }
 function songShow(k) {
@@ -3016,9 +3026,73 @@ function svTop() {   // the song title at the top of the view as soon as the son
   if (V.hidden || !H) return;
   (progScroll = performance.now(), V).scrollTo({ top: Math.max(0, H.offsetTop - 8), behavior: matchMedia("(prefers-reduced-motion: reduce)").matches ? "auto" : "smooth" });
 }
-function songStep(d) { songRep = 0; if (playing) songLoop(songIdx + d); else songShow(songIdx + d); }
-function songModeSet(on) {
+function songStep(d) {
+  if (musicOnly) { if (playing) musicLoop(musicIdx + d); else musicShow(musicIdx + d); return; }
+  songRep = 0; if (playing) songLoop(songIdx + d); else songShow(songIdx + d);
+}
+// ---------- just the music: every recording (songs, effects, the elephant's voice) one after another, scrolling only by hand ----------
+let musicOnly = false, musicIdx = 0;
+const mmss = s => s ? `${Math.floor(s / 60)}:${String(Math.round(s % 60)).padStart(2, "0")}` : "";
+function musicList() {   // one item per recording (01 and 09, 03 and 10 are the same file), in track order
+  const by = new Map(), cues = {};
+  ORDER.forEach(id => ACTS[id].lines.forEach(L => { if (L.kind === "cue" && L.track) { const k = cueKey(L); if (!cues[k] || (!cues[k].lyrics && L.lyrics)) cues[k] = L; } }));
+  Object.keys(music).filter(k => /^t\d+$/.test(k) && music[k] && music[k].src).sort((a, b) => a.slice(1) - b.slice(1)).forEach(k => {
+    const m = music[k]; let it = by.get(m.src);
+    if (!it) { it = { src: m.src, m, keys: [] }; by.set(m.src, it); }
+    it.keys.push(k);
+  });
+  return [...by.values()].map(it => {
+    const Ls = it.keys.map(k => cues[k]).filter(Boolean);
+    return { ...it, L: Ls.find(L => L.lyrics) || null, num: it.keys.map(k => k.slice(1)).join(" / "), title: it.m.title || it.keys[0] };
+  });
+}
+function musicShow(k) {
+  const list = musicList(), box = document.getElementById("mvList"), ly = document.getElementById("svLyrics");
+  songBar(true);
+  if (!list.length) { box.innerHTML = `<p class="notext">Hudba se načítá…</p>`; box.dataset.n = ""; ly.hidden = true; return null; }
+  musicIdx = ((k % list.length) + list.length) % list.length;
+  const it = list[musicIdx];
+  if (box.dataset.n !== String(list.length)) {
+    box.innerHTML = list.map((x, i) => `<button type="button" class="mv-item" data-i="${i}"><b>${esc(x.num)}</b><span>${esc(x.title)}</span><small>${mmss(x.m.dur)}</small></button>`).join("");
+    box.dataset.n = list.length;
+  }
+  box.querySelectorAll(".mv-item").forEach(b => { const on = +b.dataset.i === musicIdx; b.classList.toggle("cur", on); if (on) b.setAttribute("aria-current", "true"); else b.removeAttribute("aria-current"); });
+  if (it.L) { if (ly.dataset.k !== it.src) { svLyrics(it.L); ly.dataset.k = it.src; } box.querySelector(`.mv-item[data-i="${musicIdx}"]`).after(ly); ly.hidden = false; }
+  else { ly.hidden = true; ly.dataset.k = ""; }
+  if (!playing) document.getElementById("now").textContent = it.title;
+  return it;
+}
+async function musicLoop(k, from = 0) {   // from the chosen recording to the end of the list
+  stop(true);
+  const t = ++token;
+  playing = true; renderBtn();
+  for (;;) {
+    const it = musicShow(k); if (!it) { playing = false; renderBtn(); return; }
+    document.getElementById("now").textContent = it.title;
+    metaKey = "♪" + it.title; metaText = "♪ " + it.title; metaMine = false; setMeta();
+    await playMusic(it.src, t, null, it.L, from); from = 0;
+    if (t !== token) return;
+    if (it.L) svFollow(it.L, -1);
+    if (musicIdx + 1 >= musicList().length) { playing = false; renderBtn(); document.getElementById("now").textContent = "Konec hudby"; return; }
+    k = musicIdx + 1;
+    await wait(1200);
+    if (t !== token) return;
+  }
+}
+function songModeSet(on, mus = false) {
   if (playing) stop();
+  musicOnly = on && mus;
+  {
+    const V = document.getElementById("songView"), ly = document.getElementById("svLyrics");
+    V.classList.toggle("music", musicOnly);
+    document.getElementById("svTitle").textContent = musicOnly ? "♫ Jen přehrávání hudby" : "♪ Učení písniček";
+    V.setAttribute("aria-label", musicOnly ? "Jen přehrávání hudby" : "Učení písniček");
+    ["svPick", "svHead", "svNextBtn"].forEach(id => { document.getElementById(id).hidden = musicOnly; });
+    document.getElementById("mvList").hidden = !musicOnly;
+    if (!musicOnly) { document.getElementById("svHead").after(ly); ly.hidden = false; }
+    ly.dataset.k = "";
+    if (on && musicOnly) { document.body.classList.add("songs-on"); V.hidden = false; document.getElementById("svTimer").hidden = true; opts.songMode = true; saveOpts(); musicShow(musicIdx); V.scrollTop = 0; return; }
+  }
   opts.songMode = on; saveOpts();
   document.body.classList.toggle("songs-on", on);
   document.getElementById("songView").hidden = !on;
@@ -3096,26 +3170,29 @@ $play.addEventListener("click", () => {
   if (opts.silent) return;
   unlock();
   if (holding) { releaseHold(); return; }
-  if (playing) { stop(); const it = opts.songMode && songList()[songIdx]; document.getElementById("now").textContent = it ? it.L.title : "Pozastaveno"; }
-  else if (opts.songMode) songLoop(songIdx);
+  if (playing) { stop(); const it = opts.songMode && (musicOnly ? musicList()[musicIdx] : songList()[songIdx]); document.getElementById("now").textContent = it ? (it.title || it.L.title) : "Pozastaveno"; }
+  else if (opts.songMode) { if (musicOnly) musicLoop(musicIdx); else songLoop(songIdx); }
   else { normCur(); playFrom(cur); }
 });
 document.getElementById("songsOpen").addEventListener("click", () => songModeSet(true));
+document.getElementById("musicOpen").addEventListener("click", () => songModeSet(true, true));
+document.getElementById("mvList").addEventListener("click", e => { const b = e.target.closest(".mv-item"); if (!b) return; unlock(); musicLoop(+b.dataset.i); });
 document.getElementById("songsClose").addEventListener("click", () => songModeSet(false));
 document.getElementById("svNextBtn").addEventListener("click", () => { unlock(); songStep(1); });
 document.getElementById("svHead").addEventListener("click", () => { unlock(); songLoop(songIdx); });
 document.getElementById("svLyrics").addEventListener("click", e => {   // a tapped line: the song plays from that line (when the lyrics are timed)
   unlock();
-  const sp = e.target.closest("span[data-l]"), it = songList()[songIdx];
-  const tm = sp && it ? lyTimes(it.L) : null, at = tm ? tm[+sp.dataset.l] : null;
-  songLoop(songIdx, at != null ? Math.max(0, at - 0.6) : 0);
+  const sp = e.target.closest("span[data-l]"), it = musicOnly ? musicList()[musicIdx] : songList()[songIdx];
+  const tm = sp && it && it.L ? lyTimes(it.L) : null, at = tm ? tm[+sp.dataset.l] : null;
+  if (musicOnly) musicLoop(musicIdx, at != null ? Math.max(0, at - 0.6) : 0);
+  else songLoop(songIdx, at != null ? Math.max(0, at - 0.6) : 0);
 });
 document.getElementById("prev").addEventListener("click", () => step(-1));
 document.getElementById("next").addEventListener("click", () => step(1));
 document.getElementById("actPrev").addEventListener("click", () => { if (opts.songMode) { unlock(); songStep(-1); return; } const p = prevAct(); if (p) { unlock(); chooseAct(p); } });
 document.getElementById("actNext").addEventListener("click", () => { if (opts.songMode) { unlock(); songStep(1); return; } const x = nextAct(); if (x) { unlock(); chooseAct(x); } });
 document.getElementById("setBtn").addEventListener("click", e => {
-  if (!opts.songMode) return;
+  if (!opts.songMode || musicOnly) return;
   e.stopImmediatePropagation();   // song view: the timing of the current song
   const it = songList()[songIdx]; if (!it) return;
   const P = document.getElementById("svTimer");
@@ -3146,6 +3223,7 @@ document.getElementById("setBtn").addEventListener("click", () => {   // pause a
 function fromHash() {
   const h = decodeURIComponent(location.hash || "");
   if (/^#pisnicky$/i.test(h) || /^#písničky$/i.test(h)) return { songs: true };
+  if (/^#hudba$/i.test(h)) return { songs: true, music: true };
   let m = /^#jednani-(\w+)$/.exec(h);
   if (m) return ACTS[m[1]] ? { act: m[1], line: 0 } : null;
   m = /^#[Jj](\w+?)[-/._:](\d+)$/.exec(h) || /^#[Jj](\w+)$/.exec(h);
@@ -3161,12 +3239,12 @@ renderBtn();
 buildCast(); showNotice();
 const bootHash = fromHash();
 showAct((bootHash || {}).act || ORDER[0], false);
-const songsFromLink = () => songModeSet(true);
-if (bootHash && bootHash.songs) setTimeout(songsFromLink, 600);   // after music.json has arrived; otherwise the script view is the default
+const songsFromLink = (h = fromHash()) => songModeSet(true, !!(h && h.music));
+if (bootHash && bootHash.songs) setTimeout(() => songsFromLink(bootHash), 600);   // after music.json has arrived; otherwise the script view is the default
 else if (opts.songMode) { opts.songMode = false; saveOpts(); }
 if (bootHash && bootHash.line) setTimeout(() => goHash(true, bootHash), 300);
 applySilent();
-addEventListener("hashchange", () => { const h = fromHash(); if (h && h.songs) { songsFromLink(); return; } if (!h || (h.act === actId && (!h.line || h.line === cur))) return; stop(); goHash(true); });
+addEventListener("hashchange", () => { const h = fromHash(); if (h && h.songs) { songsFromLink(h); return; } if (!h || (h.act === actId && (!h.line || h.line === cur))) return; stop(); goHash(true); });
 if (hasTTS) {
   loadVoices();
   if (synth.addEventListener) synth.addEventListener("voiceschanged", loadVoices); else synth.onvoiceschanged = loadVoices;
