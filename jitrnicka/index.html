@@ -1427,6 +1427,7 @@ document.addEventListener("click", e => { if (!$menu.hidden && !$menu.contains(e
 document.addEventListener("keydown", e => { if (e.key === "Escape" && !$menu.hidden) { closeActMenu(); $actBtn.focus(); } });
 
 function chooseAct(id) {
+  if (musicOnly) { showAct(id, true); musicFixed = false; setTimeout(musicFromScroll, 80); return; }   // just the music: switch the script, the music plays on
   const was = playing;
   stop();
   showAct(id, true);
@@ -1495,7 +1496,7 @@ let userScrolled = false;
 ["wheel", "touchmove", "keydown"].forEach(ev => addEventListener(ev, () => { userScrolled = true; }, { passive: true }));
 const nextObs = new IntersectionObserver(es => {
   es.forEach(e => {
-    if (!e.isIntersecting || !userScrolled || playing) return;
+    if (!e.isIntersecting || !userScrolled || (playing && !musicOnly)) return;   // music-only mode: the music plays on while the reader moves into the next act
     const nx = nextAct(); if (!nx) return;
     nextObs.disconnect();
     showAct(nx, "instant");
@@ -2801,7 +2802,8 @@ function lineIntoView(L) {   // keep the active line between the top and the pla
   else if (r.top < 60 || r.bottom > vb) (progScroll = performance.now(), window).scrollBy({ top: r.top + r.height / 2 - (60 + vb) / 2, behavior: beh });   // centre it in the part not covered by the bar
 }
 function setActive(i, scroll = true) {
-  metaText = ""; metaKey = null; metaMine = false;
+  const keepMusic = musicOnly && playing;   // just the music: the script view changes, the playing music stays in the bar and on the car display
+  if (!keepMusic) { metaText = ""; metaKey = null; metaMine = false; }
   if (ACTS[actId] && i >= 0) { try { history.replaceState(null, "", "#J" + actId + "-" + (i + 1)); } catch (e) {} }
   const LS = lines(), A = ACTS[actId];
   LS.forEach(L => L.el.classList.toggle("active", L.i === i));
@@ -2809,7 +2811,7 @@ function setActive(i, scroll = true) {
   if (L && scroll && freeScroll) { const r = L.el.getBoundingClientRect(); if (inView(r.top, r.bottom)) freeScroll = false; }
   else if (L && scroll) { lineIntoView(L); setTimeout(() => { if (L.el.classList.contains("active") && !freeScroll) lineIntoView(L); }, 700); }   // again once the active line has finished growing
   const shown = L || LS[cur];
-  document.getElementById("now").textContent = L ? label(L) : (playing ? "…" : `${A.title}${A.name ? " · " + A.name : ""}`);
+  document.getElementById("now").textContent = keepMusic && musicNowTitle ? "♫ " + musicNowTitle : L ? label(L) : (playing ? "…" : `${A.title}${A.name ? " · " + A.name : ""}`);
   document.getElementById("pos").textContent = `J${actId}/${(L ? i : cur) + 1}`;
   try { mediaSync(); } catch (e) {}   // keep the phone's media notification in step
   const total = ORDER.reduce((n, id) => n + ACTS[id].lines.length, 0);
@@ -3028,7 +3030,7 @@ function songStep(d) {
   songRep = 0; if (playing) songLoop(songIdx + d); else songShow(songIdx + d);
 }
 // ---------- just the music: the whole script stays on screen and scrolls only by hand; ▶ plays the next music / sound recording ----------
-let musicOnly = false, musicSel = -1, musicFixed = false, _mp = null;
+let musicOnly = false, musicSel = -1, musicFixed = false, _mp = null, musicNowTitle = "";
 function musicPoints() {   // every place in the script that has a recording, in script order
   const n = Object.keys(music).length;
   if (_mp && _mp.n === n) return _mp.list;
@@ -3083,7 +3085,7 @@ async function musicPlay(from = 0) {   // plays the chosen recording once, then 
   stop(true);
   const t = ++token, me = musicSel;
   playing = true; renderBtn(); musicFixed = true;   // scrolling during the music clears this: then the next one is picked by where the reader is
-  document.getElementById("now").textContent = "♫ " + p.title;
+  musicNowTitle = p.title; document.getElementById("now").textContent = "♫ " + p.title;
   metaKey = "♪" + p.title; metaText = "♪ " + p.title; metaMine = false; setMeta();
   if (p.L.el && p.L.el.isConnected) p.L.el.classList.add("mus-play");
   await playMusic(p.src, t, null, p.L.lyrics ? p.L : null, from);
