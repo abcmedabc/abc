@@ -1439,7 +1439,7 @@ function showAct(id, scrollTop) {
   const A = ACTS[id];
   document.querySelectorAll(".act-tab").forEach(b => b.setAttribute("aria-selected", b.dataset.act === id ? "true" : "false"));
   document.getElementById("actNum").textContent = id;
-  document.getElementById("actPrev").disabled = !prevAct(); document.getElementById("actNext").disabled = !nextAct();
+  if (musicOnly) musicArrows(); else if (!opts.songMode) { document.getElementById("actPrev").disabled = !prevAct(); document.getElementById("actNext").disabled = !nextAct(); }   // in the music / song modes the arrows step through the music, not the acts
   $menu.querySelectorAll("button").forEach(b => b.setAttribute("aria-current", b.dataset.act === id ? "true" : "false"));
   try { history.replaceState(null, "", "#jednani-" + id); } catch (e) {}
   $script.innerHTML = "";
@@ -3041,10 +3041,16 @@ function musicPoints() {   // every place in the script that has a recording, in
   }));
   _mp = { n, list }; return list;
 }
+function musicArrows() {   // ◀ works whenever there is music before the chosen one, ▶ whenever there is more after it
+  const n = musicPoints().length;
+  document.getElementById("actPrev").disabled = !n || musicSel === 0;
+  document.getElementById("actNext").disabled = !n || musicSel === -1 || musicSel >= n - 1;
+}
 function musicMark() {   // highlight the chosen place, its title in the bar
   document.querySelectorAll("#script .mus-sel").forEach(x => x.classList.remove("mus-sel"));
   if (!playing) document.querySelectorAll("#script .mus-play").forEach(x => x.classList.remove("mus-play"));
   const list = musicPoints(), p = list[musicSel];
+  musicArrows();
   if (!p) { if (!playing) document.getElementById("now").textContent = list.length ? "Dál už žádná hudba" : "Hudba se načítá…"; return null; }
   if (p.L.el && p.L.el.isConnected) p.L.el.classList.add("mus-sel");
   if (!playing) document.getElementById("now").textContent = "▶ " + p.title;
