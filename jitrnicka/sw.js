@@ -26,7 +26,10 @@ self.addEventListener("fetch", e => {
   if (/\/(audio|music)\//.test(u.pathname)) {
     e.respondWith(caches.open(C).then(async c => {
       const hit = await c.match(u.origin + u.pathname);
-      return hit ? ranged(r, hit) : fetch(r);
+      if (hit) return ranged(r, hit);
+      const res = await fetch(r);   // played once online = there offline too (other voices, samples)
+      if (res.status === 200 && !r.headers.get("range")) { try { await c.put(u.origin + u.pathname, res.clone()); } catch (err) {} }
+      return res;
     }));
     return;
   }
