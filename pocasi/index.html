@@ -159,7 +159,6 @@ h2{font-family:var(--display);font-size:1.05rem;font-weight:700;margin:0}
 .pill.hi{background:var(--ok-soft);color:var(--ok)}
 .pill.mid{background:var(--warn-soft);color:var(--warn)}
 .pill.lo{background:var(--bad-soft);color:var(--danger)}
-#relsum{font-size:1rem;color:var(--muted)}
 
 /* Radar */
 .radar{padding:9px 0 8px;border-radius:10px}
@@ -188,7 +187,8 @@ h2{font-family:var(--display);font-size:1.05rem;font-weight:700;margin:0}
 .rleg span{white-space:nowrap}
 
 /* Compare */
-.cmp{padding:16px}
+.cmp p{padding:0 16px}
+.rel summary span{font-size:1rem;color:var(--muted)}
 .cmp p{margin:4px 0 10px;font-size:1rem;color:var(--muted)}
 .tw{overflow-x:auto}
 table{border-collapse:collapse;width:100%;font-size:.9rem}
@@ -264,15 +264,6 @@ footer a{color:var(--accent)}
     <div class="rowlab" id="dnote"></div>
   </section>
 
-  <details class="card rel" id="relbox">
-    <summary><h2>Spolehlivost</h2><span id="relsum"></span><svg class="chev" viewBox="0 0 24 24" aria-hidden="true"><path d="M6 9l6 6 6-6"/></svg></summary>
-    <div class="tw"><table>
-      <thead><tr><th>Den</th><th>Jistota</th><th>Max. teplota</th><th>Srážky</th></tr></thead>
-      <tbody id="rel"></tbody>
-    </table></div>
-    <div class="rowlab" id="relnote"></div>
-  </details>
-
   <section class="card radar">
     <header><h2>Radar</h2><span id="rload" class="num" hidden></span><span id="rtime" class="num">Načítám…</span></header>
     <div id="map" role="img" aria-label="Mapa srážek z radaru ČHMÚ"></div>
@@ -285,14 +276,23 @@ footer a{color:var(--accent)}
     <div class="rowlab" id="rnote"></div>
   </section>
 
-  <section class="card cmp">
-    <h2>Modely</h2>
-    <p>Příštích 48 h. Klepnutím model vyberete.</p>
+  <details class="card rel" id="relbox">
+    <summary><h2>Spolehlivost</h2><span id="relsum"></span><svg class="chev" viewBox="0 0 24 24" aria-hidden="true"><path d="M6 9l6 6 6-6"/></svg></summary>
+    <div class="tw"><table>
+      <thead><tr><th>Den</th><th>Jistota</th><th>Max. teplota</th><th>Srážky</th></tr></thead>
+      <tbody id="rel"></tbody>
+    </table></div>
+    <div class="rowlab" id="relnote"></div>
+  </details>
+
+  <details class="card rel cmp" id="cmpbox">
+    <summary><h2>Modely</h2><span>Příštích 48 h</span><svg class="chev" viewBox="0 0 24 24" aria-hidden="true"><path d="M6 9l6 6 6-6"/></svg></summary>
+    <p>Klepnutím model vyberete.</p>
     <div class="tw"><table>
       <thead><tr><th>Model</th><th>Teď</th><th>Pocitově</th><th>Min/max</th><th>Déšť</th><th>Úhrn</th></tr></thead>
       <tbody id="cmp"></tbody>
     </table></div>
-  </section>
+  </details>
 
   <footer><span id="upd"></span><button type="button" id="refresh">Obnovit</button>
     <span>Data: <a href="https://open-meteo.com/" target="_blank" rel="noopener">Open-Meteo</a> (DWD, ČHMÚ, ECMWF, NOAA, Météo-France, Met Office) a <a href="https://www.yr.no/" target="_blank" rel="noopener">MET Norway</a>. Radar: <a href="https://opendata.chmi.cz/" target="_blank" rel="noopener">ČHMÚ</a>, mapa © <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener">OpenStreetMap</a>. Hledání: <a href="https://photon.komoot.io/" target="_blank" rel="noopener">Photon</a>, © <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener">OpenStreetMap</a></span></footer>
@@ -1112,6 +1112,7 @@ async function radarLoad(){
 function radarInit(){
   if(!window.L){ $("rtime").textContent = "nedostupný"; $("rnote").textContent = "Mapa se nenačetla. Zkontrolujte připojení a obnovte stránku."; return; }
   radar.map = L.map("map", {zoomControl:true, scrollWheelZoom:false, minZoom:4, maxZoom:12, attributionControl:true});
+  radar.map.attributionControl.setPrefix('<a href="https://leafletjs.com" target="_blank" rel="noopener">Leaflet</a>');
   radar.map.createPane("radarde").style.zIndex = 340;
   radar.map.createPane("radar").style.zIndex = 350;
   radar.map.createPane("labels").style.zIndex = 450;
