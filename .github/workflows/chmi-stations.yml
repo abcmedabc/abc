@@ -1,10 +1,10 @@
 name: ČHMÚ stanice pro Počasí
-# Once an hour: fetch the latest ČHMÚ station observations and publish them as one
+# Twice an hour (GitHub may skip scheduled runs): fetch the latest ČHMÚ station observations and publish them as one
 # small JSON on the "data" branch. pocasi/ reads it via raw.githubusercontent.com.
 # ČHMÚ publishes its 10-minute data about 2 minutes past each full hour (UTC).
 on:
   schedule:
-    - cron: "12 * * * *"
+    - cron: "12,42 * * * *"
   workflow_dispatch:
 permissions:
   contents: write
