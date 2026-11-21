@@ -144,6 +144,26 @@ h2{font-family:var(--display);font-size:1.05rem;font-weight:700;margin:0}
 .dday .mm{font-size:.85rem;color:var(--muted);min-height:1.2em;margin-top:2px}
 .rowlab{padding:6px 16px 0;font-size:1rem;color:var(--muted)}
 
+/* Stations */
+.obs{grid-column:1/-1;font-size:.95rem;color:var(--muted)}
+.obs b{color:var(--ink);font-weight:600}
+.stm{position:absolute;transform:translate(-50%,-50%);padding:1px 5px;border-radius:5px;font:700 12px/1.35 var(--body);
+  border:1px solid rgba(0,0,0,.35);box-shadow:0 1px 2px rgba(0,0,0,.3);white-space:nowrap;cursor:pointer;font-variant-numeric:tabular-nums}
+.stpop .leaflet-popup-content-wrapper,.stpop .leaflet-popup-tip{background:var(--card);color:var(--ink);border-radius:12px}
+.stpop .leaflet-popup-content{margin:12px 14px;width:230px!important;font:14px/1.3 var(--body)}
+.stp-h b{display:block;font-size:15px}
+.stp-h span{color:var(--muted);font-size:12px}
+.stp-t{display:flex;align-items:baseline;gap:10px;margin:8px 0 10px}
+.stp-t .big{font:700 34px/1 var(--display)}
+.stp-t span{color:var(--muted)}
+.stp-g{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.stp-g div{background:var(--bg);border-radius:8px;padding:6px 8px}
+.stp-g span{display:block;font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:.04em}
+.stp-g b{display:flex;align-items:center;gap:4px;font-size:16px;font-variant-numeric:tabular-nums}
+.stp-g small{display:block;font-size:12px;color:var(--muted)}
+.stp-g svg{width:16px;height:16px;fill:var(--accent)}
+.stp-f{margin-top:8px;font-size:12px;color:var(--muted)}
+
 /* Reliability */
 .rel{padding:12px 0}
 .rel summary{display:flex;align-items:center;gap:12px;padding:0 16px;cursor:pointer;list-style:none;min-height:32px}
@@ -295,7 +315,7 @@ footer a{color:var(--accent)}
   </details>
 
   <footer><span id="upd"></span><button type="button" id="refresh">Obnovit</button>
-    <span>Data: <a href="https://open-meteo.com/" target="_blank" rel="noopener">Open-Meteo</a> (DWD, ČHMÚ, ECMWF, NOAA, Météo-France, Met Office) a <a href="https://www.yr.no/" target="_blank" rel="noopener">MET Norway</a>. Radar: <a href="https://opendata.chmi.cz/" target="_blank" rel="noopener">ČHMÚ</a>, mapa © <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener">OpenStreetMap</a>. Hledání: <a href="https://photon.komoot.io/" target="_blank" rel="noopener">Photon</a>, © <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener">OpenStreetMap</a></span></footer>
+    <span>Data: <a href="https://open-meteo.com/" target="_blank" rel="noopener">Open-Meteo</a> (DWD, ČHMÚ, ECMWF, NOAA, Météo-France, Met Office) a <a href="https://www.yr.no/" target="_blank" rel="noopener">MET Norway</a>. Radar a stanice: <a href="https://opendata.chmi.cz/" target="_blank" rel="noopener">ČHMÚ</a>, mapa © <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener">OpenStreetMap</a>. Hledání: <a href="https://photon.komoot.io/" target="_blank" rel="noopener">Photon</a>, © <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener">OpenStreetMap</a></span></footer>
 </main>
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"></script>
@@ -379,7 +399,9 @@ async function fetchOM(model, p){
     slots.push({ time:times[i], hr, span:1, t:c.t[i], tmax:c.t[i], tmin:c.t[i], f:c.f[i], pp:c.pp[i], mm:c.mm[i], code:c.code[i],
       w:c.w[i], g:c.g[i], rh:c.rh[i], day: has(c.day[i]) ? !!c.day[i] : (hr >= 7 && hr < 19) });
   }
-  return finish(slots, j.utc_offset_seconds || 0);
+  const res = finish(slots, j.utc_offset_seconds || 0);
+  res.elev = j.elevation;
+  return res;
 }
 
 /* MET Norway (yr.no) */
@@ -548,6 +570,87 @@ function outlook(rows){
   return `${what} ${when} od ${rows[i].hr}:00, asi ${j - i} h.${pct}`;
 }
 
+/* Stations (ČHMÚ, mirrored to GitHub every 15 min) */
+const STATIONS_URL = "https://raw.githubusercontent.com/abcmedabc/abc/data/chmi.json";
+const fmt1 = v => v.toFixed(1).replace(".", ",");
+const fmtKm = k => (k < 10 ? fmt1(k) : Math.round(k)) + " km";
+const ago = t => { const m = Math.max(0, Math.round((Date.now() - Date.parse(t)) / 60e3)); return m < 60 ? m + " min" : Math.floor(m / 60) + " h " + (m % 60) + " min"; };
+function km(a, b, c, d){
+  const r = Math.PI / 180, x = Math.sin((c - a) * r / 2) ** 2 + Math.cos(a * r) * Math.cos(c * r) * Math.sin((d - b) * r / 2) ** 2;
+  return 12742 * Math.asin(Math.sqrt(x));
+}
+async function loadStations(){
+  try{
+    const j = await getJSON(STATIONS_URL + "?v=" + Math.floor(Date.now() / 300e3));
+    const st = (j.stations || []).filter(x => has(x.T) && Date.now() - Date.parse(x.time) < 3 * 3600e3);
+    // Flag stations that disagree with their neighbours (adjusted for altitude).
+    st.forEach(x => {
+      const nb = st.filter(y => y !== x && km(x.lat, x.lon, y.lat, y.lon) < 40).map(y => y.T + .0065 * ((y.elev || 0) - (x.elev || 0)));
+      nb.sort((a, b) => a - b);
+      x.bad = nb.length >= 3 && Math.abs(x.T - nb[nb.length >> 1]) > 4;
+    });
+    state.st = {stations: st, generated: j.generated};
+  }catch(e){ state.st = {error: e.message || "Chyba"}; }
+  render(); stationsDraw();
+}
+// Nearest trustworthy station for the selected place, or null.
+function nearObs(modelT){
+  const s = state.st && state.st.stations; if(!s) return null;
+  const p = state.place || DEFAULT_PLACE, bm = state.data.best_match, elev = bm && bm.elev;
+  let best = null;
+  for(const x of s){
+    if(x.bad || Date.now() - Date.parse(x.time) > 90 * 60e3) continue;
+    const k = km(p.lat, p.lon, x.lat, x.lon);
+    if(k > 15) continue;
+    if(has(elev) && has(x.elev) && Math.abs(elev - x.elev) > 250) continue;
+    if(has(modelT) && Math.abs(x.T - modelT) > 10) continue;
+    if(!best || k < best.km) best = {...x, km:k};
+  }
+  return best;
+}
+function tempColor(t){
+  const S = [[-20,[142,91,209]],[-10,[59,111,216]],[0,[69,179,224]],[5,[92,201,167]],[10,[139,209,106]],[15,[226,214,75]],[20,[242,169,59]],[25,[236,109,47]],[30,[212,53,43]]];
+  let i = 0; while(i < S.length - 2 && t > S[i + 1][0]) i++;
+  const [t0, c0] = S[i], [t1, c1] = S[i + 1], k = Math.min(1, Math.max(0, (t - t0) / (t1 - t0)));
+  const c = c0.map((v, j) => Math.round(v + (c1[j] - v) * k));
+  const lum = (.299 * c[0] + .587 * c[1] + .114 * c[2]) / 255;
+  return {bg: `rgb(${c.join(",")})`, fg: lum < .55 ? "#fff" : "#111"};
+}
+const CARD = ["S","SSV","SV","VSV","V","VJV","JV","JJV","J","JJZ","JZ","ZJZ","Z","ZSZ","SZ","SSZ"];
+function dewPoint(t, h){ if(!has(t) || !has(h) || h <= 0) return null; const g = Math.log(h / 100) + 17.27 * t / (237.7 + t); return 237.7 * g / (17.27 - g); }
+function stationCard(x){
+  const p = state.place || DEFAULT_PLACE, k = km(p.lat, p.lon, x.lat, x.lon), fl = feels(x.T, x.H, x.F), dp = dewPoint(x.T, x.H);
+  const arrow = has(x.D) ? `<svg viewBox="0 0 24 24" style="transform:rotate(${x.D + 180}deg)"><path d="M12 2l6 18-6-4-6 4z"/></svg>` : "";
+  const hm = new Date(x.time).toLocaleTimeString("cs-CZ", {hour:"2-digit", minute:"2-digit"});
+  return `<div class="stp">
+    <div class="stp-h"><b>${esc(x.name)}</b><span>${Math.round(x.elev || 0)} m n. m. · ${fmtKm(k)} od místa</span></div>
+    <div class="stp-t"><span class="big num">${has(x.T) ? fmt1(x.T) + "°" : "–"}</span>${has(fl) ? `<span>pocitově ${deg(fl)}</span>` : ""}</div>
+    <div class="stp-g">
+      <div><span>Vítr</span><b>${arrow}${has(x.F) ? fmt1(x.F) + " m/s" : "–"}</b><small>${has(x.Fmax) ? "nárazy " + fmt1(x.Fmax) : ""}${has(x.D) ? " · od " + CARD[Math.round(x.D / 22.5) % 16] : ""}</small></div>
+      <div><span>Vlhkost</span><b>${has(x.H) ? Math.round(x.H) + " %" : "–"}</b><small>${has(dp) ? "rosný bod " + fmt1(dp) + "°" : ""}</small></div>
+      <div><span>Tlak</span><b>${has(x.P0) ? Math.round(x.P0) + " hPa" : "–"}</b></div>
+      <div><span>Srážky 1 h</span><b>${has(x.R1h) ? fmt1(x.R1h) + " mm" : "–"}</b></div>
+    </div>
+    <div class="stp-f">ČHMÚ · ${hm}, před ${ago(x.time)}${x.bad ? " · liší se od okolí" : ""}</div></div>`;
+}
+// Draw temperature pills, skipping ones that would overlap (nearest to the place first).
+function stationsDraw(){
+  if(!radar.map || !radar.st || radar.popOpen) return;
+  radar.st.clearLayers();
+  const s = state.st && state.st.stations; if(!s) return;
+  const p = state.place || DEFAULT_PLACE, b = radar.map.getBounds().pad(.1), taken = [];
+  const list = s.filter(x => !x.bad && b.contains([x.lat, x.lon])).sort((a, c) => km(p.lat, p.lon, a.lat, a.lon) - km(p.lat, p.lon, c.lat, c.lon));
+  for(const x of list){
+    const pt = radar.map.latLngToContainerPoint([x.lat, x.lon]), w = 34, h = 20;
+    if(taken.some(q => Math.abs(q.x - pt.x) < w && Math.abs(q.y - pt.y) < h)) continue;
+    taken.push(pt);
+    const c = tempColor(x.T);
+    L.marker([x.lat, x.lon], {icon: L.divIcon({className:"", iconSize:null, html:`<span class="stm" style="background:${c.bg};color:${c.fg}">${Math.round(x.T)}°</span>`}),
+      title: x.name + ", " + fmt1(x.T) + " °C", keyboard:true})
+      .bindPopup(() => stationCard(x), {className:"stpop", maxWidth:260, autoPanPadding:[20, 20]}).addTo(radar.st);
+  }
+}
+
 // Tile tinted by intensity k (0..1).
 function fact(label, val, sub, color, k){
   const x = Math.round(Math.min(1, Math.max(0, k)) * 70);
@@ -561,14 +664,20 @@ function renderNow(){
     el.innerHTML = head + `<div></div><div class="muted" style="grid-column:1/-1">${failed ? "Tento model se nepodařilo načíst. Vyberte jiný." : "Načítám předpověď…"}</div>`;
     return;
   }
-  const r = d.rows[0];
+  const r = d.rows[0], o = nearObs(r.t);
+  // Measured values from a nearby station replace the model where available.
+  const T = o ? o.T : r.t, w = o && has(o.F) ? o.F : r.w, g = o && has(o.Fmax) ? o.Fmax : r.g, rh = o && has(o.H) ? o.H : r.rh;
+  const fl = o ? (feels(o.T, has(o.H) ? o.H : r.rh, has(o.F) ? o.F : r.w) ?? r.f) : r.f;
+  const rainSub = o && has(o.R1h) ? fmt1(o.R1h) + " mm za h" : has(r.mm) && r.mm >= .05 ? fmt1(r.mm) + " mm/h" : "";
+  const obs = o ? `<div class="obs">Měřeno: <b>${esc(o.name)}</b>, ${fmtKm(o.km)}, před ${ago(o.time)}</div>`
+    : state.st && state.st.stations ? `<div class="obs">Podle modelu. Blízko není spolehlivá stanice.</div>` : "";
   el.innerHTML = head + icon(r.code, r.day) +
-    `<div><div class="big num">${deg(r.t)}</div></div>` +
-    `<div class="feel" style="grid-column:1/-1"><b>${esc(WMO[r.code] || "")}</b>${WMO[r.code] ? ", " : ""}pocitově <b class="num">${deg(r.f)}</b></div>` +
+    `<div><div class="big num">${deg(T)}</div></div>` +
+    `<div class="feel" style="grid-column:1/-1"><b>${esc(WMO[r.code] || "")}</b>${WMO[r.code] ? ", " : ""}pocitově <b class="num">${deg(fl)}</b></div>` + obs +
     `<div class="facts">
-       ${fact("Déšť", has(r.pp) ? Math.round(r.pp) + " %" : "–", has(r.mm) && r.mm >= .05 ? r.mm.toFixed(1).replace(".", ",") + " mm/h" : "", "var(--rain)", has(r.pp) ? r.pp / 100 : 0)}
-       ${fact("Vítr", has(r.w) ? Math.round(r.w) + " m/s" : "–", has(r.g) ? "nárazy " + Math.round(r.g) : "", "var(--wind)", has(r.w) ? Math.max(r.w / 14, has(r.g) ? r.g / 24 : 0) : 0)}
-       ${fact("Vlhkost", has(r.rh) ? Math.round(r.rh) + " %" : "–", "", "var(--hum)", has(r.rh) ? Math.max(0, (r.rh - 40) / 60) * .7 : 0)}
+       ${fact("Déšť", has(r.pp) ? Math.round(r.pp) + " %" : "–", rainSub, "var(--rain)", has(r.pp) ? r.pp / 100 : 0)}
+       ${fact("Vítr", has(w) ? Math.round(w) + " m/s" : "–", has(g) ? "nárazy " + Math.round(g) : "", "var(--wind)", has(w) ? Math.max(w / 14, has(g) ? g / 24 : 0) : 0)}
+       ${fact("Vlhkost", has(rh) ? Math.round(rh) + " %" : "–", "", "var(--hum)", has(rh) ? Math.max(0, (rh - 40) / 60) * .7 : 0)}
      </div>
      <div class="outlook">${esc(outlook(d.rows))}</div>`;
 }
@@ -734,7 +843,7 @@ function setPlace(p){
   state.model = defaultModel(p); state.manual = false;
   const rec = [p, ...store.get("pocasi.recent", []).filter(r => r.name !== p.name || r.sub !== p.sub)].slice(0, 5);
   store.set("pocasi.recent", rec);
-  state.resetScroll = true; notice(""); load(); radarCenter();
+  state.resetScroll = true; notice(""); load(); radarCenter(); stationsDraw();
 }
 function selectModel(id){
   const d = state.data[id]; if(d && d.error) return;
@@ -822,8 +931,8 @@ function locate(quiet){
 $("geo").addEventListener("click", () => locate(false));
 $("msel").addEventListener("change", e => selectModel(e.target.value));
 $("cmp").addEventListener("click", e => { const r = e.target.closest("[data-m]"); if(r) selectModel(r.dataset.m); });
-$("refresh").addEventListener("click", () => { notice(""); load(); radarLoad(); });
-document.addEventListener("visibilitychange", () => { if(!document.hidden && state.updated && Date.now() - state.updated > 30 * 60e3){ load(); radarLoad(); } });
+$("refresh").addEventListener("click", () => { notice(""); load(); radarLoad(); loadStations(); });
+document.addEventListener("visibilitychange", () => { if(!document.hidden && state.updated && Date.now() - state.updated > 30 * 60e3){ load(); radarLoad(); loadStations(); } });
 
 
 /* Radar: ČHMÚ on top, DWD fills areas outside Czech coverage */
@@ -933,8 +1042,8 @@ function radarMarkers(){
   const p = state.place || DEFAULT_PLACE;
   if(radar.place) radar.place.remove();
   if(radar.me) radar.me.remove();
-  radar.place = L.circleMarker([p.lat, p.lon], {radius:7, weight:2, color:"#fff", fillColor:"#d63a2f", fillOpacity:1, pane:"labels"}).addTo(radar.map);
-  radar.me = state.me ? L.circleMarker([state.me.lat, state.me.lon], {radius:5, weight:2, color:"#fff", fillColor:"#1f78e0", fillOpacity:1, pane:"labels"}).addTo(radar.map) : null;
+  radar.place = L.circleMarker([p.lat, p.lon], {radius:7, weight:2, color:"#fff", fillColor:"#d63a2f", fillOpacity:1, pane:"labels", interactive:false}).addTo(radar.map);
+  radar.me = state.me ? L.circleMarker([state.me.lat, state.me.lon], {radius:5, weight:2, color:"#fff", fillColor:"#1f78e0", fillOpacity:1, pane:"labels", interactive:false}).addTo(radar.map) : null;
 }
 function radarCenter(){
   if(!radar.map) return;
@@ -1117,6 +1226,11 @@ function radarInit(){
   radar.map.createPane("radar").style.zIndex = 350;
   radar.map.createPane("labels").style.zIndex = 450;
   radar.map.getPane("labels").style.pointerEvents = "none";
+  radar.map.getPane("labels").style.zIndex = 650;
+  radar.st = L.layerGroup().addTo(radar.map);
+  radar.map.on("zoomend moveend", stationsDraw);
+  radar.map.on("popupopen", () => { radar.popOpen = true; });
+  radar.map.on("popupclose", () => { radar.popOpen = false; setTimeout(stationsDraw, 0); });
   const Me = L.Control.extend({ options:{position:"topleft"}, onAdd(){
     const box = L.DomUtil.create("div", "leaflet-bar leaflet-control"), a = L.DomUtil.create("a", "rme", box);
     a.href = "#"; a.title = "Na moji polohu"; a.setAttribute("role", "button"); a.setAttribute("aria-label", "Vycentrovat na moji polohu");
@@ -1137,6 +1251,7 @@ $("rslider").addEventListener("input", e => { radarStop(); radarShow(+e.target.v
 const firstRun = !state.place;
 load();
 radarInit();
+loadStations();
 if(firstRun) locate(true);
 </script>
 </body>
