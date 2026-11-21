@@ -1,0 +1,39 @@
+name: ČHMÚ stanice pro Počasí
+# Once an hour: fetch the latest ČHMÚ station observations and publish them as one
+# small JSON on the "data" branch. pocasi/ reads it via raw.githubusercontent.com.
+# ČHMÚ publishes its 10-minute data about 2 minutes past each full hour (UTC).
+on:
+  schedule:
+    - cron: "12 * * * *"
+  workflow_dispatch:
+permissions:
+  contents: write
+concurrency:
+  group: chmi-stations
+  cancel-in-progress: true
+jobs:
+  fetch:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          sparse-checkout: pocasi/tools
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Fetch stations
+        run: |
+          mkdir out
+          python pocasi/tools/chmi_stations.py out/chmi.json
+      - name: Publish to data branch
+        env:
+          TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          cd out
+          git init -q -b data
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add chmi.json
+          git commit -q -m "ČHMÚ stanice $(date -u +%Y-%m-%dT%H:%MZ)"
+          git push -q -f "https://x-access-token:${TOKEN}@github.com/${GITHUB_REPOSITORY}.git" data

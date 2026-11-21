@@ -145,8 +145,6 @@ h2{font-family:var(--display);font-size:1.05rem;font-weight:700;margin:0}
 .rowlab{padding:6px 16px 0;font-size:1rem;color:var(--muted)}
 
 /* Stations */
-.obs{grid-column:1/-1;font-size:.95rem;color:var(--muted)}
-.obs b{color:var(--ink);font-weight:600}
 .stm{position:absolute;transform:translate(-50%,-50%);padding:1px 5px;border-radius:5px;font:700 12px/1.35 var(--body);
   border:1px solid rgba(0,0,0,.35);box-shadow:0 1px 2px rgba(0,0,0,.3);white-space:nowrap;cursor:pointer;font-variant-numeric:tabular-nums}
 .stpop .leaflet-popup-content-wrapper,.stpop .leaflet-popup-tip{background:var(--card);color:var(--ink);border-radius:12px}
@@ -591,22 +589,7 @@ async function loadStations(){
     });
     state.st = {stations: st, generated: j.generated};
   }catch(e){ state.st = {error: e.message || "Chyba"}; }
-  render(); stationsDraw();
-}
-// Nearest trustworthy station for the selected place, or null.
-function nearObs(modelT){
-  const s = state.st && state.st.stations; if(!s) return null;
-  const p = state.place || DEFAULT_PLACE, bm = state.data.best_match, elev = bm && bm.elev;
-  let best = null;
-  for(const x of s){
-    if(x.bad || Date.now() - Date.parse(x.time) > 90 * 60e3) continue;
-    const k = km(p.lat, p.lon, x.lat, x.lon);
-    if(k > 15) continue;
-    if(has(elev) && has(x.elev) && Math.abs(elev - x.elev) > 250) continue;
-    if(has(modelT) && Math.abs(x.T - modelT) > 10) continue;
-    if(!best || k < best.km) best = {...x, km:k};
-  }
-  return best;
+  stationsDraw();
 }
 function tempColor(t){
   const S = [[-20,[142,91,209]],[-10,[59,111,216]],[0,[69,179,224]],[5,[92,201,167]],[10,[139,209,106]],[15,[226,214,75]],[20,[242,169,59]],[25,[236,109,47]],[30,[212,53,43]]];
@@ -664,13 +647,8 @@ function renderNow(){
     el.innerHTML = head + `<div></div><div class="muted" style="grid-column:1/-1">${failed ? "Tento model se nepodařilo načíst. Vyberte jiný." : "Načítám předpověď…"}</div>`;
     return;
   }
-  const r = d.rows[0], o = nearObs(r.t);
-  // Measured values from a nearby station replace the model where available.
-  const T = o ? o.T : r.t, w = o && has(o.F) ? o.F : r.w, g = o && has(o.Fmax) ? o.Fmax : r.g, rh = o && has(o.H) ? o.H : r.rh;
-  const fl = o ? (feels(o.T, has(o.H) ? o.H : r.rh, has(o.F) ? o.F : r.w) ?? r.f) : r.f;
-  const rainSub = o && has(o.R1h) ? fmt1(o.R1h) + " mm za h" : has(r.mm) && r.mm >= .05 ? fmt1(r.mm) + " mm/h" : "";
-  const obs = o ? `<div class="obs">Měřeno: <b>${esc(o.name)}</b>, ${fmtKm(o.km)}, před ${ago(o.time)}</div>`
-    : state.st && state.st.stations ? `<div class="obs">Podle modelu. Blízko není spolehlivá stanice.</div>` : "";
+  const r = d.rows[0], T = r.t, w = r.w, g = r.g, rh = r.rh, fl = r.f, obs = "";
+  const rainSub = has(r.mm) && r.mm >= .05 ? fmt1(r.mm) + " mm/h" : "";
   el.innerHTML = head + icon(r.code, r.day) +
     `<div><div class="big num">${deg(T)}</div></div>` +
     `<div class="feel" style="grid-column:1/-1"><b>${esc(WMO[r.code] || "")}</b>${WMO[r.code] ? ", " : ""}pocitově <b class="num">${deg(fl)}</b></div>` + obs +
