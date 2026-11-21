@@ -147,6 +147,7 @@ h2{font-family:var(--display);font-size:1.05rem;font-weight:700;margin:0}
 /* Stations */
 .stm{position:absolute;transform:translate(-50%,-50%);padding:1px 5px;border-radius:5px;font:700 12px/1.35 var(--body);
   border:1px solid rgba(0,0,0,.35);box-shadow:0 1px 2px rgba(0,0,0,.3);white-space:nowrap;cursor:pointer;font-variant-numeric:tabular-nums}
+.stm.old{opacity:.5}
 .stm.sc{border-radius:10px;border:1.5px solid #fff;font-size:11px;padding:0 6px;opacity:.92}
 .stpop .leaflet-popup-content-wrapper,.stpop .leaflet-popup-tip{background:var(--card);color:var(--ink);border-radius:12px}
 .stpop .leaflet-popup-content{margin:12px 14px;width:230px!important;font:14px/1.3 var(--body)}
@@ -183,8 +184,13 @@ h2{font-family:var(--display);font-size:1.05rem;font-weight:700;margin:0}
 .radar{padding:9px 0 8px;border-radius:10px}
 .radar header{display:flex;justify-content:space-between;align-items:baseline;gap:12px;padding:0 16px 8px}
 #rtime{font-size:1rem;color:var(--muted)}
-#rload{flex:1;text-align:center;font-size:.9rem;color:var(--muted);white-space:nowrap}
-#rload b{color:var(--ink);font-weight:600}
+.mapwrap{position:relative}
+#rload{position:absolute;left:50%;bottom:24px;transform:translateX(-50%);z-index:500;background:var(--card);color:var(--muted);
+  font:500 12px/1 var(--body);padding:5px 9px;border-radius:12px;box-shadow:0 1px 4px rgba(0,0,0,.25);white-space:nowrap;pointer-events:none}
+#rload b{color:var(--ink);font-weight:700}
+.radar header{flex-wrap:wrap;row-gap:2px}
+#rtime{white-space:nowrap}
+#map .leaflet-control-attribution{font-size:10px;line-height:1.4;white-space:nowrap;padding:0 4px}
 #map.fut::after{content:attr(data-fut);position:absolute;right:8px;top:8px;z-index:500;background:var(--card);color:var(--ink);font:600 11px var(--body);letter-spacing:.06em;padding:3px 7px;border-radius:6px;opacity:.9}
 #map{height:300px;position:relative;z-index:0;background:var(--bg)}
 .leaflet-container{font-family:var(--body)}
@@ -289,8 +295,8 @@ footer a{color:var(--accent)}
   </section>
 
   <section class="card radar">
-    <header><h2>Radar</h2><span id="rload" class="num" hidden></span><span id="rtime" class="num">Načítám…</span></header>
-    <div id="map" role="img" aria-label="Mapa srážek z radaru ČHMÚ"></div>
+    <header><h2>Radar</h2><span id="rtime" class="num">Načítám…</span></header>
+    <div class="mapwrap"><div id="map" role="img" aria-label="Mapa srážek z radaru ČHMÚ"></div><span id="rload" class="num" hidden></span></div>
     <div class="rctl">
       <button type="button" id="rplay" aria-label="Přehrát"><svg viewBox="0 0 24 24"><path d="M7 4.5v15l12-7.5z"/></svg></button>
       <input type="range" id="rslider" min="0" max="0" value="0" aria-label="Čas radarového snímku">
@@ -587,7 +593,7 @@ function km(a, b, c, d){
 async function loadStations(){
   try{
     const j = await getJSON(STATIONS_URL + "?v=" + Math.floor(Date.now() / 300e3));
-    const st = (j.stations || []).filter(x => has(x.T) && Date.now() - Date.parse(x.time) < 3 * 3600e3);
+    const st = (j.stations || []).filter(x => has(x.T) && Date.now() - Date.parse(x.time) < 6 * 3600e3);
     // Flag stations that disagree with their neighbours (adjusted for altitude).
     st.forEach(x => {
       const nb = st.filter(y => y !== x && km(x.lat, x.lon, y.lat, y.lon) < 40).map(y => y.T + .0065 * ((y.elev || 0) - (x.elev || 0)));
@@ -692,7 +698,7 @@ function stationsDraw(){
     L.marker([x.lat, x.lon], {icon: L.divIcon({className:"", iconSize:null, html:`<span class="stm${cls}" style="background:${c.bg};color:${c.fg}">${Math.round(x.T)}°</span>`}), title, keyboard:true})
       .bindPopup(card, {className:"stpop", maxWidth:260, autoPanPadding:[20, 20]}).addTo(radar.st);
   };
-  s.forEach(x => put(x, "", x.name + ", " + fmt1(x.T) + " °C", () => stationCard(x)));
+  s.forEach(x => put(x, Date.now() - Date.parse(x.time) > 2 * 3600e3 ? " old" : "", x.name + ", " + fmt1(x.T) + " °C", () => stationCard(x)));
   c2.forEach(x => put(x, " sc", "Čidlo " + x.id + ", " + fmt1(x.T) + " °C", () => scCard(x)));
   $("stkey").hidden = !s.length && !c2.length;
   $("stkey2").hidden = !c2.length;
@@ -1076,7 +1082,7 @@ function radarTiles(){
   const dark = isDark(); if(dark === radar.dark) return; radar.dark = dark;
   $("map").classList.toggle("dark", dark);
   if(!radar.base) radar.base = L.tileLayer("https://tile.openstreetmap.org/{z}/{x}/{y}.png", {maxZoom:12,
-    attribution:'© <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>, radar © ČHMÚ, DWD'}).addTo(radar.map);
+    attribution:'© <a href="https://www.openstreetmap.org/copyright">OSM</a> · ČHMÚ · DWD'}).addTo(radar.map);
 }
 const covered = ll => L.latLngBounds(RADAR.data).contains(ll) || L.latLngBounds(DWD.bounds).contains(ll);
 function radarMarkers(){
