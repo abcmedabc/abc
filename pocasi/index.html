@@ -147,6 +147,7 @@ h2{font-family:var(--display);font-size:1.05rem;font-weight:700;margin:0}
 /* Stations */
 .stm{position:absolute;transform:translate(-50%,-50%);padding:1px 5px;border-radius:5px;font:700 12px/1.35 var(--body);
   border:1px solid rgba(0,0,0,.35);box-shadow:0 1px 2px rgba(0,0,0,.3);white-space:nowrap;cursor:pointer;font-variant-numeric:tabular-nums}
+.stm.sc{border-radius:10px;border:1.5px solid #fff;font-size:11px;padding:0 6px;opacity:.92}
 .stpop .leaflet-popup-content-wrapper,.stpop .leaflet-popup-tip{background:var(--card);color:var(--ink);border-radius:12px}
 .stpop .leaflet-popup-content{margin:12px 14px;width:230px!important;font:14px/1.3 var(--body)}
 .stp-h b{display:block;font-size:15px}
@@ -290,6 +291,7 @@ footer a{color:var(--accent)}
       <input type="range" id="rslider" min="0" max="0" value="0" aria-label="Čas radarového snímku">
     </div>
     <div class="rkey"><span><i style="background:var(--line)"></i>naměřeno</span><span id="rkey"><i style="background:var(--fc1)"></i>předpověď 1 h</span><span id="rkey2"><i style="background:var(--fc2)"></i>odhad 2 a 3 h</span></div>
+    <div class="rkey" id="stkey" hidden><span><i style="background:var(--temp);border-radius:2px"></i>stanice ČHMÚ</span><span id="stkey2" hidden><i style="background:var(--temp);border-radius:6px;outline:1.5px solid var(--card)"></i>občanská čidla (při přiblížení)</span></div>
     <div class="rleg"><span>slabé</span><i></i><span>silné srážky</span></div>
     <div class="rowlab" id="rnote"></div>
   </section>
@@ -313,7 +315,7 @@ footer a{color:var(--accent)}
   </details>
 
   <footer><span id="upd"></span><button type="button" id="refresh">Obnovit</button>
-    <span>Data: <a href="https://open-meteo.com/" target="_blank" rel="noopener">Open-Meteo</a> (DWD, ČHMÚ, ECMWF, NOAA, Météo-France, Met Office) a <a href="https://www.yr.no/" target="_blank" rel="noopener">MET Norway</a>. Radar a stanice: <a href="https://opendata.chmi.cz/" target="_blank" rel="noopener">ČHMÚ</a>, mapa © <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener">OpenStreetMap</a>. Hledání: <a href="https://photon.komoot.io/" target="_blank" rel="noopener">Photon</a>, © <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener">OpenStreetMap</a></span></footer>
+    <span>Data: <a href="https://open-meteo.com/" target="_blank" rel="noopener">Open-Meteo</a> (DWD, ČHMÚ, ECMWF, NOAA, Météo-France, Met Office) a <a href="https://www.yr.no/" target="_blank" rel="noopener">MET Norway</a>. Radar a stanice: <a href="https://opendata.chmi.cz/" target="_blank" rel="noopener">ČHMÚ</a>, čidla <a href="https://sensor.community/" target="_blank" rel="noopener">Sensor.Community</a>, mapa © <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener">OpenStreetMap</a>. Hledání: <a href="https://photon.komoot.io/" target="_blank" rel="noopener">Photon</a>, © <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener">OpenStreetMap</a></span></footer>
 </main>
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"></script>
@@ -617,21 +619,77 @@ function stationCard(x){
     <div class="stp-f">ČHMÚ · ${hm}, před ${ago(x.time)}${x.bad ? " · liší se od okolí" : ""}</div></div>`;
 }
 // Draw temperature pills, skipping ones that would overlap (nearest to the place first).
+/* Sensor.Community citizen sensors: fetched only around the map view when zoomed in */
+const SC = { minZoom: 10, maxKm: 15, maxAge: 30 * 60e3 };
+const sc = { data: new Map(), fetched: new Map(), busy: false };
+async function scLoad(){
+  if(!radar.map || sc.busy || radar.map.getZoom() < SC.minZoom) return;
+  const c = radar.map.getCenter(), b = radar.map.getBounds();
+  const r = Math.min(SC.maxKm, Math.ceil(km(c.lat, c.lng, b.getNorth(), b.getEast())));
+  const key = c.lat.toFixed(2) + "," + c.lng.toFixed(2) + "," + r;
+  if(Date.now() - (sc.fetched.get(key) || 0) < 5 * 60e3) return;
+  sc.busy = true;
+  try{
+    const j = await getJSON("https://data.sensor.community/airrohr/v1/filter/area=" + c.lat.toFixed(4) + "," + c.lng.toFixed(4) + "," + r);
+    sc.fetched.set(key, Date.now());
+    for(const e of j){
+      const loc = e.location || {}, v = {};
+      if(+loc.indoor) continue;
+      (e.sensordatavalues || []).forEach(d => { v[d.value_type] = +d.value; });
+      if(!has(v.temperature) || v.temperature < -40 || v.temperature > 50) continue;
+      const t = Date.parse(e.timestamp.replace(" ", "T") + "Z"), id = e.sensor.id, old = sc.data.get(id);
+      if(old && old.t >= t) continue;
+      sc.data.set(id, { id, t, lat:+loc.latitude, lon:+loc.longitude, elev:+loc.altitude, exact:!!+loc.exact_location,
+        type:e.sensor.sensor_type.name, T:v.temperature, H:has(v.humidity) && v.humidity <= 100 ? v.humidity : null,
+        P0:has(v.pressure_at_sealevel) ? v.pressure_at_sealevel / 100 : null });
+    }
+  }catch(e){}
+  sc.busy = false;
+  stationsDraw();
+}
+// Citizen sensors are often warmed by sun or houses: compare with ČHMÚ nearby, else with each other.
+function scTrusted(x){
+  if(Date.now() - x.t > SC.maxAge) return false;
+  const ref = (state.st && state.st.stations || []).filter(y => !y.bad && km(x.lat, x.lon, y.lat, y.lon) < 25)
+    .map(y => y.T + .0065 * ((y.elev || 0) - (x.elev || 0)));
+  const pool = ref.length ? ref : [...sc.data.values()].filter(y => y !== x && km(x.lat, x.lon, y.lat, y.lon) < 10).map(y => y.T);
+  if(pool.length < (ref.length ? 1 : 3)) return !ref.length && pool.length === 0 ? true : false;
+  pool.sort((a, b) => a - b);
+  return Math.abs(x.T - pool[pool.length >> 1]) <= 3;
+}
+function scCard(x){
+  const dp = dewPoint(x.T, x.H), p = state.place || DEFAULT_PLACE;
+  const hm = new Date(x.t).toLocaleTimeString("cs-CZ", {hour:"2-digit", minute:"2-digit"});
+  return `<div class="stp">
+    <div class="stp-h"><b>Čidlo Sensor.Community</b><span>č. ${x.id} · ${esc(x.type)} · ${fmtKm(km(p.lat, p.lon, x.lat, x.lon))} od místa${x.exact ? "" : " · poloha přibližná"}</span></div>
+    <div class="stp-t"><span class="big num">${fmt1(x.T)}°</span><span>občanské čidlo</span></div>
+    <div class="stp-g">
+      <div><span>Vlhkost</span><b>${has(x.H) ? Math.round(x.H) + " %" : "–"}</b><small>${has(dp) ? "rosný bod " + fmt1(dp) + "°" : ""}</small></div>
+      <div><span>Tlak</span><b>${has(x.P0) ? Math.round(x.P0) + " hPa" : "–"}</b></div>
+    </div>
+    <div class="stp-f">Sensor.Community · ${hm}, před ${ago(new Date(x.t).toISOString())}</div></div>`;
+}
+
+// Draw temperature pills: ČHMÚ first, then citizen sensors, skipping any that would overlap.
 function stationsDraw(){
   if(!radar.map || !radar.st || radar.popOpen) return;
   radar.st.clearLayers();
-  const s = state.st && state.st.stations; if(!s) return;
-  const p = state.place || DEFAULT_PLACE, b = radar.map.getBounds().pad(.1), taken = [];
-  const list = s.filter(x => !x.bad && b.contains([x.lat, x.lon])).sort((a, c) => km(p.lat, p.lon, a.lat, a.lon) - km(p.lat, p.lon, c.lat, c.lon));
-  for(const x of list){
-    const pt = radar.map.latLngToContainerPoint([x.lat, x.lon]), w = 34, h = 20;
-    if(taken.some(q => Math.abs(q.x - pt.x) < w && Math.abs(q.y - pt.y) < h)) continue;
+  const z = radar.map.getZoom(), p = state.place || DEFAULT_PLACE, b = radar.map.getBounds().pad(.1), taken = [];
+  const near = (a, c) => km(p.lat, p.lon, a.lat, a.lon) - km(p.lat, p.lon, c.lat, c.lon);
+  const s = z >= 7 && state.st && state.st.stations ? state.st.stations.filter(x => !x.bad && b.contains([x.lat, x.lon])).sort(near) : [];
+  const c2 = z >= SC.minZoom ? [...sc.data.values()].filter(x => b.contains([x.lat, x.lon]) && scTrusted(x)).sort(near) : [];
+  const put = (x, cls, title, card) => {
+    const pt = radar.map.latLngToContainerPoint([x.lat, x.lon]);
+    if(taken.some(q => Math.abs(q.x - pt.x) < 34 && Math.abs(q.y - pt.y) < 20)) return;
     taken.push(pt);
     const c = tempColor(x.T);
-    L.marker([x.lat, x.lon], {icon: L.divIcon({className:"", iconSize:null, html:`<span class="stm" style="background:${c.bg};color:${c.fg}">${Math.round(x.T)}°</span>`}),
-      title: x.name + ", " + fmt1(x.T) + " °C", keyboard:true})
-      .bindPopup(() => stationCard(x), {className:"stpop", maxWidth:260, autoPanPadding:[20, 20]}).addTo(radar.st);
-  }
+    L.marker([x.lat, x.lon], {icon: L.divIcon({className:"", iconSize:null, html:`<span class="stm${cls}" style="background:${c.bg};color:${c.fg}">${Math.round(x.T)}°</span>`}), title, keyboard:true})
+      .bindPopup(card, {className:"stpop", maxWidth:260, autoPanPadding:[20, 20]}).addTo(radar.st);
+  };
+  s.forEach(x => put(x, "", x.name + ", " + fmt1(x.T) + " °C", () => stationCard(x)));
+  c2.forEach(x => put(x, " sc", "Čidlo " + x.id + ", " + fmt1(x.T) + " °C", () => scCard(x)));
+  $("stkey").hidden = !s.length && !c2.length;
+  $("stkey2").hidden = !c2.length;
 }
 
 // Tile tinted by intensity k (0..1).
@@ -1206,7 +1264,7 @@ function radarInit(){
   radar.map.getPane("labels").style.pointerEvents = "none";
   radar.map.getPane("labels").style.zIndex = 650;
   radar.st = L.layerGroup().addTo(radar.map);
-  radar.map.on("zoomend moveend", stationsDraw);
+  radar.map.on("zoomend moveend", () => { stationsDraw(); clearTimeout(sc.timer); sc.timer = setTimeout(scLoad, 600); });
   radar.map.on("popupopen", () => { radar.popOpen = true; });
   radar.map.on("popupclose", () => { radar.popOpen = false; setTimeout(stationsDraw, 0); });
   const Me = L.Control.extend({ options:{position:"topleft"}, onAdd(){
