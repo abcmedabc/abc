@@ -190,6 +190,11 @@ h2{font-family:var(--display);font-size:1.05rem;font-weight:700;margin:0}
 .leaflet-container{font-family:var(--body)}
 .rme{display:grid!important;place-items:center}
 .rme svg{width:18px;height:18px;fill:none;stroke:#222;stroke-width:2;stroke-linecap:round}
+.rst.off{background:#e4e7ea}
+.rst.off svg{stroke:#999}
+.rst.off::after{content:"";position:absolute;width:22px;height:2px;background:#999;transform:rotate(-45deg)}
+.rst{position:relative}
+.stpop .leaflet-popup-content{cursor:pointer}
 #map .leaflet-tile-pane{filter:saturate(.55) contrast(.95)}
 #map.dark .leaflet-tile-pane{filter:invert(1) hue-rotate(180deg) brightness(.85) contrast(.85) saturate(.4)}
 .rctl{display:flex;align-items:center;gap:12px;padding:10px 16px 0}
@@ -623,7 +628,7 @@ function stationCard(x){
 const SC = { minZoom: 10, maxKm: 15, maxAge: 30 * 60e3 };
 const sc = { data: new Map(), fetched: new Map(), busy: false };
 async function scLoad(){
-  if(!radar.map || sc.busy || radar.map.getZoom() < SC.minZoom) return;
+  if(!radar.map || !radar.showSt || sc.busy || radar.map.getZoom() < SC.minZoom) return;
   const c = radar.map.getCenter(), b = radar.map.getBounds();
   const r = Math.min(SC.maxKm, Math.ceil(km(c.lat, c.lng, b.getNorth(), b.getEast())));
   const key = c.lat.toFixed(2) + "," + c.lng.toFixed(2) + "," + r;
@@ -674,6 +679,7 @@ function scCard(x){
 function stationsDraw(){
   if(!radar.map || !radar.st || radar.popOpen) return;
   radar.st.clearLayers();
+  if(!radar.showSt){ $("stkey").hidden = true; return; }
   const z = radar.map.getZoom(), p = state.place || DEFAULT_PLACE, b = radar.map.getBounds().pad(.1), taken = [];
   const near = (a, c) => km(p.lat, p.lon, a.lat, a.lon) - km(p.lat, p.lon, c.lat, c.lon);
   const s = z >= 7 && state.st && state.st.stations ? state.st.stations.filter(x => !x.bad && b.contains([x.lat, x.lon])).sort(near) : [];
@@ -1265,7 +1271,12 @@ function radarInit(){
   radar.map.getPane("labels").style.zIndex = 650;
   radar.st = L.layerGroup().addTo(radar.map);
   radar.map.on("zoomend moveend", () => { stationsDraw(); clearTimeout(sc.timer); sc.timer = setTimeout(scLoad, 600); });
-  radar.map.on("popupopen", () => { radar.popOpen = true; });
+  // A tap on the station card closes it.
+  radar.map.on("popupopen", e => {
+    radar.popOpen = true;
+    const el = e.popup.getElement();
+    if(el && !el._closeOnTap){ el._closeOnTap = true; el.addEventListener("click", () => radar.map.closePopup()); }
+  });
   radar.map.on("popupclose", () => { radar.popOpen = false; setTimeout(stationsDraw, 0); });
   const Me = L.Control.extend({ options:{position:"topleft"}, onAdd(){
     const box = L.DomUtil.create("div", "leaflet-bar leaflet-control"), a = L.DomUtil.create("a", "rme", box);
@@ -1276,6 +1287,20 @@ function radarInit(){
     return box;
   }});
   new Me().addTo(radar.map);
+  radar.showSt = store.get("pocasi.stations", true);
+  const St = L.Control.extend({ options:{position:"topleft"}, onAdd(){
+    const box = L.DomUtil.create("div", "leaflet-bar leaflet-control"), a = L.DomUtil.create("a", "rme rst", box);
+    a.href = "#"; a.setAttribute("role", "button");
+    const sync = () => { a.classList.toggle("off", !radar.showSt); a.title = radar.showSt ? "Skrýt stanice" : "Zobrazit stanice";
+      a.setAttribute("aria-label", a.title); a.setAttribute("aria-pressed", String(radar.showSt)); };
+    a.innerHTML = '<svg viewBox="0 0 24 24"><path d="M10 13.5V5a2 2 0 1 1 4 0v8.5a4 4 0 1 1-4 0z"/><path d="M12 9v6"/></svg>';
+    sync();
+    L.DomEvent.on(a, "click", e => { L.DomEvent.stop(e); radar.showSt = !radar.showSt; store.set("pocasi.stations", radar.showSt);
+      sync(); radar.map.closePopup(); stationsDraw(); if(radar.showSt) scLoad(); });
+    L.DomEvent.disableClickPropagation(box);
+    return box;
+  }});
+  new St().addTo(radar.map);
   radarTiles(); radarCenter(); radarLoad();
   if(window.matchMedia) matchMedia("(prefers-color-scheme: dark)").addEventListener("change", radarTiles);
   new MutationObserver(radarTiles).observe(document.documentElement, {attributes:true, attributeFilter:["data-theme"]});
