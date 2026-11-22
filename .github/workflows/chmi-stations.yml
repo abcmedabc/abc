@@ -4,7 +4,7 @@ name: ČHMÚ stanice pro Počasí
 # ČHMÚ publishes its 10-minute data about 2 minutes past each full hour (UTC).
 on:
   schedule:
-    - cron: "* * * * *"
+    - cron: '3,13,23,33,43,53 * * * *'
   workflow_dispatch:
 permissions:
   contents: write
