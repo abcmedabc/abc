@@ -335,7 +335,8 @@ footer a{color:var(--accent)}
 const MODELS = [
   {id:"best_match",           short:"Mix", name:"Nejlepší mix",  src:"Open-Meteo vybere podle místa"},
   {id:"icon_seamless",        name:"ICON",          src:"DWD, Německo, až 2 km"},
-  {id:"chmi_aladin_seamless", name:"ALADIN",        src:"ČHMÚ, až 1 km"},
+  {id:"chmi_aladin_seamless", name:"ALADIN",        src:"ČHMÚ, 1 km v Česku, jinde 2,3 km"},
+  {id:"geosphere_seamless",   name:"C-LAEF",        src:"GeoSphere Rakousko, 1 km"},
   {id:"metno",                name:"Yr.no",         src:"MET Norway", metno:true},
   {id:"ecmwf_ifs025",         name:"ECMWF IFS",     src:"Evropské centrum"},
   {id:"ukmo_seamless",        name:"UKMO",          src:"Met Office, Británie"},
@@ -346,7 +347,10 @@ const VARS = "temperature_2m,apparent_temperature,precipitation_probability,prec
 const HOURS = 48, COL = 50, DAYS = 7;
 const DEFAULT_PLACE = {name:"Praha", sub:"Česko", lat:50.088, lon:14.4208, cc:"CZ"};
 const inCZ = p => p.cc ? p.cc === "CZ" : (p.lat > 48.55 && p.lat < 51.06 && p.lon > 12.09 && p.lon < 18.86);
-const defaultModel = p => inCZ(p) ? "chmi_aladin_seamless" : "best_match";
+// National models: Czechia and Slovakia ALADIN (ČHMÚ, same model family as SHMÚ), Austria C-LAEF (GeoSphere).
+const inBox = (p, a, b, c, d) => p.lat > a && p.lat < b && p.lon > c && p.lon < d;
+const country = p => p.cc || (inCZ(p) ? "CZ" : inBox(p, 47.73, 49.61, 16.83, 22.57) ? "SK" : inBox(p, 46.37, 49.02, 9.53, 17.16) ? "AT" : "");
+const defaultModel = p => ({CZ:"chmi_aladin_seamless", SK:"chmi_aladin_seamless", AT:"geosphere_seamless"})[country(p)] || "best_match";
 const $ = id => document.getElementById(id);
 const store = {
   get(k, d){ try{ const v = localStorage.getItem(k); return v ? JSON.parse(v) : d; }catch(e){ return d; } },
