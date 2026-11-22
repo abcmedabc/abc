@@ -302,7 +302,7 @@ footer a{color:var(--accent)}
       <input type="range" id="rslider" min="0" max="0" value="0" aria-label="Čas radarového snímku">
     </div>
     <div class="rkey"><span><i style="background:var(--line)"></i>naměřeno</span><span id="rkey"><i style="background:var(--fc1)"></i>předpověď 1 h</span><span id="rkey2"><i style="background:var(--fc2)"></i>odhad 2 a 3 h</span></div>
-    <div class="rkey" id="stkey" hidden><span><i style="background:var(--temp);border-radius:2px"></i>stanice ČHMÚ</span><span id="stkey2" hidden><i style="background:var(--temp);border-radius:6px;outline:1.5px solid var(--card)"></i>občanská čidla (při přiblížení)</span></div>
+    <div class="rkey" id="stkey" hidden><span><i style="background:var(--temp);border-radius:2px"></i>stanice ČHMÚ</span><span id="stkey2"><i style="background:var(--temp);border-radius:6px;outline:1.5px solid var(--card)"></i>občanská čidla</span><span id="stnote"></span></div>
     <div class="rleg"><span>slabé</span><i></i><span>silné srážky</span></div>
     <div class="rowlab" id="rnote"></div>
   </section>
@@ -593,14 +593,16 @@ function km(a, b, c, d){
 async function loadStations(){
   try{
     const j = await getJSON(STATIONS_URL + "?v=" + Math.floor(Date.now() / 300e3));
-    const st = (j.stations || []).filter(x => has(x.T) && Date.now() - Date.parse(x.time) < 6 * 3600e3);
+    const all = (j.stations || []).filter(x => has(x.T));
+    const st = all.filter(x => Date.now() - Date.parse(x.time) < 6 * 3600e3);
+    const newest = Math.max(0, ...all.map(x => Date.parse(x.time)));
     // Flag stations that disagree with their neighbours (adjusted for altitude).
     st.forEach(x => {
       const nb = st.filter(y => y !== x && km(x.lat, x.lon, y.lat, y.lon) < 40).map(y => y.T + .0065 * ((y.elev || 0) - (x.elev || 0)));
       nb.sort((a, b) => a - b);
       x.bad = nb.length >= 3 && Math.abs(x.T - nb[nb.length >> 1]) > 4;
     });
-    state.st = {stations: st, generated: j.generated};
+    state.st = {stations: st, generated: j.generated, old: !st.length && newest ? ago(new Date(newest).toISOString()) : ""};
   }catch(e){ state.st = {error: e.message || "Chyba"}; }
   stationsDraw();
 }
@@ -700,8 +702,10 @@ function stationsDraw(){
   };
   s.forEach(x => put(x, Date.now() - Date.parse(x.time) > 2 * 3600e3 ? " old" : "", x.name + ", " + fmt1(x.T) + " °C", () => stationCard(x)));
   c2.forEach(x => put(x, " sc", "Čidlo " + x.id + ", " + fmt1(x.T) + " °C", () => scCard(x)));
-  $("stkey").hidden = !s.length && !c2.length;
-  $("stkey2").hidden = !c2.length;
+  $("stkey").hidden = false;
+  const old = state.st && state.st.old;
+  $("stnote").textContent = [old ? "ČHMÚ: data jsou " + old + " stará, skryto" : z < 7 && state.st && state.st.stations && state.st.stations.length ? "ČHMÚ: přibližte mapu" : "",
+    z < SC.minZoom ? "čidla: přibližte na město" : ""].filter(Boolean).join(" · ");
 }
 
 // Tile tinted by intensity k (0..1).
@@ -1001,6 +1005,18 @@ const probe = url => new Promise(ok => { const im = new Image(); im.onload = () 
 const mx = lon => lon * 20037508.34 / 180;
 const my = lat => Math.log(Math.tan((90 + lat) * Math.PI / 360)) * 6378137;
 const ilon = x => x / 20037508.34 * 180;
+// The ČHMÚ image has a frame and noise outside its data area: clip it away.
+function czClip(){
+  const [[a1, o1], [a2, o2]] = RADAR.bounds, [[d1, p1], [d2, p2]] = RADAR.data;
+  const W = o2 - o1, H = my(a2) - my(a1), pad = .4;
+  const top = (my(a2) - my(d2)) / H * 100 + pad, right = (o2 - p2) / W * 100 + pad, bottom = (my(d1) - my(a1)) / H * 100 + pad, left = (p1 - o1) / W * 100 + pad;
+  return `inset(${top.toFixed(2)}% ${right.toFixed(2)}% ${bottom.toFixed(2)}% ${left.toFixed(2)}%)`;
+}
+function czOverlay(url, bounds){
+  const o = L.imageOverlay(url, bounds, {opacity:0, pane:"radar", interactive:false});
+  o.on("add", () => { const el = o.getElement(); if(el) el.style.clipPath = czClip(); });
+  return o;
+}
 const ilat = y => (2 * Math.atan(Math.exp(y / 6378137)) - Math.PI / 2) * 180 / Math.PI;
 async function dwdImage(t){
   const [[la1, lo1], [la2, lo2]] = DWD.bounds, x1 = mx(lo1), x2 = mx(lo2), y1 = my(la1), y2 = my(la2);
@@ -1103,7 +1119,7 @@ function radarCenter(){
 function radarNote(){
   const fut = radar.frames.filter(f => f.future), h = fut.length ? Math.round((fut[fut.length - 1].t - radar.now) / 3600e3) : 0;
   $("rnote").textContent = !radar.ok ? "Místo je mimo dosah radarů ČHMÚ a DWD." :
-    "Zpět 90 min" + (h ? ", dopředu " + h + " h." : ".") + " Česko: ČHMÚ. Jinde: DWD." +
+    "Zpět 90 min" + (h ? ", dopředu " + h + " h." : ".") + " Česko: ČHMÚ. Německo: DWD. Okolní země: RainViewer, jen zpět a hrubší." +
     (h ? (radar.mv ? " Mimo předpověď DWD jen posun snímků." : " Předpověď jen v Německu.") : "") +
     " Červená: vybrané místo. Modrá: vy.";
 }
@@ -1134,16 +1150,38 @@ function radarPaint(){
   $("rkey").hidden = a < 0;
   $("rkey2").hidden = b < 0;
 }
+/* RainViewer: other countries (Austria, Slovakia, Poland…), past frames only.
+   Free tiles go up to zoom 7; closer in they are only enlarged. */
+async function rvLoad(seq){
+  let j;
+  try{ j = await getJSON("https://api.rainviewer.com/public/weather-maps.json"); }catch(e){ return; }
+  if(seq !== radar.seq) return;
+  const past = (j.radar && j.radar.past) || [];
+  const mine = radar.frames.filter(f => !f.future);
+  radar.prog.rvN = 0;
+  for(const f of mine){
+    let best = null;
+    for(const r of past){ const d = Math.abs(r.time * 1000 - f.t); if(d <= 5 * 60e3 && (!best || d < best.d)) best = {r, d}; }
+    if(!best) continue;
+    radar.prog.rvN++;
+    f.rv = L.tileLayer(j.host + best.r.path + "/256/{z}/{x}/{y}/2/1_1.png", {maxNativeZoom:7, maxZoom:12, opacity:0, pane:"radarrv",
+      attribution:'<a href="https://www.rainviewer.com/" target="_blank" rel="noopener">RainViewer</a>'});
+    let done = false;
+    f.rv.once("load", () => { if(!done && seq === radar.seq){ done = true; radar.prog.rv++; radarProg(); } });
+    f.rv.addTo(radar.map);
+  }
+  radarShow(radar.idx); radarProg();
+}
 function radarProg(){
   const p = radar.prog, el = $("rload");
   if(!p){ el.hidden = true; return; }
-  el.hidden = p.cz >= p.czN && p.de >= p.deN;
-  el.innerHTML = `ČHMÚ <b>${p.cz}/${p.czN}</b> · DWD <b>${p.de}/${p.deN}</b>`;
+  el.hidden = p.cz >= p.czN && p.de >= p.deN && p.rv >= p.rvN;
+  el.innerHTML = `ČHMÚ <b>${p.cz}/${p.czN}</b> · DWD <b>${p.de}/${p.deN}</b>` + (p.rvN ? ` · okolí <b>${p.rv}/${p.rvN}</b>` : "");
 }
 function radarShow(i){
   if(!radar.frames.length) return;
   radar.idx = i;
-  radar.frames.forEach((f, j) => { const o = f.rough ? .5 : f.future ? .6 : .72; if(f.cz) f.cz.setOpacity(j === i ? o : 0); if(f.de) f.de.setOpacity(j === i ? o : 0); });
+  radar.frames.forEach((f, j) => { const o = f.rough ? .5 : f.future ? .6 : .72; if(f.cz) f.cz.setOpacity(j === i ? o : 0); if(f.de) f.de.setOpacity(j === i ? o : 0); if(f.rv) f.rv.setOpacity(j === i ? .65 : 0); });
   $("rslider").value = i;
   const f = radar.frames[i], hm = new Date(f.t).toLocaleTimeString("cs-CZ", {hour:"2-digit", minute:"2-digit"});
   $("rtime").textContent = hm + (f.future ? (f.rough ? ", odhad" : ", předpověď") : f.t === radar.now ? ", poslední" : "");
@@ -1170,13 +1208,14 @@ async function radarLoad(){
   let t = Math.floor(Date.now() / RADAR.poll) * RADAR.poll, found = 0;
   for(let k = 0; k < 8 && !found; k++, t -= RADAR.poll) if(await probe(radarName(t))) found = t;
   if(seq !== radar.seq) return;
-  radar.frames.forEach(f => { if(f.cz) f.cz.remove(); if(f.de) f.de.remove(); }); radar.frames = [];
+  radar.frames.forEach(f => { if(f.cz) f.cz.remove(); if(f.de) f.de.remove(); if(f.rv) f.rv.remove(); }); radar.frames = [];
   radar.blobs.forEach(u => URL.revokeObjectURL(u)); radar.blobs = [];
   if(!found){ $("rtime").textContent = "nedostupný"; $("rnote").textContent = "Radarové snímky se teď nepodařilo načíst. Zkuste Obnovit."; return; }
-  radar.prog = {cz:0, czN:RADAR.frames, de:0, deN:0, seq};
+  radar.prog = {cz:0, czN:RADAR.frames, de:0, deN:0, rv:0, rvN:0, seq};
+  rvLoad(seq);
   for(let k = RADAR.frames - 1; k >= 0; k--){
     const tt = found - k * RADAR.step;
-    radar.frames.push({ t:tt, de:null, cz:L.imageOverlay(radarName(tt), RADAR.bounds, {opacity:0, pane:"radar", interactive:false}) });
+    radar.frames.push({ t:tt, de:null, cz:czOverlay(radarName(tt), RADAR.bounds) });
   }
   // Add newest first so the latest ČHMÚ image starts loading first.
   [...radar.frames].reverse().forEach(f => {
@@ -1226,7 +1265,7 @@ async function radarLoad(){
     blendAll();
     radar.frames.forEach(f => {
       if(!f.future) return;
-      f.cz = L.imageOverlay(radarName(found), shifted(RADAR.bounds, mv, (f.t - found) / 3600e3), {opacity:0, pane:"radar", interactive:false}).addTo(radar.map);
+      f.cz = czOverlay(radarName(found), shifted(RADAR.bounds, mv, (f.t - found) / 3600e3)).addTo(radar.map);
     });
     radarShow(radar.idx); radarNote();
   };
@@ -1270,6 +1309,7 @@ function radarInit(){
   if(!window.L){ $("rtime").textContent = "nedostupný"; $("rnote").textContent = "Mapa se nenačetla. Zkontrolujte připojení a obnovte stránku."; return; }
   radar.map = L.map("map", {zoomControl:true, scrollWheelZoom:false, minZoom:4, maxZoom:12, attributionControl:true});
   radar.map.attributionControl.setPrefix('<a href="https://leafletjs.com" target="_blank" rel="noopener">Leaflet</a>');
+  radar.map.createPane("radarrv").style.zIndex = 330;
   radar.map.createPane("radarde").style.zIndex = 340;
   radar.map.createPane("radar").style.zIndex = 350;
   radar.map.createPane("labels").style.zIndex = 450;
