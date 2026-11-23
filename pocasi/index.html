@@ -144,6 +144,26 @@ h2{font-family:var(--display);font-size:1.05rem;font-weight:700;margin:0}
 .dday .mm{font-size:.85rem;color:var(--muted);min-height:1.2em;margin-top:2px}
 .rowlab{padding:6px 16px 0;font-size:1rem;color:var(--muted)}
 
+/* Heads-up and warnings */
+.heads{display:flex;flex-direction:column;gap:3px;margin-top:6px}
+.heads div{padding-left:14px;position:relative}
+.heads div::before{content:"";position:absolute;left:2px;top:.55em;width:6px;height:6px;border-radius:50%;background:var(--fc1)}
+.alerts{grid-column:1/-1;margin-top:10px;padding-top:10px;border-top:1px solid var(--line)}
+.alerts h3{font-size:.95rem;margin:0 0 4px;color:var(--muted);font-weight:600}
+.wv{--wc:#7a8a99;--wt:#55626e;border-left:4px solid var(--wc);background:color-mix(in srgb, var(--wc) 13%, transparent);border-radius:8px;padding:7px 10px;margin-top:6px}
+.wv.yel{--wc:#e2bd00;--wt:#8a6d00}
+.wv.ora{--wc:#f08a24;--wt:#b05a00}
+.wv.red{--wc:#d6342b;--wt:#b02820}
+.wv.out{--wc:#4f7fc4;--wt:#3a66a6}
+:root[data-theme="dark"] .wv{--wt:var(--wc)}
+@media (prefers-color-scheme:dark){ :root:not([data-theme="light"]) .wv{--wt:var(--wc)} }
+.wv.part{opacity:.7}
+.wv summary{cursor:pointer;list-style:none;display:flex;flex-wrap:wrap;gap:2px 8px;align-items:baseline}
+.wv summary::-webkit-details-marker{display:none}
+.wv .wl{font-size:.75rem;font-weight:700;text-transform:uppercase;letter-spacing:.04em;color:var(--wt)}
+.wv .wt{font-size:.9rem;color:var(--muted)}
+.wv p{margin:6px 0 0;font-size:.95rem;white-space:pre-line}
+
 /* Stations */
 .stm{position:absolute;transform:translate(-50%,-50%);padding:1px 5px;border-radius:5px;font:700 12px/1.35 var(--body);
   border:1px solid rgba(0,0,0,.35);box-shadow:0 1px 2px rgba(0,0,0,.3);white-space:nowrap;cursor:pointer;font-variant-numeric:tabular-nums}
@@ -326,7 +346,7 @@ footer a{color:var(--accent)}
   </details>
 
   <footer><span id="upd"></span><button type="button" id="refresh">Obnovit</button>
-    <span>Data: <a href="https://open-meteo.com/" target="_blank" rel="noopener">Open-Meteo</a> (DWD, ČHMÚ, ECMWF, NOAA, Météo-France, Met Office) a <a href="https://www.yr.no/" target="_blank" rel="noopener">MET Norway</a>. Radar a stanice: <a href="https://opendata.chmi.cz/" target="_blank" rel="noopener">ČHMÚ</a>, čidla <a href="https://sensor.community/" target="_blank" rel="noopener">Sensor.Community</a>, mapa © <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener">OpenStreetMap</a>. Hledání: <a href="https://photon.komoot.io/" target="_blank" rel="noopener">Photon</a>, © <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener">OpenStreetMap</a></span></footer>
+    <span>Data: <a href="https://open-meteo.com/" target="_blank" rel="noopener">Open-Meteo</a> (DWD, ČHMÚ, ECMWF, NOAA, Météo-France, Met Office) a <a href="https://www.yr.no/" target="_blank" rel="noopener">MET Norway</a>. Radar a stanice: <a href="https://opendata.chmi.cz/" target="_blank" rel="noopener">ČHMÚ</a>, výstrahy <a href="https://vystrahy-cr.chmi.cz/" target="_blank" rel="noopener">ČHMÚ</a>, čidla <a href="https://sensor.community/" target="_blank" rel="noopener">Sensor.Community</a>, mapa © <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener">OpenStreetMap</a>. Hledání: <a href="https://photon.komoot.io/" target="_blank" rel="noopener">Photon</a>, © <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener">OpenStreetMap</a></span></footer>
 </main>
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"></script>
@@ -576,12 +596,12 @@ function outlook(rows){
   const wet = r => (has(r.pp) && r.pp >= 50) || (has(r.mm) && r.mm >= 0.3);
   const i = rows.findIndex(wet);
   const maxPP = Math.max(-1, ...rows.filter(r => has(r.pp)).map(r => r.pp));
-  if(i < 0) return maxPP >= 0 ? `Do 48 h sucho. Šance na srážky nejvýš ${Math.round(maxPP)} %.` : "Do 48 h sucho.";
+  if(i < 0) return maxPP >= 10 ? `Do 48 h sucho. Šance na srážky nejvýš ${Math.round(maxPP)} %.` : "Do 48 h sucho.";
   const what = isSnow(rows[i].code) ? "Sníh" : "Déšť";
   const pct = has(rows[i].pp) ? ` Šance ${Math.round(rows[i].pp)} %.` : "";
   if(i === 0) return `${what} právě teď.${pct}`;
   let j = i; while(j < rows.length && wet(rows[j])) j++;
-  const when = (rows[i].time.slice(0, 10) === rows[0].time.slice(0, 10) ? "dnes" : dayName(rows[i].time.slice(0, 10), rows[0].time.slice(0, 10)).toLowerCase());
+  const when = dayPhrase(rows[i].time.slice(0, 10), rows[0].time.slice(0, 10)).toLowerCase();
   return `${what} ${when} od ${rows[i].hr}:00, asi ${j - i} h.${pct}`;
 }
 
@@ -717,6 +737,119 @@ function fact(label, val, sub, color, k){
   const x = Math.round(Math.min(1, Math.max(0, k)) * 70);
   return `<div class="fact${x >= 45 ? " strong" : ""}" style="--c:${color};--x:${x}%"><span>${label}</span><b class="num">${val}</b>${sub ? `<small class="num">${sub}</small>` : ""}</div>`;
 }
+
+/* Heads-up: notable weather in the next 7 days, from the selected model */
+const DAYPH = ["V neděli","V pondělí","V úterý","Ve středu","Ve čtvrtek","V pátek","V sobotu"];
+function dayPhrase(date, today){
+  const diff = Math.round((Date.parse(date + "T00:00Z") - Date.parse(today + "T00:00Z")) / 864e5);
+  return diff === 0 ? "Dnes" : diff === 1 ? "Zítra" : DAYPH[new Date(Date.parse(date + "T00:00Z")).getUTCDay()];
+}
+function headsUp(d){
+  const now = d.rows[0] && d.rows[0].time, days = new Map();
+  for(const s of d.slots){
+    if(now && s.time < now.slice(0, 13)) continue;
+    const k = s.time.slice(0, 10);
+    if(!days.has(k)) days.set(k, {date:k, min:Infinity, max:-Infinity, gust:0, rain:0, snow:0, storm:false});
+    const x = days.get(k), mm = has(s.mm) ? s.mm : 0;
+    x.min = Math.min(x.min, s.tmin); x.max = Math.max(x.max, s.tmax);
+    if(has(s.g)) x.gust = Math.max(x.gust, s.g);
+    if(isSnow(s.code) || (mm > 0 && s.t <= .5)) x.snow += mm; else x.rain += mm;
+    if(has(s.code) && s.code >= 95) x.storm = true;
+  }
+  const list = [...days.values()].sort((a, b) => a.date < b.date ? -1 : 1).slice(0, 7);
+  const lv = Object.fromEntries(reliability().map(r => [r.date, r.level]));
+  const out = new Map(), add = (date, txt) => { if(!out.has(date)) out.set(date, []); out.get(date).push(txt); };
+  const freezingNow = has(d.rows[0].t) && d.rows[0].t <= 0;
+  let frostSaid = freezingNow, snowSaid = false, windSaid = false, heatSaid = false;
+  list.forEach((x, i) => {
+    if(!isFinite(x.min)) return;
+    if(!frostSaid && x.min <= -.5){ add(x.date, "začne mrznout, až " + deg(x.min)); frostSaid = true; }
+    else if(x.min <= -10) add(x.date, "silný mráz, až " + deg(x.min));
+    if(!snowSaid && x.snow >= .5){ add(x.date, "sněžení, asi " + Math.max(1, Math.round(x.snow)) + " cm"); snowSaid = true; }
+    if(x.rain >= 15) add(x.date, "vydatný déšť, asi " + Math.round(x.rain) + " mm");
+    if(x.storm) add(x.date, "bouřky");
+    if(!windSaid && x.gust >= 15){ add(x.date, (x.gust >= 25 ? "velmi silný vítr" : "silný vítr") + ", nárazy až " + Math.round(x.gust) + " m/s"); windSaid = true; }
+    if(!heatSaid && x.max >= 30){ add(x.date, "vedro, až " + deg(x.max)); heatSaid = true; }
+    const prev = list[i - 1];
+    if(prev && isFinite(prev.max) && i > 0){
+      if(prev.max - x.max >= 8) add(x.date, "výrazné ochlazení");
+      else if(x.max - prev.max >= 8) add(x.date, "výrazné oteplení");
+    }
+  });
+  const lines = [...out.entries()].slice(0, 4).map(([date, parts]) => {
+    const t = dayPhrase(date, d.today) + " " + parts.join(", ") + (lv[date] === "lo" ? " (zatím nejisté)" : "") + ".";
+    return `<div>${esc(t)}</div>`;
+  });
+  return lines.length ? `<div class="heads">${lines.join("")}</div>` : "";
+}
+
+/* ČHMÚ warnings, read directly from vystrahy-cr.chmi.cz (CORS allowed) */
+const ALERTS_URL = "https://vystrahy-cr.chmi.cz/data2/alerts.json";
+const KRAJE = ["praha","středočes","jihočes","plzeň","karlovar","ústeck","libere","královéhrad","pardub","vysočin","jihomorav","olomouc","zlín","moravskoslez"];
+const krajKey = n => { const s = String(n || "").toLowerCase(); return KRAJE.find(k => s.includes(k)) || ""; };
+const CAT = {heat:"Vysoké teploty", cold:"Nízké teploty", "heat-stress":"Tepelná zátěž", "cold-stress":"Mrazivé počasí", wind:"Silný vítr", snow:"Sněžení",
+  "slippery-roads":"Náledí a kluzké povrchy", "ice-load":"Námraza", thunderstorms:"Bouřky", rain:"Vydatný déšť", floods:"Povodně", fires:"Požáry",
+  ozone:"Ozon", dust:"Prach", "nitrogen-dioxide":"Oxid dusičitý", "sulfur-dioxide":"Oxid siřičitý", "another-phenomena":"Jiný jev", outlook:"Výhled"};
+const SEV = {Moderate:["Žlutá", "yel"], Severe:["Oranžová", "ora"], Extreme:["Červená", "red"], Minor:["Informace", "inf"], Unknown:["Výhled", "out"]};
+async function loadAlerts(){
+  try{
+    const j = await getJSON(ALERTS_URL + "?v=" + Math.floor(Date.now() / 300e3));
+    const now = Date.now(), list = [];
+    for(const g of j.phenomenon_groups || []) for(const ag of g.area_groups || []) for(const a of ag.single_alerts || []){
+      if(!a.phenomenon || a.is_cancellation) continue;
+      if(a.t_to && Date.parse(a.t_to) < now) continue;
+      const cz = o => (o && o.cz) || "";
+      list.push({ cat:g.alternative_phenomenon_category, sev:a.severity, from:a.t_from, to:a.t_to,
+        name: cz(a.parameters && a.parameters.phenomenon_name) || cz(a.headline) || (a.phenomenon === "hazardous-phenomena-outlook" ? "Výhled nebezpečných jevů" : CAT[g.alternative_phenomenon_category] || "Výstraha"),
+        desc: cz(a.description), instr: cz(a.instruction),
+        areas: (ag.areas || []).map(x => ({name:x.name, whole:x.whole_area, sub:(x.subareas || []).map(y => y.name)})) });
+    }
+    state.alerts = {list, sent:j.sent};
+  }catch(e){ state.alerts = {error: e.message || "Chyba"}; }
+  renderNow();
+}
+// Fill in the region (kraj) of a Czech place that was saved without it.
+async function ensureRegion(){
+  const p = state.place || DEFAULT_PLACE;
+  if(country(p) !== "CZ" || p.kraj || p._regTried) return;
+  p._regTried = true;
+  try{
+    const j = await getJSON("https://photon.komoot.io/reverse?lat=" + p.lat.toFixed(5) + "&lon=" + p.lon.toFixed(5));
+    const r = (j.features && j.features[0] && j.features[0].properties) || {};
+    const kraj = r.state || (/^praha/i.test(r.city || "") ? "Hlavní město Praha" : "");
+    if(kraj){ p.kraj = kraj; p.okres = p.okres || r.county; p.city = p.city || r.city; if(state.place) store.set("pocasi.place", p); renderNow(); }
+  }catch(e){}
+}
+const wd2 = ["ne","po","út","st","čt","pá","so"];
+function whenTxt(from, to){
+  const f = d => { const x = new Date(d), today = new Date().toDateString() === x.toDateString();
+    return (today ? "dnes" : wd2[x.getDay()]) + " " + x.toLocaleTimeString("cs-CZ", {hour:"numeric", minute:"2-digit"}); };
+  const now = Date.now();
+  if(from && Date.parse(from) > now) return "od " + f(from) + (to ? " do " + f(to) : "");
+  return to ? "do " + f(to) : "";
+}
+function alertsHTML(){
+  const p = state.place || DEFAULT_PLACE;
+  if(country(p) !== "CZ" || !state.alerts) return "";
+  if(state.alerts.error) return `<div class="alerts"><div class="muted">Výstrahy ČHMÚ se nepodařilo načíst.</div></div>`;
+  const k = krajKey(p.kraj), names = [p.name, p.city, String(p.okres || "").replace(/^okres\s+/i, "")].filter(Boolean).map(x => x.toLowerCase());
+  const mine = [], part = [];
+  for(const a of state.alerts.list){
+    const ar = a.areas.filter(x => !k || krajKey(x.name) === k);
+    if(!ar.length) continue;
+    if(ar.some(x => x.whole) || ar.some(x => x.sub.some(o => names.includes(o.toLowerCase())))) mine.push(a);
+    else part.push({...a, orp: ar.flatMap(x => x.sub)});
+  }
+  const item = (a, partial) => {
+    const [lbl, cls] = SEV[a.sev] || SEV.Minor;
+    return `<details class="wv ${cls}${partial ? " part" : ""}"><summary><span class="wl">${lbl}</span><b>${esc(a.name)}</b><span class="wt">${esc(whenTxt(a.from, a.to))}</span>${partial ? `<span class="wt">jen část kraje: ${esc(a.orp.slice(0, 6).join(", "))}${a.orp.length > 6 ? "…" : ""}</span>` : ""}</summary>${a.desc ? `<p>${esc(a.desc)}</p>` : ""}${a.instr ? `<p class="muted">${esc(a.instr)}</p>` : ""}</details>`;
+  };
+  const where = p.kraj ? p.kraj : "Česko";
+  const body = mine.length || part.length ? mine.map(a => item(a, false)).join("") + part.map(a => item(a, true)).join("")
+    : `<div class="muted">Pro ${esc(where)} teď žádné.</div>`;
+  return `<div class="alerts"><h3>Výstrahy ČHMÚ</h3>${body}</div>`;
+}
+
 function renderNow(){
   const p = state.place || DEFAULT_PLACE, d = current(), el = $("now");
   const head = `<div><div class="place">${esc(p.name)}</div><div class="sub">${esc(p.sub || "")}</div></div>`;
@@ -735,7 +868,7 @@ function renderNow(){
        ${fact("Vítr", has(w) ? Math.round(w) + " m/s" : "–", has(g) ? "nárazy " + Math.round(g) : "", "var(--wind)", has(w) ? Math.max(w / 14, has(g) ? g / 24 : 0) : 0)}
        ${fact("Vlhkost", has(rh) ? Math.round(rh) + " %" : "–", "", "var(--hum)", has(rh) ? Math.max(0, (rh - 40) / 60) * .7 : 0)}
      </div>
-     <div class="outlook">${esc(outlook(d.rows))}</div>`;
+     <div class="outlook">${esc(outlook(d.rows))}${headsUp(d)}</div>${alertsHTML()}`;
 }
 
 function renderModels(){
@@ -899,7 +1032,7 @@ function setPlace(p){
   state.model = defaultModel(p); state.manual = false;
   const rec = [p, ...store.get("pocasi.recent", []).filter(r => r.name !== p.name || r.sub !== p.sub)].slice(0, 5);
   store.set("pocasi.recent", rec);
-  state.resetScroll = true; notice(""); load(); radarCenter(); stationsDraw();
+  state.resetScroll = true; notice(""); load(); radarCenter(); stationsDraw(); ensureRegion();
 }
 function selectModel(id){
   const d = state.data[id]; if(d && d.error) return;
@@ -926,7 +1059,7 @@ function photonPlace(f){
     name = p.name || p.district || p.city;
     sub = uniq([p.locality !== name ? p.locality : "", p.district !== name ? p.district : "", p.city !== name ? p.city : "", p.state, p.country]);
   }
-  return { name, sub: sub.filter(x => x !== name).join(", "), lat:c[1], lon:c[0], cc:p.countrycode };
+  return { name, sub: sub.filter(x => x !== name).join(", "), lat:c[1], lon:c[0], cc:p.countrycode, kraj:p.state || (/^praha/i.test(p.city || p.name || "") && p.countrycode === "CZ" ? "Hlavní město Praha" : undefined), okres:p.county, city:p.city };
 }
 async function search(q){
   const seq = ++searchSeq, ref = state.place || DEFAULT_PLACE;
@@ -938,7 +1071,7 @@ async function search(q){
   if(!list || !list.length){
     try{
       const j = await getJSON("https://geocoding-api.open-meteo.com/v1/search?count=6&language=cs&format=json&name=" + encodeURIComponent(q));
-      list = (j.results || []).map(r => ({ name:r.name, sub:[r.admin1, r.country].filter(Boolean).join(", "), lat:r.latitude, lon:r.longitude, cc:r.country_code }));
+      list = (j.results || []).map(r => ({ name:r.name, sub:[r.admin1, r.country].filter(Boolean).join(", "), lat:r.latitude, lon:r.longitude, cc:r.country_code, kraj:r.admin1, okres:r.admin2 }));
     }catch(e){ if(!list){ if(seq === searchSeq) showResults([], "Hledání teď nefunguje. Zkuste to za chvíli."); return; } }
   }
   if(seq !== searchSeq) return;
@@ -973,11 +1106,11 @@ function locate(quiet){
     try{
       const j = await getJSON("https://photon.komoot.io/reverse?lat=" + lat.toFixed(5) + "&lon=" + lon.toFixed(5));
       const r = (j.features && j.features[0] && j.features[0].properties) || {};
-      var cc = r.countrycode;
+      var cc = r.countrycode, reg = {kraj:r.state || (/^praha/i.test(r.city || "") ? "Hlavní město Praha" : undefined), okres:r.county, city:r.city};
       const n = r.district || r.city || r.locality || r.name;
       if(n){ name = n; sub = uniq([r.locality !== n ? r.locality : "", r.city !== n ? r.city : "", r.countrycode !== "CZ" ? r.country : ""]).join(", ") || "Moje poloha"; }
     }catch(e){}
-    setPlace({name, sub, lat, lon, cc});
+    setPlace({name, sub, lat, lon, cc, ...(reg || {})});
   }, err => {
     if(quiet) return;
     notice(err.code === 1 ? "Přístup k poloze je zakázaný. Povolte ho v prohlížeči, nebo vyhledejte místo ručně."
@@ -987,8 +1120,8 @@ function locate(quiet){
 $("geo").addEventListener("click", () => locate(false));
 $("msel").addEventListener("change", e => selectModel(e.target.value));
 $("cmp").addEventListener("click", e => { const r = e.target.closest("[data-m]"); if(r) selectModel(r.dataset.m); });
-$("refresh").addEventListener("click", () => { notice(""); load(); radarLoad(); loadStations(); });
-document.addEventListener("visibilitychange", () => { if(!document.hidden && state.updated && Date.now() - state.updated > 30 * 60e3){ load(); radarLoad(); loadStations(); } });
+$("refresh").addEventListener("click", () => { notice(""); load(); radarLoad(); loadStations(); loadAlerts(); });
+document.addEventListener("visibilitychange", () => { if(!document.hidden && state.updated && Date.now() - state.updated > 30 * 60e3){ load(); radarLoad(); loadStations(); loadAlerts(); } });
 
 
 /* Radar: ČHMÚ on top, DWD fills areas outside Czech coverage */
@@ -1363,6 +1496,7 @@ const firstRun = !state.place;
 load();
 radarInit();
 loadStations();
+loadAlerts(); ensureRegion();
 if(firstRun) locate(true);
 </script>
 </body>
