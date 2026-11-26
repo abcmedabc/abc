@@ -156,6 +156,7 @@ h2{font-family:var(--display);font-size:1.05rem;font-weight:700;margin:0}
 .heads div::before{content:"";position:absolute;left:2px;top:.55em;width:6px;height:6px;border-radius:50%;background:var(--fc1)}
 .alerts{grid-column:1/-1;margin-top:10px;padding-top:10px;border-top:1px solid var(--line)}
 .alerts h3{font-size:.95rem;margin:0 0 4px;color:var(--muted);font-weight:600}
+.alerts h4{font-size:.9rem;margin:8px 0 0;font-weight:600}
 .wv{--wc:#7a8a99;--wt:#55626e;border-left:4px solid var(--wc);background:color-mix(in srgb, var(--wc) 13%, transparent);border-radius:8px;padding:7px 10px;margin-top:6px}
 .wv.yel{--wc:#e2bd00;--wt:#8a6d00}
 .wv.ora{--wc:#f08a24;--wt:#b05a00}
@@ -856,7 +857,7 @@ async function loadAlerts(){
       list.push({ cat:g.alternative_phenomenon_category, sev:a.severity, from:a.t_from, to:a.t_to,
         name: cz(a.parameters && a.parameters.phenomenon_name) || cz(a.headline) || (a.phenomenon === "hazardous-phenomena-outlook" ? "Výhled nebezpečných jevů" : CAT[g.alternative_phenomenon_category] || "Výstraha"),
         desc: cz(a.description), instr: cz(a.instruction),
-        areas: (ag.areas || []).map(x => ({name:x.name, whole:x.whole_area, sub:(x.subareas || []).map(y => y.name)})) });
+        areas: (ag.areas || []).map(x => ({id:x.id, name:x.name, whole:x.whole_area, sub:(x.subareas || []).map(y => y.name), subId:(x.subareas || []).map(y => y.id)})) });
     }
     state.alerts = {list, sent:j.sent};
   }catch(e){ state.alerts = {error: e.message || "Chyba"}; }
@@ -882,26 +883,77 @@ function whenTxt(from, to){
   if(from && Date.parse(from) > now) return "od " + f(from) + (to ? " do " + f(to) : "");
   return to ? "do " + f(to) : "";
 }
-function alertsHTML(){
-  const p = state.place || DEFAULT_PLACE;
-  if(country(p) !== "CZ" || !state.alerts) return "";
-  if(state.alerts.error) return `<div class="alerts"><div class="muted">Výstrahy ČHMÚ se nepodařilo načíst.</div></div>`;
-  const k = krajKey(p.kraj), names = [p.name, p.city, String(p.okres || "").replace(/^okres\s+/i, "")].filter(Boolean).map(x => x.toLowerCase());
-  const mine = [], part = [];
-  for(const a of state.alerts.list){
-    const ar = a.areas.filter(x => !k || krajKey(x.name) === k);
-    if(!ar.length) continue;
-    if(ar.some(x => x.whole) || ar.some(x => x.sub.some(o => names.includes(o.toLowerCase())))) mine.push(a);
-    else part.push({...a, orp: ar.flatMap(x => x.sub)});
+/* ORP lookup from the ČHMÚ warning map (SVG, CORS allowed). The map is a plain lon/lat projection;
+   the affine fit below was calibrated on the four extreme points of Czechia (error about 3 km). */
+const ORP_MAP = "https://vystrahy-cr.chmi.cz/data/map.svg";
+const ORP_FIT = [[312.44814, -0.95909], [5.21933, -313.22419], [-2633.32479, 16030.23293]];
+const ORP_REGION = {"11":["CZ090","CZ010"],"21":["CZ020"],"31":["CZ031"],"32":["CZ032"],"41":["CZ041"],"42":["CZ042"],"51":["CZ051"],"52":["CZ052"],"53":["CZ053"],"61":["CZ063"],"62":["CZ064"],"71":["CZ071"],"72":["CZ072"],"81":["CZ080"]};
+async function loadOrp(){
+  if(state.orp) return;
+  state.orp = {loading:true};
+  try{
+    const r = await fetch(ORP_MAP); if(!r.ok) throw new Error("HTTP " + r.status);
+    const doc = new DOMParser().parseFromString(await r.text(), "image/svg+xml"), polys = [];
+    doc.querySelectorAll("g.ORP").forEach(g => g.querySelectorAll("path").forEach(pth => {
+      const n = (pth.getAttribute("d") || "").match(/-?\d+(\.\d+)?/g); if(!n) return;
+      const pts = []; for(let k = 0; k + 1 < n.length; k += 2) pts.push([+n[k], +n[k + 1]]);
+      polys.push({id: g.id, pts});
+    }));
+    state.orp = {polys};
+  }catch(e){ state.orp = {error: e.message}; }
+  renderNow();
+}
+function orpAt(lat, lon){
+  const o = state.orp; if(!o || !o.polys) return null;
+  const X = lon * Math.cos(49.8 * Math.PI / 180), Y = lat, [a, b, c] = ORP_FIT;
+  const x = X * a[0] + Y * b[0] + c[0], y = X * a[1] + Y * b[1] + c[1];
+  for(const p of o.polys){
+    let inside = false;
+    for(let i = 0, k = p.pts.length - 1; i < p.pts.length; k = i++){
+      const [x1, y1] = p.pts[i], [x2, y2] = p.pts[k];
+      if((y1 > y) !== (y2 > y) && x < (x2 - x1) * (y - y1) / (y2 - y1) + x1) inside = !inside;
+    }
+    if(inside) return {orp: p.id, regions: ORP_REGION[p.id.split(":")[1].slice(0, 2)] || []};
   }
-  const item = (a, partial) => {
+  return null;
+}
+function alertsFor(loc){
+  const out = [], seen = new Set();
+  for(const a of state.alerts.list){
+    const hit = a.areas.some(x => (x.whole && loc.regions.some(r => x.id && x.id.endsWith(":" + r))) || x.subId.includes(loc.orp));
+    if(!hit) continue;
+    const key = [a.name, a.sev, a.from, a.to].join("|");
+    if(seen.has(key)) continue;
+    seen.add(key); out.push(a);
+  }
+  return out;
+}
+function alertsHTML(){
+  if(!state.alerts) return "";
+  const p = state.place || DEFAULT_PLACE, me = state.me;
+  const pIn = country(p) === "CZ", mIn = me && inCZ(me);
+  if(!pIn && !mIn) return "";
+  if(state.alerts.error) return `<div class="alerts"><div class="muted">Výstrahy ČHMÚ se nepodařilo načíst.</div></div>`;
+  if(!state.orp){ loadOrp(); return ""; }
+  if(state.orp.loading) return "";
+  if(state.orp.error) return `<div class="alerts"><div class="muted">Mapu oblastí ČHMÚ se nepodařilo načíst.</div></div>`;
+  const lp = pIn ? orpAt(p.lat, p.lon) : null, lm = mIn ? orpAt(me.lat, me.lon) : null;
+  const same = lp && lm && lp.orp === lm.orp;
+  const item = a => {
     const [lbl, cls] = SEV[a.sev] || SEV.Minor;
-    return `<details class="wv ${cls}${partial ? " part" : ""}"><summary><span class="wl">${lbl}</span><b>${esc(a.name)}</b><span class="wt">${esc(whenTxt(a.from, a.to))}</span>${partial ? `<span class="wt">jen část kraje: ${esc(a.orp.slice(0, 6).join(", "))}${a.orp.length > 6 ? "…" : ""}</span>` : ""}</summary>${a.desc ? `<p>${esc(a.desc)}</p>` : ""}${a.instr ? `<p class="muted">${esc(a.instr)}</p>` : ""}</details>`;
+    return `<details class="wv ${cls}"><summary><span class="wl">${lbl}</span><b>${esc(a.name)}</b><span class="wt">${esc(whenTxt(a.from, a.to))}</span></summary>${a.desc ? `<p>${esc(a.desc)}</p>` : ""}${a.instr ? `<p class="muted">${esc(a.instr)}</p>` : ""}</details>`;
   };
-  const where = p.kraj ? p.kraj : "Česko";
-  const body = mine.length || part.length ? mine.map(a => item(a, false)).join("") + part.map(a => item(a, true)).join("")
-    : `<div class="muted">Pro ${esc(where)} teď žádné.</div>`;
-  return `<div class="alerts"><h3>Výstrahy ČHMÚ</h3>${body}</div>`;
+  const block = (title, loc) => {
+    const l = alertsFor(loc);
+    return `<h4>${esc(title)}</h4>` + (l.length ? l.map(item).join("") : `<div class="muted">Žádné.</div>`);
+  };
+  let body = "";
+  if(same) body = block(p.name + " a vaše poloha", lp);
+  else {
+    if(lp) body += block(p.name, lp);
+    if(lm) body += block("Vaše poloha", lm);
+  }
+  return body ? `<div class="alerts"><h3>Výstrahy ČHMÚ</h3>${body}</div>` : "";
 }
 
 function renderNow(){
@@ -1452,6 +1504,7 @@ function getMe(then, quiet){
   if(!navigator.geolocation){ if(!quiet) notice("Tento prohlížeč polohu neumí."); return; }
   navigator.geolocation.getCurrentPosition(pos => {
     state.me = {lat:pos.coords.latitude, lon:pos.coords.longitude};
+    renderNow();
     radarMarkers(); if(then) then();
   }, err => { if(!quiet) notice(err.code === 1 ? "Přístup k poloze je zakázaný. Povolte ho v prohlížeči." : "Polohu se nepodařilo zjistit.", true); },
   {timeout:10000, maximumAge:120000});
