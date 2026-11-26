@@ -12,7 +12,7 @@
 /* Layout: one column, max 720px. Summary first, then a 48h strip that scrolls sideways, then model comparison. */
 :root{
   --bg:#e9eef3; --card:#f8fafc; --ink:#14222e; --muted:#5a6b79; --line:#d3dce4;
-  --accent:#1f6fb5; --rain:#2f7fd0; --rain-soft:#d5e5f5; --temp:#d9731a; --sun:#e2a21b;
+  --accent:#1f6fb5; --rain:#2f7fd0; --rain-soft:#d5e5f5; --snow:#0f9fc8; --temp:#d9731a; --sun:#e2a21b;
   --fc1:#e09a1f; --fc2:#c4473a; --danger:#b3372f; --wind:#2a8c7a; --hum:#5b6fa8; --ok:#2b7a3d; --ok-soft:#dcefe0; --warn:#946200; --warn-soft:#f6ebcf; --bad-soft:#f6dcda;
   --display:"Bricolage Grotesque","Segoe UI",system-ui,sans-serif;
   --body:"Instrument Sans","Segoe UI",system-ui,sans-serif;
@@ -21,13 +21,13 @@
 @media (prefers-color-scheme:dark){
   :root:not([data-theme="light"]){
     --bg:#0f1820; --card:#18242f; --ink:#e8eef3; --muted:#93a4b2; --line:#2a3a48;
-    --accent:#6db4f0; --rain:#58a6ec; --rain-soft:#213a52; --temp:#f0a04e; --sun:#f2c14b;
+    --accent:#6db4f0; --rain:#58a6ec; --rain-soft:#213a52; --snow:#7fdcf5; --temp:#f0a04e; --sun:#f2c14b;
     --danger:#ef8078; --ok:#7fd193; --ok-soft:#1f3a28; --warn:#f0c463; --warn-soft:#3d3218; --bad-soft:#47221f; color-scheme:dark;
   }
 }
 :root[data-theme="dark"]{
   --bg:#0f1820; --card:#18242f; --ink:#e8eef3; --muted:#93a4b2; --line:#2a3a48;
-  --accent:#6db4f0; --rain:#58a6ec; --rain-soft:#213a52; --temp:#f0a04e; --sun:#f2c14b;
+  --accent:#6db4f0; --rain:#58a6ec; --rain-soft:#213a52; --snow:#7fdcf5; --temp:#f0a04e; --sun:#f2c14b;
   --danger:#ef8078; --ok:#7fd193; --ok-soft:#1f3a28; --warn:#f0c463; --warn-soft:#3d3218; --bad-soft:#47221f; color-scheme:dark;
 }
 *{box-sizing:border-box}
@@ -89,6 +89,8 @@ h2{font-family:var(--display);font-size:1.05rem;font-weight:700;margin:0}
 .hours{padding:14px 0 12px}
 .legend{display:flex;flex-wrap:wrap;gap:4px 12px;font-size:.95rem;color:var(--muted)}
 .legend i{display:inline-block;width:18px;height:0;border-top:3px solid var(--temp);vertical-align:middle;margin-right:5px}
+.legend .dots{display:inline-flex;margin:0 3px 0 0;vertical-align:middle}
+.legend .dots i{width:6px;height:6px;border:0;margin:0}
 .legend i.p{border:0;width:8px;height:12px;background:var(--rain);border-radius:2px}
 .legend i.b{border:0;height:10px;width:14px;background:var(--temp);opacity:.25;border-radius:2px}
 .legend i.f{border-top-style:dashed;border-top-width:2px;border-color:var(--muted)}
@@ -111,7 +113,11 @@ h2{font-family:var(--display);font-size:1.05rem;font-weight:700;margin:0}
 .bar i{display:block;width:100%;background:var(--rain);border-radius:5px 5px 0 0}
 .col .pp{font-weight:600;font-size:.85rem;color:var(--rain)}
 .col .pp.low{color:var(--muted);font-weight:500}
-.col .mm{font-size:.8rem;color:var(--muted);min-height:1.2em}
+.col .mm{font-size:.78rem;color:var(--muted);min-height:2.4em;text-align:center;line-height:1.2;white-space:nowrap}
+.dots{display:flex;gap:3px;justify-content:center;min-height:8px;margin:2px 0}
+.dots i{width:7px;height:7px;border-radius:50%;background:var(--rain)}
+.dots.snow i{background:var(--card);box-shadow:inset 0 0 0 2px var(--snow)}
+.dots.mix i{background:linear-gradient(90deg,var(--rain) 50%,var(--snow) 50%)}
 .curve{display:block;position:relative}
 .curve .t{fill:none;stroke:var(--temp);stroke-width:3;stroke-linejoin:round;stroke-linecap:round}
 .curve .b{fill:var(--temp);opacity:.16;stroke:none}
@@ -141,7 +147,7 @@ h2{font-family:var(--display);font-size:1.05rem;font-weight:700;margin:0}
 .half .pp{font-size:.9rem;font-weight:600;color:var(--rain)}
 .half .pp.low{color:var(--muted);font-weight:500}
 .dday.ext .dn::after{content:" · mix";color:var(--muted);font-weight:500;font-size:.85rem}
-.dday .mm{font-size:.85rem;color:var(--muted);min-height:1.2em;margin-top:2px}
+.dday .mm{font-size:.85rem;color:var(--muted);min-height:1.2em;margin-top:2px;white-space:nowrap}
 .rowlab{padding:6px 16px 0;font-size:1rem;color:var(--muted)}
 
 /* Heads-up and warnings */
@@ -264,6 +270,8 @@ footer a{color:var(--accent)}
 .ico .ray{stroke:var(--sun)}
 .ico .moon{stroke:var(--sun);fill:none}
 .ico .drop{stroke:var(--rain)}
+.ico .flake{stroke:var(--snow);stroke-width:2;fill:none}
+.ico .halo{stroke:var(--card);stroke-width:4.4;fill:none}
 .ico .bolt{stroke:var(--sun);fill:var(--sun)}
 .ico .cl{fill:var(--card)}
 @media (max-width:400px){ .now .big{font-size:3.6rem} .now .ico{width:68px;height:68px} .loc button span{display:none} }
@@ -283,8 +291,9 @@ footer a{color:var(--accent)}
     <symbol id="i-fog" viewBox="0 0 24 24"><g transform="translate(0 -4)"><use href="#g-cloud"/></g><path d="M5 18h14M7 21h10"/></symbol>
     <symbol id="i-drizzle" viewBox="0 0 24 24"><g transform="translate(0 -4)"><use href="#g-cloud"/></g><path class="drop" d="M9 18v1.5M15 18v1.5"/></symbol>
     <symbol id="i-rain" viewBox="0 0 24 24"><g transform="translate(0 -4)"><use href="#g-cloud"/></g><path class="drop" d="M8.5 17.5l-1 3.5M12.5 17.5l-1 3.5M16.5 17.5l-1 3.5"/></symbol>
-    <symbol id="i-snow" viewBox="0 0 24 24"><g transform="translate(0 -4)"><use href="#g-cloud"/></g><path class="drop" d="M8 18.5h.01M12 18.5h.01M16 18.5h.01M10 21.5h.01M14 21.5h.01" stroke-width="2.4"/></symbol>
-    <symbol id="i-sleet" viewBox="0 0 24 24"><g transform="translate(0 -4)"><use href="#g-cloud"/></g><path class="drop" d="M8.5 17.5l-1 3.5M16.5 17.5l-1 3.5"/><path class="drop" d="M12 19.5h.01" stroke-width="2.4"/></symbol>
+    <g id="g-flake"><path d="M0-7V7M-6.06-3.5L6.06 3.5M-6.06 3.5L6.06-3.5M-2 -5.8L0-4.2 2-5.8M-2 5.8L0 4.2 2 5.8M-6 -1.1L-4.1-2.1-4.6-4.3M6 1.1L4.1 2.1 4.6 4.3M-6 1.1L-4.1 2.1-4.6 4.3M6-1.1L4.1-2.1 4.6-4.3"/></g>
+    <symbol id="i-snow" viewBox="0 0 24 24"><g transform="translate(0 -2)"><use href="#g-cloud"/></g><g transform="translate(12 14)"><use class="halo" href="#g-flake"/><use class="flake" href="#g-flake"/></g></symbol>
+    <symbol id="i-sleet" viewBox="0 0 24 24"><g transform="translate(0 -4)"><use href="#g-cloud"/></g><path class="drop" d="M7.5 17.5l-1 3.5M11 17.5l-1 3.5"/><g transform="translate(16.5 18.5) scale(.55)"><use class="halo" href="#g-flake"/><use class="flake" href="#g-flake"/></g></symbol>
     <symbol id="i-storm" viewBox="0 0 24 24"><g transform="translate(0 -4)"><use href="#g-cloud"/></g><path class="bolt" d="M12.5 15.5l-3 4h2.5l-1 3 3.5-4.5H12z" stroke-width="1"/></symbol>
     <symbol id="i-pin" viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><circle cx="12" cy="12" r="7.5"/><path d="M12 2v2.5M12 19.5V22M2 12h2.5M19.5 12H22"/></symbol>
   </defs>
@@ -303,7 +312,7 @@ footer a{color:var(--accent)}
 
   <section class="card hours">
     <header><h2>Hodinová</h2>
-      <div class="legend"><span><i></i>teplota</span><span><i class="f"></i>pocitová</span><span><i class="b"></i>rozptyl</span><span><i class="p"></i>šance srážek</span></div></header>
+      <div class="legend"><span><i></i>teplota</span><span><i class="f"></i>pocitová</span><span><i class="b"></i>rozptyl</span><span><i class="p"></i>šance srážek</span><span><span class="dots"><i></i></span>slabé · <span class="dots"><i></i><i></i><i></i></span>silné</span></div></header>
     <div class="scroll" id="scroll"><div class="strip" id="strip"></div></div>
     <div class="rowlab" id="ppnote"></div>
   </section>
@@ -363,7 +372,7 @@ const MODELS = [
   {id:"meteofrance_seamless", short:"AROME", name:"AROME/ARPEGE",  src:"Météo-France"},
   {id:"gfs_seamless",         name:"GFS",           src:"NOAA, USA"}
 ];
-const VARS = "temperature_2m,apparent_temperature,precipitation_probability,precipitation,weather_code,wind_speed_10m,wind_gusts_10m,relative_humidity_2m,is_day";
+const VARS = "temperature_2m,apparent_temperature,precipitation_probability,precipitation,snowfall,weather_code,wind_speed_10m,wind_gusts_10m,relative_humidity_2m,is_day";
 const HOURS = 48, COL = 50, DAYS = 7;
 const DEFAULT_PLACE = {name:"Praha", sub:"Česko", lat:50.088, lon:14.4208, cc:"CZ"};
 const inCZ = p => p.cc ? p.cc === "CZ" : (p.lat > 48.55 && p.lat < 51.06 && p.lon > 12.09 && p.lon < 18.86);
@@ -402,6 +411,34 @@ function iconId(code, day){
 }
 const icon = (code, day) => `<svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><use href="#${iconId(code, day)}"/></svg>`;
 const isSnow = c => has(c) && ((c >= 71 && c <= 77) || c === 85 || c === 86);
+const isSleet = c => has(c) && (c === 56 || c === 57 || (c >= 66 && c <= 68));
+// Split a slot's precipitation into rain (mm) and snow (cm). 1 mm of water ≈ 0.7 cm of snow (as Open-Meteo).
+function splitP(s){
+  const mm = has(s.mm) ? s.mm : 0;
+  if(has(s.sn)){ const sn = Math.max(0, s.sn); return {rn: Math.max(0, mm - sn / .7), sn}; }
+  if(mm <= 0) return {rn:0, sn:0};
+  if(isSnow(s.code)) return {rn:0, sn:mm * .7};
+  if(isSleet(s.code)) return {rn:mm / 2, sn:mm / 2 * .7};
+  if(has(s.t) && s.t <= .5 && !(has(s.code) && s.code >= 51 && s.code <= 65)) return {rn:0, sn:mm * .7};
+  return {rn:mm, sn:0};
+}
+const pType = p => p.sn >= .05 && p.rn >= .1 ? "mix" : p.sn >= .05 ? "snow" : p.rn >= .05 ? "rain" : "";
+// Intensity 1..3: per hour (rate) or per half day (total).
+const lvRate = (p, h) => { const r = p.rn / h, n = p.sn / h; return Math.max(r <= 0 ? 0 : r < 1 ? 1 : r < 4 ? 2 : 3, n <= 0 ? 0 : n < .5 ? 1 : n < 2 ? 2 : 3); };
+const lvTotal = p => Math.max(p.rn < .1 ? 0 : p.rn < 2 ? 1 : p.rn < 10 ? 2 : 3, p.sn < .05 ? 0 : p.sn < 2 ? 1 : p.sn < 8 ? 2 : 3);
+const fmtMM = v => (v < 10 ? fmt1(v) : Math.round(v)) + " mm";
+const fmtCM = v => (v < 1 ? "<1" : Math.round(v)) + " cm ❄";
+function dots(lv, type){
+  if(!lv || !type) return `<span class="dots"></span>`;
+  const n = ["", "slabé", "střední", "silné"][lv], w = {rain:"déšť", snow:"sněžení", mix:"déšť se sněhem"}[type];
+  return `<span class="dots ${type}" title="${n} ${w}" aria-label="${n} ${w}">${"<i></i>".repeat(lv)}</span>`;
+}
+function amount(p){
+  const a = [];
+  if(p.rn >= .05) a.push(fmtMM(p.rn));
+  if(p.sn >= .05) a.push(fmtCM(p.sn));
+  return a.join("<br>");
+}
 
 async function getJSON(url){
   const r = await fetch(url);
@@ -425,13 +462,13 @@ async function fetchOM(model, p){
   const h = j.hourly || {};
   const col = k => h[k] || h[k + "_" + model] || [];
   const times = h.time || [];
-  const c = { t:col("temperature_2m"), f:col("apparent_temperature"), pp:col("precipitation_probability"), mm:col("precipitation"),
+  const c = { t:col("temperature_2m"), f:col("apparent_temperature"), pp:col("precipitation_probability"), mm:col("precipitation"), sn:col("snowfall"),
     code:col("weather_code"), w:col("wind_speed_10m"), g:col("wind_gusts_10m"), rh:col("relative_humidity_2m"), day:col("is_day") };
   const slots = [];
   for(let i = 0; i < times.length; i++){
     if(!has(c.t[i])) continue;
     const hr = +times[i].slice(11, 13);
-    slots.push({ time:times[i], hr, span:1, t:c.t[i], tmax:c.t[i], tmin:c.t[i], f:c.f[i], pp:c.pp[i], mm:c.mm[i], code:c.code[i],
+    slots.push({ time:times[i], hr, span:1, t:c.t[i], tmax:c.t[i], tmin:c.t[i], f:c.f[i], pp:c.pp[i], mm:c.mm[i], sn:c.sn[i], code:c.code[i],
       w:c.w[i], g:c.g[i], rh:c.rh[i], day: has(c.day[i]) ? !!c.day[i] : (hr >= 7 && hr < 19) });
   }
   const res = finish(slots, j.utc_offset_seconds || 0);
@@ -570,8 +607,11 @@ function daily(d){
     if(ss.reduce((a, s) => a + s.span, 0) < 6) return null;
     const pps = ss.map(s => s.pp).filter(has), mm = ss.reduce((a, s) => a + (has(s.mm) ? s.mm : 0), 0);
     const pp = pps.length ? Math.max(...pps) : null;
-    return { temp: isDay ? Math.max(...ss.map(s => s.tmax)) : Math.min(...ss.map(s => s.tmin)), pp, mm,
-      code: halfCode(ss, mm >= 0.3 || (pp !== null && pp >= 50)) };
+    const sp = ss.map(splitP).reduce((a, b) => ({rn:a.rn + b.rn, sn:a.sn + b.sn}), {rn:0, sn:0}), ty = pType(sp);
+    let code = halfCode(ss, mm >= 0.3 || (pp !== null && pp >= 50));
+    if(ty === "mix" && sp.rn >= .3 && sp.sn >= .2 && sev(code) < 6) code = 68;
+    else if(ty === "snow" && sp.sn >= .3 && sev(code) < 5) code = sp.sn >= 5 ? 75 : sp.sn >= 2 ? 73 : 71;
+    return { temp: isDay ? Math.max(...ss.map(s => s.tmax)) : Math.min(...ss.map(s => s.tmin)), pp, mm, sp, ty, code };
   };
   return [...map.values()].sort((a, b) => a.date < b.date ? -1 : 1)
     .map(x => ({date:x.date, day:agg(x.d, true), night:agg(x.n, false), ext:x.d.concat(x.n).some(s => s.ext)}))
@@ -597,12 +637,15 @@ function outlook(rows){
   const i = rows.findIndex(wet);
   const maxPP = Math.max(-1, ...rows.filter(r => has(r.pp)).map(r => r.pp));
   if(i < 0) return maxPP >= 10 ? `Do 48 h sucho. Šance na srážky nejvýš ${Math.round(maxPP)} %.` : "Do 48 h sucho.";
-  const what = isSnow(rows[i].code) ? "Sníh" : "Déšť";
+  let j0 = i; while(j0 < rows.length && wet(rows[j0])) j0++;
+  const run = rows.slice(i, j0).map(splitP).reduce((a, b) => ({rn:a.rn + b.rn, sn:a.sn + b.sn}), {rn:0, sn:0}), ty = pType(run);
+  const what = ty === "snow" ? "Sníh" : ty === "mix" ? "Déšť se sněhem" : "Déšť";
+  const amt = run.sn >= .5 ? ` ${fmtCM(run.sn)}.` : "";
   const pct = has(rows[i].pp) ? ` Šance ${Math.round(rows[i].pp)} %.` : "";
-  if(i === 0) return `${what} právě teď.${pct}`;
+  if(i === 0) return `${what} právě teď.${amt}${pct}`;
   let j = i; while(j < rows.length && wet(rows[j])) j++;
   const when = dayPhrase(rows[i].time.slice(0, 10), rows[0].time.slice(0, 10)).toLowerCase();
-  return `${what} ${when} od ${rows[i].hr}:00, asi ${j - i} h.${pct}`;
+  return `${what} ${when} od ${rows[i].hr}:00, asi ${j - i} h.${amt}${pct}`;
 }
 
 /* Stations (ČHMÚ, mirrored to GitHub every 15 min) */
@@ -753,7 +796,7 @@ function headsUp(d){
     const x = days.get(k), mm = has(s.mm) ? s.mm : 0;
     x.min = Math.min(x.min, s.tmin); x.max = Math.max(x.max, s.tmax);
     if(has(s.g)) x.gust = Math.max(x.gust, s.g);
-    if(isSnow(s.code) || (mm > 0 && s.t <= .5)) x.snow += mm; else x.rain += mm;
+    const sp = splitP(s); x.snow += sp.sn; x.rain += sp.rn; if(sp.sn >= .05 && sp.rn >= .1) x.mix = true;
     if(has(s.code) && s.code >= 95) x.storm = true;
   }
   const list = [...days.values()].sort((a, b) => a.date < b.date ? -1 : 1).slice(0, 7);
@@ -765,7 +808,7 @@ function headsUp(d){
     if(!isFinite(x.min)) return;
     if(!frostSaid && x.min <= -.5){ add(x.date, "začne mrznout, až " + deg(x.min)); frostSaid = true; }
     else if(x.min <= -10) add(x.date, "silný mráz, až " + deg(x.min));
-    if(!snowSaid && x.snow >= .5){ add(x.date, "sněžení, asi " + Math.max(1, Math.round(x.snow)) + " cm"); snowSaid = true; }
+    if(!snowSaid && x.snow >= 1){ add(x.date, (x.mix ? "déšť se sněhem, sněhu " : "sněžení, ") + "asi " + fmtCM(x.snow)); snowSaid = true; }
     if(x.rain >= 15) add(x.date, "vydatný déšť, asi " + Math.round(x.rain) + " mm");
     if(x.storm) add(x.date, "bouřky");
     if(!windSaid && x.gust >= 15){ add(x.date, (x.gust >= 25 ? "velmi silný vítr" : "silný vítr") + ", nárazy až " + Math.round(x.gust) + " m/s"); windSaid = true; }
@@ -859,12 +902,13 @@ function renderNow(){
     return;
   }
   const r = d.rows[0], T = r.t, w = r.w, g = r.g, rh = r.rh, fl = r.f, obs = "";
-  const rainSub = has(r.mm) && r.mm >= .05 ? fmt1(r.mm) + " mm/h" : "";
+  const sp0 = splitP(r), ty0 = pType(sp0);
+  const rainSub = ty0 === "snow" ? fmtCM(sp0.sn).replace(" cm", " cm/h") : ty0 === "mix" ? fmt1(sp0.rn) + " mm/h + sníh" : ty0 ? fmt1(sp0.rn) + " mm/h" : "";
   el.innerHTML = head + icon(r.code, r.day) +
     `<div><div class="big num">${deg(T)}</div></div>` +
     `<div class="feel" style="grid-column:1/-1"><b>${esc(WMO[r.code] || "")}</b>${WMO[r.code] ? ", " : ""}pocitově <b class="num">${deg(fl)}</b></div>` + obs +
     `<div class="facts">
-       ${fact("Déšť", has(r.pp) ? Math.round(r.pp) + " %" : "–", rainSub, "var(--rain)", has(r.pp) ? r.pp / 100 : 0)}
+       ${fact(ty0 === "snow" ? "Sníh" : ty0 === "mix" ? "Déšť a sníh" : "Srážky", has(r.pp) ? Math.round(r.pp) + " %" : "–", rainSub, ty0 === "snow" ? "var(--snow)" : "var(--rain)", has(r.pp) ? r.pp / 100 : 0)}
        ${fact("Vítr", has(w) ? Math.round(w) + " m/s" : "–", has(g) ? "nárazy " + Math.round(g) : "", "var(--wind)", has(w) ? Math.max(w / 14, has(g) ? g / 24 : 0) : 0)}
        ${fact("Vlhkost", has(rh) ? Math.round(rh) + " %" : "–", "", "var(--hum)", has(rh) ? Math.max(0, (rh - 40) / 60) * .7 : 0)}
      </div>
@@ -912,11 +956,11 @@ function renderStrip(){
   let top = "", bot = "", seps = "";
   rows.forEach((r, i) => {
     const pp = has(r.pp) ? Math.round(r.pp) : null, cls = i === 0 ? " nowc" : "";
-    const mm = has(r.mm) && r.mm >= 0.05 ? (r.mm < 10 ? r.mm.toFixed(1).replace(".", ",") : Math.round(r.mm)) + " mm" : "";
+    const sp = splitP(r), ty = pType(sp);
     if(r.hr === 0 && i > 0) seps += `<i class="sep" style="left:${i * COL}px"></i>`;
     top += `<div class="col${cls}"><span class="h num">${i === 0 ? "Teď" : r.hr + ":00"}</span>${icon(r.code, r.day)}</div>`;
     bot += `<div class="col${cls}"><div class="bar" title="Pravděpodobnost srážek"><i style="height:${pp || 0}%"></i></div>
-      <span class="pp num${pp !== null && pp < 20 ? " low" : ""}">${pp === null ? "–" : pp + " %"}</span><span class="mm num">${mm}</span></div>`;
+      <span class="pp num${pp !== null && pp < 20 ? " low" : ""}">${pp === null ? "–" : pp + " %"}</span>${dots(ty ? lvRate(sp, r.span || 1) : 0, ty)}<span class="mm num">${ty ? amount(sp) : ""}</span></div>`;
   });
   const keep = $("scroll").scrollLeft;
   el.style.width = W + "px";
@@ -933,13 +977,14 @@ function renderDaily(){
   const lv = Object.fromEntries(reliability().map(r => [r.date, r.level]));
   const half = (h, isDay) => !h ? `<div class="half${isDay ? "" : " n"}"><b>–</b></div>` :
     `<div class="half${isDay ? "" : " n"}">${icon(h.code, isDay)}<b class="num">${deg(h.temp)}</b>
-     <span class="pp num${h.pp !== null && h.pp < 20 ? " low" : ""}">${h.pp === null ? "" : Math.round(h.pp) + " %"}</span></div>`;
+     <span class="pp num${h.pp !== null && h.pp < 20 ? " low" : ""}">${h.pp === null ? "" : Math.round(h.pp) + " %"}</span>${dots(h.ty ? lvTotal(h.sp) : 0, h.ty)}</div>`;
   el.innerHTML = list.map(x => {
-    const dt = new Date(Date.parse(x.date + "T00:00Z")), mm = (x.day ? x.day.mm : 0) + (x.night ? x.night.mm : 0);
+    const dt = new Date(Date.parse(x.date + "T00:00Z")), z = {rn:0, sn:0};
+    [x.day, x.night].forEach(h => { if(h){ z.rn += h.sp.rn; z.sn += h.sp.sn; } });
     const name = x.date === d.today ? "Dnes" : wd[dt.getUTCDay()];
     return `<div class="dday${x.ext ? " ext" : ""}${lv[x.date] ? " lv-" + lv[x.date] : ""}"><div class="dn">${name} <span class="num">${dt.getUTCDate()}.</span></div>
       <div class="halves">${half(x.day, true)}${half(x.night, false)}</div>
-      <div class="mm num">${mm >= 0.05 ? mm.toFixed(1).replace(".", ",") + " mm" : ""}</div></div>`;
+      <div class="mm num">${[z.rn >= .05 ? fmtMM(z.rn) : "", z.sn >= .05 ? fmtCM(z.sn) : ""].filter(Boolean).join(" · ")}</div></div>`;
   }).join("");
   $("dnote").textContent = "Den 6 až 18 h, noc 18 až 6 h. Pozadí: jistota předpovědi." + (d.extFrom ? " Mix: za hranou modelu." : "");
 }
