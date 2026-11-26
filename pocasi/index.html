@@ -438,7 +438,7 @@ const pType = p => p.sn >= .05 && p.rn >= .1 ? "mix" : p.sn >= .05 ? "snow" : p.
 const lvRate = (p, h) => { const r = p.rn / h, n = p.sn / h; return Math.max(r <= 0 ? 0 : r < 1 ? 1 : r < 4 ? 2 : 3, n <= 0 ? 0 : n < .5 ? 1 : n < 2 ? 2 : 3); };
 const lvTotal = p => Math.max(p.rn < .1 ? 0 : p.rn < 2 ? 1 : p.rn < 10 ? 2 : 3, p.sn < .05 ? 0 : p.sn < 2 ? 1 : p.sn < 8 ? 2 : 3);
 const fmtMM = v => (v < 10 ? fmt1(v) : Math.round(v)) + " mm";
-const fmtCM = v => (v < 1 ? "<1" : Math.round(v)) + " cm ❄";
+const fmtCM = v => "❄ " + (v < 1 ? "<1" : Math.round(v)) + " cm";
 function dots(lv, type){
   if(!lv || !type) return `<span class="dots"></span>`;
   const n = ["", "slabé", "střední", "silné"][lv], w = {rain:"déšť", snow:"sněžení", mix:"déšť se sněhem"}[type];
@@ -1237,9 +1237,112 @@ async function dwdImage(t){
     data:im, cov, W, H:c.height, mpx:(x2 - x1) / W, mpy:(y2 - y1) / c.height };
 }
 // Forecast frame: DWD forecast where DWD covers, elsewhere the source image S moved by motion mv.
-function blendDWD(F, S, t, mv){
-  const W = S.W, H = S.H, out = new ImageData(W, H), o = out.data, s = S.data.data;
-  const h = (t - S.t) / 3600e3, dx = Math.round(mv.dx * h / S.mpx), dy = Math.round(-mv.dy * h / S.mpy);
+/* Motion of precipitation ("flow").
+   v0: motion measured from recent radar frames (RainViewer tiles around the place, else DWD).
+   wind: steering wind from the model at 850/700/500 hPa; the level mix that best matches v0 is used
+   (as DWD does). The radar motion dominates the first half hour, then hands over to the wind by 3 h. */
+const R_EARTH = 6378137;
+function windAt(t){
+  const W = radar.flow.wind; if(!W || !W.length) return null;
+  if(t <= W[0].t) return W[0];
+  for(let i = 1; i < W.length; i++) if(t <= W[i].t){ const a = W[i - 1], b = W[i], k = (t - a.t) / (b.t - a.t); return {u:a.u + (b.u - a.u) * k, v:a.v + (b.v - a.v) * k}; }
+  return W[W.length - 1];
+}
+function flowVel(t){
+  const F = radar.flow, lead = Math.max(0, (t - radar.now) / 3600e3), vw = windAt(t);
+  if(!F.v0) return vw || {u:0, v:0};
+  if(!vw) return F.v0;
+  const w = Math.min(1, Math.max(0, 1 - (lead - .5) / 2.5));
+  return {u: w * F.v0.u + (1 - w) * vw.u, v: w * F.v0.v + (1 - w) * vw.v};
+}
+// Displacement between two times, in Web Mercator metres.
+function disp(t0, t1){
+  if(!radar.flow) return {dx:0, dy:0};
+  const sg = t1 >= t0 ? 1 : -1, step = 5 * 60e3, k = 1 / Math.cos(radar.flow.lat * Math.PI / 180);
+  let dx = 0, dy = 0;
+  for(let t = Math.min(t0, t1); t < Math.max(t0, t1); t += step){
+    const dt = Math.min(step, Math.max(t0, t1) - t), v = flowVel(t + dt / 2);
+    dx += v.u * dt / 1000; dy += v.v * dt / 1000;
+  }
+  return {dx: sg * dx * k, dy: sg * dy * k};
+}
+async function fetchWind(p){
+  const j = await getJSON("https://api.open-meteo.com/v1/forecast?latitude=" + p.lat.toFixed(3) + "&longitude=" + p.lon.toFixed(3) +
+    "&hourly=wind_speed_850hPa,wind_direction_850hPa,wind_speed_700hPa,wind_direction_700hPa,wind_speed_500hPa,wind_direction_500hPa" +
+    "&past_hours=1&forecast_hours=5&timezone=UTC&wind_speed_unit=ms");
+  const h = j.hourly || {}, out = {};
+  for(const L of [850, 700, 500]){
+    const sp = h["wind_speed_" + L + "hPa"] || [], dr = h["wind_direction_" + L + "hPa"] || [];
+    out[L] = (h.time || []).map((t, i) => has(sp[i]) && has(dr[i]) ? {t: Date.parse(t + ":00Z"), u: -sp[i] * Math.sin(dr[i] * Math.PI / 180), v: -sp[i] * Math.cos(dr[i] * Math.PI / 180)} : null).filter(Boolean);
+  }
+  return out[700] && out[700].length ? out : null;
+}
+// Rain motion near the place from RainViewer tiles (zoom 6, 3×3 tiles), by block matching 30 min apart.
+async function rvMotion(rv, p){
+  const z = 6, n = 2 ** z, tx = Math.floor((p.lon + 180) / 360 * n);
+  const la = p.lat * Math.PI / 180, ty = Math.floor((1 - Math.log(Math.tan(la) + 1 / Math.cos(la)) / Math.PI) / 2 * n);
+  const past = rv.past, last = past[past.length - 1];
+  const pick = m => past.reduce((a, b) => Math.abs(b.time - (last.time - m * 60)) < Math.abs(a.time - (last.time - m * 60)) ? b : a);
+  const frames = [last, pick(30), pick(60)].filter((f, i, a) => a.indexOf(f) === i);
+  const D = 3, G = 768 / D;
+  const grid = async f => {
+    const c = document.createElement("canvas"); c.width = c.height = 768; const g = c.getContext("2d");
+    await Promise.all([-1, 0, 1].flatMap(dy => [-1, 0, 1].map(async dx => {
+      const r = await fetch(rv.host + f.path + "/256/" + z + "/" + (tx + dx) + "/" + (ty + dy) + "/2/1_1.png");
+      if(!r.ok) return;
+      g.drawImage(await createImageBitmap(await r.blob()), (dx + 1) * 256, (dy + 1) * 256);
+    })));
+    const a = g.getImageData(0, 0, 768, 768).data, m = new Uint8Array(G * G);
+    for(let y = 0; y < 768; y++) for(let x = 0; x < 768; x++) if(a[(y * 768 + x) * 4 + 3] > 0) m[(y / D | 0) * G + (x / D | 0)]++;
+    for(let i = 0; i < m.length; i++) m[i] = m[i] >= 3 ? 1 : 0;
+    return {m, t: f.time * 1000};
+  };
+  const gs = await Promise.all(frames.map(grid));
+  const R = 10, mpx = 2 * Math.PI * R_EARTH / (256 * n) * Math.cos(la) * D, vs = [];
+  for(let i = 1; i < gs.length; i++){
+    const a = gs[i].m, b = gs[i - 1].m, dt = (gs[i - 1].t - gs[i].t) / 1000;
+    let na = 0, nb = 0; for(let k = 0; k < a.length; k++){ na += a[k]; nb += b[k]; }
+    if(na < 30 || nb < 30 || dt <= 0) continue;
+    const H = new Float64Array((2 * R + 1) ** 2); let best = -1, bx = 0, by = 0;
+    for(let dy = -R; dy <= R; dy++) for(let dx = -R; dx <= R; dx++){
+      let hit = 0;
+      for(let y = Math.max(0, -dy); y < Math.min(G, G - dy); y++){ const ra = y * G, rb = (y + dy) * G + dx;
+        for(let x = Math.max(0, -dx); x < Math.min(G, G - dx); x++) hit += a[ra + x] & b[rb + x]; }
+      H[(dy + R) * (2 * R + 1) + dx + R] = hit;
+      if(hit > best){ best = hit; bx = dx; by = dy; }
+    }
+    if(best / Math.min(na, nb) < .35 || Math.abs(bx) === R || Math.abs(by) === R) continue;
+    // Sub-cell refinement with a parabola through the neighbours.
+    const at = (dx, dy) => H[(dy + R) * (2 * R + 1) + dx + R];
+    const sub = (m, c, q) => { const d = m - 2 * c + q; return d < 0 ? (m - q) / (2 * d) : 0; };
+    const fx = bx + sub(at(bx - 1, by), best, at(bx + 1, by)), fy = by + sub(at(bx, by - 1), best, at(bx, by + 1));
+    vs.push({u: fx * mpx / dt, v: -fy * mpx / dt});
+  }
+  if(!vs.length) return null;
+  const v = {u: vs.reduce((s, x) => s + x.u, 0) / vs.length, v: vs.reduce((s, x) => s + x.v, 0) / vs.length};
+  return Math.hypot(v.u, v.v) > 40 ? null : v;
+}
+async function computeFlow(){
+  const p = state.place || DEFAULT_PLACE;
+  const [wind, v0] = await Promise.all([fetchWind(p).catch(() => null), radar.rvP.then(rv => rv ? rvMotion(rv, p) : null).catch(() => null)]);
+  if(!wind && !v0) return null;
+  const F = {lat: p.lat, v0, src: v0 ? "RainViewer" : "", level: ""};
+  if(wind){
+    const mix = {"850 hPa":[[850, 1]], "700 hPa":[[700, 1]], "500 hPa":[[500, 1]], "850–700 hPa":[[850, .5], [700, .5]], "700–500 hPa":[[700, .5], [500, .5]], "850–500 hPa":[[850, 1/3], [700, 1/3], [500, 1/3]]};
+    const series = ws => wind[700].map((e, i) => ({t: e.t, u: ws.reduce((s, [L, w]) => s + w * ((wind[L][i] || e).u), 0), v: ws.reduce((s, [L, w]) => s + w * ((wind[L][i] || e).v), 0)}));
+    let pickName = "700 hPa";
+    if(v0){
+      radar.flow = {wind: series(mix["700 hPa"])};
+      let bd = Infinity;
+      for(const [k, ws] of Object.entries(mix)){ radar.flow.wind = series(ws); const w = windAt(radar.now), d = Math.hypot(w.u - v0.u, w.v - v0.v); if(d < bd){ bd = d; pickName = k; } }
+    }
+    F.wind = series(mix[pickName]); F.level = pickName;
+  }
+  return F;
+}
+function blendDWD(F, S, t){
+  const W = S.W, H = S.H, out = new ImageData(W, H), o = out.data, s = S.data.data, Dm = disp(S.t, t);
+  const dx = Math.round(Dm.dx / S.mpx), dy = Math.round(-Dm.dy / S.mpy);
   const f = F && F.data.data, cov = F && F.cov;
   for(let y = 0; y < H; y++){
     const sy = y - dy, inY = sy >= 0 && sy < H;
@@ -1278,9 +1381,31 @@ function motion(a, b){
   if(best / Math.min(na, nb) < .3) return null;
   return { dx: bx * a.mppx, dy: -by * a.mppy };   // metres per 60 min, north up
 }
-function shifted(bounds, mv, f){
+function shifted(bounds, D){
   const [[la1, lo1], [la2, lo2]] = bounds;
-  return [[ilat(my(la1) + mv.dy * f), ilon(mx(lo1) + mv.dx * f)], [ilat(my(la2) + mv.dy * f), ilon(mx(lo2) + mv.dx * f)]];
+  return [[ilat(my(la1) + D.dy), ilon(mx(lo1) + D.dx)], [ilat(my(la2) + D.dy), ilon(mx(lo2) + D.dx)]];
+}
+// RainViewer has no forecast: show its latest frame moved, one pane per future frame.
+function rvFuture(seq){
+  if(!radar.flow || !radar.rvLatest || radar.rvFutDone || seq !== radar.seq) return;
+  radar.rvFutDone = true;
+  radar.frames.forEach((f, k) => {
+    if(!f.future) return;
+    const pn = "rvf" + k;
+    if(!radar.map.getPane(pn)){ const el = radar.map.createPane(pn); el.style.zIndex = 330; el.style.pointerEvents = "none"; }
+    f.rvPane = pn;
+    f.rv = L.tileLayer(radar.rvLatest, {maxNativeZoom:7, maxZoom:12, opacity:0, pane:pn}).addTo(radar.map);
+  });
+  rvShift(); radarShow(radar.idx);
+}
+function rvShift(z){
+  if(!radar.map || !radar.flow) return;
+  const sc = 256 * 2 ** (z ?? radar.map.getZoom()) / (2 * Math.PI * R_EARTH);
+  radar.frames.forEach(f => {
+    if(!f.rvPane) return;
+    const D = disp(radar.rvLatestT, f.t);
+    radar.map.getPane(f.rvPane).style.transform = `translate(${(D.dx * sc).toFixed(1)}px, ${(-D.dy * sc).toFixed(1)}px)`;
+  });
 }
 function isDark(){
   const t = document.documentElement.getAttribute("data-theme");
@@ -1309,11 +1434,18 @@ function radarCenter(){
   radarMarkers();
   radar.ok = ok; radarNote();
 }
+const DIR8 = ["sever","severovýchod","východ","jihovýchod","jih","jihozápad","západ","severozápad"];
 function radarNote(){
   const fut = radar.frames.filter(f => f.future), h = fut.length ? Math.round((fut[fut.length - 1].t - radar.now) / 3600e3) : 0;
+  let mv = "";
+  if(h && radar.flow){
+    const v = flowVel(radar.now), sp = Math.hypot(v.u, v.v) * 3.6;
+    const to = DIR8[Math.round(((Math.atan2(v.u, v.v) * 180 / Math.PI + 360) % 360) / 45) % 8];
+    mv = sp < 3 ? " Srážky stojí skoro na místě." : ` Srážky táhnou na ${to}, asi ${Math.round(sp)} km/h.`;
+    mv += " Odhad: " + [radar.flow.v0 ? "pohyb z radaru (" + radar.flow.src + ")" : "", radar.flow.wind ? "vítr " + radar.flow.level : ""].filter(Boolean).join(", pak ") + ".";
+  }
   $("rnote").textContent = !radar.ok ? "Místo je mimo dosah radarů ČHMÚ a DWD." :
-    "Zpět 90 min" + (h ? ", dopředu " + h + " h." : ".") + " Česko: ČHMÚ. Německo: DWD. Okolní země: RainViewer, jen zpět a hrubší." +
-    (h ? (radar.mv ? " Mimo předpověď DWD jen posun snímků." : " Předpověď jen v Německu.") : "") +
+    "Zpět 90 min" + (h ? ", dopředu " + h + " h." : ".") + " Česko: ČHMÚ. Německo: DWD. Okolí: RainViewer." + mv +
     " Červená: vybrané místo. Modrá: vy.";
 }
 function getMe(then, quiet){
@@ -1347,9 +1479,12 @@ function radarPaint(){
    Free tiles go up to zoom 7; closer in they are only enlarged. */
 async function rvLoad(seq){
   let j;
-  try{ j = await getJSON("https://api.rainviewer.com/public/weather-maps.json"); }catch(e){ return; }
-  if(seq !== radar.seq) return;
+  try{ j = await getJSON("https://api.rainviewer.com/public/weather-maps.json"); }catch(e){ return null; }
+  if(seq !== radar.seq) return null;
   const past = (j.radar && j.radar.past) || [];
+  if(!past.length) return null;
+  const lastRv = past[past.length - 1];
+  radar.rvLatest = j.host + lastRv.path + "/256/{z}/{x}/{y}/2/1_1.png"; radar.rvLatestT = lastRv.time * 1000;
   const mine = radar.frames.filter(f => !f.future);
   radar.prog.rvN = 0;
   for(const f of mine){
@@ -1363,7 +1498,8 @@ async function rvLoad(seq){
     f.rv.once("load", () => { if(!done && seq === radar.seq){ done = true; radar.prog.rv++; radarProg(); } });
     f.rv.addTo(radar.map);
   }
-  radarShow(radar.idx); radarProg();
+  radarShow(radar.idx); radarProg(); rvFuture(seq);
+  return {host: j.host, past};
 }
 function radarProg(){
   const p = radar.prog, el = $("rload");
@@ -1402,10 +1538,11 @@ async function radarLoad(){
   for(let k = 0; k < 8 && !found; k++, t -= RADAR.poll) if(await probe(radarName(t))) found = t;
   if(seq !== radar.seq) return;
   radar.frames.forEach(f => { if(f.cz) f.cz.remove(); if(f.de) f.de.remove(); if(f.rv) f.rv.remove(); }); radar.frames = [];
+  radar.flow = null; radar.flowDone = false; radar.rvLatest = null; radar.rvFutDone = false;
   radar.blobs.forEach(u => URL.revokeObjectURL(u)); radar.blobs = [];
   if(!found){ $("rtime").textContent = "nedostupný"; $("rnote").textContent = "Radarové snímky se teď nepodařilo načíst. Zkuste Obnovit."; return; }
   radar.prog = {cz:0, czN:RADAR.frames, de:0, deN:0, rv:0, rvN:0, seq};
-  rvLoad(seq);
+  radar.rvP = rvLoad(seq);
   for(let k = RADAR.frames - 1; k >= 0; k--){
     const tt = found - k * RADAR.step;
     radar.frames.push({ t:tt, de:null, cz:czOverlay(radarName(tt), RADAR.bounds) });
@@ -1431,7 +1568,7 @@ async function radarLoad(){
   const blendAll = async () => {
     while(radar.mv && A && pending.length && seq === radar.seq){
       const j = pending.shift(), F = imgs[j], f = radar.frames[j];
-      const out = blendDWD(F, A, f.t, radar.mv), u = await imageURL(out);
+      const out = blendDWD(F, A, f.t), u = await imageURL(out);
       if(seq !== radar.seq) return;
       if(u && f.de) f.de.setUrl(u);
       F.data = null; F.cov = null;
@@ -1444,24 +1581,42 @@ async function radarLoad(){
     .sort((a, b) => Math.abs(a - nowIdx) - Math.abs(b - nowIdx) || a - b);
   const order = [nowIdx, usable(fut1) ? fut1 : -1, ...near].filter((j, k, a) => j >= 0 && a.indexOf(j) === k);
   radar.prog.deN = order.length; radarProg();
-  const tryMotion = () => {
-    if(radar.mv || seq !== radar.seq) return;
-    let ia = -1, ib = -1;
-    imgs.forEach((im, j) => { if(!im) return; if(j <= nowIdx) ia = j; else ib = j; });
-    if(ia < 0 || ib < 0) return;
-    let mv = motion(imgs[ia], imgs[ib]);
-    if(!mv) return;
-    const k = 3600e3 / (radar.frames[ib].t - radar.frames[ia].t); mv = {dx: mv.dx * k, dy: mv.dy * k};
-    radar.mv = mv;
+  // Pick the latest past DWD frame as the base for moving German rain into Czechia.
+  const setA = () => {
+    if(A || !radar.mv || seq !== radar.seq) return;
+    let ia = -1; imgs.forEach((im, j) => { if(im && j <= nowIdx) ia = j; });
+    if(ia < 0) return;
     A = imgs[ia]; A.t = radar.frames[ia].t;
     imgs.forEach((im, j) => { if(im && j <= nowIdx && im !== A){ im.data = null; im.cov = null; } });
     blendAll();
-    radar.frames.forEach(f => {
-      if(!f.future) return;
-      f.cz = czOverlay(radarName(found), shifted(RADAR.bounds, mv, (f.t - found) / 3600e3)).addTo(radar.map);
-    });
-    radarShow(radar.idx); radarNote();
   };
+  const onFlow = () => {
+    radar.mv = true;
+    radar.frames.forEach(f => {
+      if(!f.future || f.cz) return;
+      f.cz = czOverlay(radarName(found), shifted(RADAR.bounds, disp(found, f.t))).addTo(radar.map);
+    });
+    rvFuture(seq); setA(); radarShow(radar.idx); radarNote();
+  };
+  const tryMotion = () => {
+    if(seq !== radar.seq) return;
+    if(!radar.flow && radar.flowDone){
+      // Fallback: motion from DWD analysis vs DWD forecast.
+      let ia = -1, ib = -1;
+      imgs.forEach((im, j) => { if(!im) return; if(j <= nowIdx) ia = j; else ib = j; });
+      if(ia < 0 || ib < 0) return;
+      const mv = motion(imgs[ia], imgs[ib]); if(!mv) return;
+      const lat = (state.place || DEFAULT_PLACE).lat, c = Math.cos(lat * Math.PI / 180), dt = (radar.frames[ib].t - radar.frames[ia].t) / 1000;
+      radar.flow = {lat, v0: {u: mv.dx * c / dt, v: mv.dy * c / dt}, src: "DWD", level: ""};
+      onFlow();
+    }
+    setA();
+  };
+  const flowP = computeFlow().then(F => {
+    if(seq !== radar.seq) return;
+    radar.flowDone = true;
+    if(F){ radar.flow = F; onFlow(); } else tryMotion();
+  }).catch(() => { radar.flowDone = true; });
   const fetchOne = j => {
     const f = radar.frames[j];
     return dwdImage(f.t).catch(() => null).then(img => {
@@ -1471,7 +1626,7 @@ async function radarLoad(){
       imgs[j] = img;
       f.de = L.imageOverlay(img.url, DWD.bounds, {opacity:0, pane:"radarde", interactive:false}).addTo(radar.map);
       if(f.future) pending.push(j);
-      else if(radar.mv){ img.data = null; img.cov = null; }
+      else if(radar.mv){ setA(); if(img !== A){ img.data = null; img.cov = null; } }
       radarShow(radar.idx); tryMotion(); return blendAll();
     });
   };
@@ -1480,11 +1635,13 @@ async function radarLoad(){
   const worker = async () => { while(next < order.length && seq === radar.seq) await fetchOne(order[next++]); };
   await Promise.all([worker(), worker(), worker(), worker()]);
   if(seq !== radar.seq) return;
+  await flowP; if(seq !== radar.seq) return;
+  tryMotion(); setA();
   await blendAll();
   // Beyond the DWD forecast (or where it failed): keep moving the last frame.
   if(radar.mv && (last || A)) for(const f of radar.frames){
     if(!f.future || f.de) continue;
-    const u = await imageURL(blendDWD(null, last || A, f.t, radar.mv));
+    const u = await imageURL(blendDWD(null, last || A, f.t));
     if(seq !== radar.seq) return;
     if(u) f.de = L.imageOverlay(u, DWD.bounds, {opacity:0, pane:"radarde", interactive:false}).addTo(radar.map);
   }
@@ -1492,6 +1649,7 @@ async function radarLoad(){
   radarShow(radar.idx);
   if(!radar.mv){
     const cur = radar.frames[radar.idx];
+    radar.frames.forEach(f => { if(f.future && !f.de && f.rv){ f.rv.remove(); f.rv = null; } });
     radar.frames = radar.frames.filter(f => !f.future || f.de);
     $("rslider").max = radar.frames.length - 1;
     radarShow(Math.max(0, radar.frames.indexOf(cur)));
@@ -1503,6 +1661,8 @@ function radarInit(){
   radar.map = L.map("map", {zoomControl:true, scrollWheelZoom:false, minZoom:4, maxZoom:12, attributionControl:true});
   radar.map.attributionControl.setPrefix('<a href="https://leafletjs.com" target="_blank" rel="noopener">Leaflet</a>');
   radar.map.createPane("radarrv").style.zIndex = 330;
+  radar.map.on("zoomanim", e => rvShift(e.zoom));
+  radar.map.on("zoomend", () => rvShift());
   radar.map.createPane("radarde").style.zIndex = 340;
   radar.map.createPane("radar").style.zIndex = 350;
   radar.map.createPane("labels").style.zIndex = 450;
