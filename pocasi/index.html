@@ -228,14 +228,14 @@ h2{font-family:var(--display);font-size:1.05rem;font-weight:700;margin:0}
 .radar header{display:flex;justify-content:space-between;align-items:baseline;gap:12px;padding:0 16px 8px}
 #rtime{font-size:1rem;color:var(--muted)}
 .mapwrap{position:relative}
-#rload{display:inline-flex;align-items:center;gap:4px;height:30px;padding:0 10px;border-radius:15px;border:1px solid var(--line);background:var(--card);color:var(--muted);font-size:.85rem;white-space:nowrap;align-self:center}
+#rload{display:inline-flex;flex:none;align-items:center;gap:3px;height:26px;padding:0 7px;border-radius:13px;border:1px solid var(--line);background:var(--card);color:var(--muted);font-size:.85rem;white-space:nowrap;align-self:center}
 #rload svg{width:16px;height:16px;fill:none;stroke:currentColor;stroke-width:2.2;stroke-linecap:round;stroke-linejoin:round}
 #rload.busy svg{animation:spin 1s linear infinite}
 #rload.done{color:var(--accent);padding:0 8px}
 @keyframes spin{to{transform:rotate(360deg)}}
 @media (prefers-reduced-motion:reduce){ #rload.busy svg{animation:none} }
-.radar header{justify-content:flex-start;align-items:center}
-.radar header #rtime{margin-left:auto}
+.radar header{justify-content:flex-start;align-items:center;flex-wrap:nowrap!important;gap:8px}
+.radar header #rtime{margin-left:auto;white-space:nowrap}
 #map.pop .leaflet-top.leaflet-left{display:none}
 .radar header{flex-wrap:wrap;row-gap:2px}
 #rtime{white-space:nowrap}
@@ -358,7 +358,7 @@ footer a{color:var(--accent)}
   </section>
 
   <section class="card radar">
-    <header><h2>Radar</h2><button type="button" id="rload" class="num" aria-label="Obnovit radar" title="Obnovit radar"></button><span id="rtime" class="num">Načítám…</span></header>
+    <header><h2>Radar</h2><button type="button" id="rload" class="num" aria-label="Obnovit radar" title="Obnovit radar"></button><span id="rtime" class="num"></span></header>
     <div class="mapwrap"><div id="map" role="img" aria-label="Mapa srážek z radaru ČHMÚ"></div></div>
     <div class="rctl">
       <button type="button" id="rplay" aria-label="Přehrát"><svg viewBox="0 0 24 24"><path d="M7 4.5v15l12-7.5z"/></svg></button>
@@ -1590,7 +1590,7 @@ function radarProg(){
   if(!p){ el.className = "done"; el.innerHTML = ICON_REFRESH; return; }
   const done = p.cz + p.de + p.rv, all = p.czN + p.deN + p.rvN;
   if(done >= all){ el.className = "done"; el.innerHTML = ICON_REFRESH; el.title = "Obnovit radar"; el.setAttribute("aria-label", "Obnovit radar"); }
-  else { el.className = "busy num"; el.innerHTML = ICON_REFRESH + done + "/" + all; el.title = `Načítám radar: ČHMÚ ${p.cz}/${p.czN}, DWD ${p.de}/${p.deN}, okolí ${p.rv}/${p.rvN}`; el.setAttribute("aria-label", el.title); }
+  else { el.className = "busy num"; el.innerHTML = ICON_REFRESH + Math.floor(done / Math.max(1, all) * 100) + " %"; el.title = `Načítám radar: ČHMÚ ${p.cz}/${p.czN}, DWD ${p.de}/${p.deN}, okolí ${p.rv}/${p.rvN}`; el.setAttribute("aria-label", el.title); }
 }
 function radarShow(i){
   if(!radar.frames.length) return;
@@ -1598,7 +1598,7 @@ function radarShow(i){
   radar.frames.forEach((f, j) => { const o = f.rough ? .5 : f.future ? .6 : .72; if(f.cz) f.cz.setOpacity(j === i ? o : 0); if(f.de) f.de.setOpacity(j === i ? o : 0); if(f.rv) f.rv.setOpacity(j === i ? .65 : 0); });
   $("rslider").value = i;
   const f = radar.frames[i], hm = new Date(f.t).toLocaleTimeString("cs-CZ", {hour:"2-digit", minute:"2-digit"});
-  $("rtime").textContent = hm + (f.future ? (f.rough ? ", odhad" : ", předpověď") : f.t === radar.now ? ", poslední" : "");
+  $("rtime").textContent = hm;
   $("map").classList.toggle("fut", !!f.future);
   $("map").dataset.fut = f.rough ? "ODHAD" : "PŘEDPOVĚĎ";
 }
