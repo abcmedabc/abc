@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Počasí po hodinách</title>
+<title>Počasí</title>
 <link rel="manifest" href="manifest.webmanifest">
 <link rel="apple-touch-icon" href="apple-touch-icon.png">
 <meta name="theme-color" content="#e9eef3">
@@ -362,6 +362,7 @@ footer a{color:var(--accent)}
     <div class="rkey"><span><i style="background:var(--line)"></i>naměřeno</span><span id="rkey"><i style="background:var(--fc1)"></i>předpověď 1 h</span><span id="rkey2"><i style="background:var(--fc2)"></i>odhad 2 a 3 h</span></div>
     <div class="rleg"><span>slabé</span><i></i><span>silné srážky</span></div>
     <div class="rkey" id="stkey" hidden><span><span class="stm lg" style="background:rgb(139,209,106);color:#111">7°</span>stanice ČHMÚ</span><span id="stkey2"><span class="stm sc lg" style="background:rgb(139,209,106);color:#111">7°</span>občanská čidla</span><span id="stnote"></span></div>
+    <div class="rowlab">Štítek stanice ČHMÚ je vybledlý, když je měření starší než 2 hodiny, a zmizí po 6 hodinách nebo když se teplota výrazně liší od okolních stanic. Občanská čidla se ukazují jen do 30 minut od měření a jen pokud se od stanic ČHMÚ v okolí liší nejvýš o 3 °C, jinak je skryjeme (bývají ohřátá sluncem nebo domem). Stáří měření ukáže klepnutí na štítek.</div>
     <div class="rowlab" id="rnote"></div>
     </details>
   </section>
