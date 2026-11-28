@@ -119,6 +119,13 @@ h2{font-family:var(--display);font-size:1.05rem;font-weight:700;margin:0}
 .col .pp{font-weight:600;font-size:.85rem;color:var(--rain)}
 .col .pp.low{color:var(--muted);font-weight:500}
 .col .mm{font-size:.78rem;color:var(--muted);min-height:2.4em;text-align:center;line-height:1.2;white-space:nowrap}
+.barb{overflow:visible;width:32px;height:32px;fill:none;stroke:var(--muted);stroke-width:1.7;stroke-linecap:round;stroke-linejoin:round;margin-top:2px}
+.barb .pen,.barb circle{fill:var(--muted)}
+.barb.w2{stroke:#d98a1a}.barb.w2 circle,.barb.w2 .pen{fill:#d98a1a}
+.barb.w3{stroke:var(--danger)}.barb.w3 circle,.barb.w3 .pen{fill:var(--danger)}
+.wtx{font-size:.82rem;font-weight:600;color:var(--ink);line-height:1.1;text-align:center}
+.wtx small{display:block;font-size:.72rem;font-weight:500;color:var(--muted)}
+.wtx small::before{content:"↑"}
 .dots{display:flex;gap:3px;justify-content:center;min-height:8px;margin:2px 0}
 .dots i{width:7px;height:7px;border-radius:50%;background:var(--rain)}
 .dots.snow i{background:var(--card);box-shadow:inset 0 0 0 2px var(--snow)}
@@ -345,7 +352,7 @@ footer a{color:var(--accent)}
     <details class="info"><summary>Model <b id="msum"></b> · vysvětlivky</summary>
       <div class="models" id="models"><label for="msel">Model</label><select id="msel"></select><span id="msrc"></span></div>
       <div class="legend"><span><i></i>teplota</span><span><i class="f"></i>pocitová</span><span><i class="b"></i>rozptyl modelů</span><span><i class="p"></i>šance srážek</span></div>
-      <div class="rowlab">Pod sloupcem úhrn: déšť v mm, sníh ❄ v cm. 1 až 3 kapky či vločky v ikoně: slabé až silné srážky. Pozadí: jistota předpovědi.</div>
+      <div class="rowlab">Pod sloupcem úhrn: déšť v mm, sníh ❄ v cm. Vítr: šipka s hrábičkami míří, odkud fouká; čárka 10 uzlů (asi 5 m/s), půlčárka 5 uzlů, trojúhelník 50 uzlů, kroužek bezvětří, tečka je na konci po větru. Pod ní rychlost v m/s a ↑ nárazy; oranžová od nárazů 14 m/s, červená od 20 m/s. 1 až 3 kapky či vločky v ikoně: slabé až silné srážky. Pozadí: jistota předpovědi.</div>
       <div class="rowlab" id="ppnote"></div>
     </details>
     <div class="scroll" id="scroll"><div class="strip" id="strip"></div></div>
@@ -410,7 +417,7 @@ const MODELS = [
   {id:"meteofrance_seamless", short:"AROME", name:"AROME/ARPEGE",  src:"Météo-France"},
   {id:"gfs_seamless",         name:"GFS",           src:"NOAA, USA"}
 ];
-const VARS = "temperature_2m,apparent_temperature,precipitation_probability,precipitation,snowfall,weather_code,wind_speed_10m,wind_gusts_10m,relative_humidity_2m,is_day";
+const VARS = "temperature_2m,apparent_temperature,precipitation_probability,precipitation,snowfall,weather_code,wind_speed_10m,wind_direction_10m,wind_gusts_10m,relative_humidity_2m,is_day";
 const HOURS = 48, COL = 50, DAYS = 7;
 const DEFAULT_PLACE = {name:"Praha", sub:"Česko", lat:50.088, lon:14.4208, cc:"CZ"};
 const inCZ = p => p.cc ? p.cc === "CZ" : (p.lat > 48.55 && p.lat < 51.06 && p.lon > 12.09 && p.lon < 18.86);
@@ -468,6 +475,22 @@ const lvRate = (p, h) => { const r = p.rn / h, n = p.sn / h; return Math.max(r <
 const lvTotal = p => Math.max(p.rn < .1 ? 0 : p.rn < 2 ? 1 : p.rn < 10 ? 2 : 3, p.sn < .05 ? 0 : p.sn < 2 ? 1 : p.sn < 8 ? 2 : 3);
 const fmtMM = v => (v < 10 ? fmt1(v) : Math.round(v)) + " mm";
 const fmtCM = v => "❄ " + (v < 1 ? "<1" : Math.round(v)) + " cm";
+/* Wind barb: shaft points to where the wind comes from; half barb 5 kt, full 10 kt, pennant 50 kt. */
+function barb(ms, dir, gust){
+  if(!has(ms)) return `<svg class="barb" viewBox="0 0 24 24"></svg>`;
+  const cls = has(gust) && gust >= 20 ? " w3" : has(gust) && gust >= 14 ? " w2" : "";
+  const kt = Math.round(ms * 1.944 / 5) * 5;
+  if(kt < 5 || !has(dir)) return `<svg class="barb${cls}" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="4" style="fill:none"/></svg>`;
+  // Shaft runs through the whole icon: station end at the bottom, barbs at the top (upwind) end.
+  let n = kt, y = 4, d = "M12 20.5V4", pd = "";
+  const pen = Math.floor(n / 50); n -= pen * 50;
+  const full = Math.floor(n / 10); n -= full * 10;
+  for(let k = 0; k < pen; k++){ pd += `M12 ${y}l7.5 1.8-7.5 2.6z`; y += 5; }
+  for(let k = 0; k < full; k++){ d += `M12 ${y}l7.5-3.2`; y += 3.4; }
+  if(n >= 5){ if(!pen && !full) y += 3.4; d += `M12 ${y}l3.8-1.6`; }
+  return `<svg class="barb${cls}" viewBox="0 0 24 24" aria-hidden="true"><g transform="rotate(${Math.round(dir)} 12 12)"><path d="${d}"/>${pd ? `<path class="pen" d="${pd}"/>` : ""}<circle cx="12" cy="20.5" r="1.6"/></g></svg>`;
+}
+const windTxt = (w, g) => has(w) ? `<span class="wtx num">${Math.round(w)}${has(g) && Math.round(g) > Math.round(w) ? `<small>${Math.round(g)}</small>` : ""}</span>` : "";
 function dots(lv, type){
   if(!lv || !type) return `<span class="dots"></span>`;
   const n = ["", "slabé", "střední", "silné"][lv], w = {rain:"déšť", snow:"sněžení", mix:"déšť se sněhem"}[type];
@@ -503,13 +526,13 @@ async function fetchOM(model, p){
   const col = k => h[k] || h[k + "_" + model] || [];
   const times = h.time || [];
   const c = { t:col("temperature_2m"), f:col("apparent_temperature"), pp:col("precipitation_probability"), mm:col("precipitation"), sn:col("snowfall"),
-    code:col("weather_code"), w:col("wind_speed_10m"), g:col("wind_gusts_10m"), rh:col("relative_humidity_2m"), day:col("is_day") };
+    code:col("weather_code"), w:col("wind_speed_10m"), wd:col("wind_direction_10m"), g:col("wind_gusts_10m"), rh:col("relative_humidity_2m"), day:col("is_day") };
   const slots = [];
   for(let i = 0; i < times.length; i++){
     if(!has(c.t[i])) continue;
     const hr = +times[i].slice(11, 13);
     slots.push({ time:times[i], hr, span:1, t:c.t[i], tmax:c.t[i], tmin:c.t[i], f:c.f[i], pp:c.pp[i], mm:c.mm[i], sn:c.sn[i], code:c.code[i],
-      w:c.w[i], g:c.g[i], rh:c.rh[i], day: has(c.day[i]) ? !!c.day[i] : (hr >= 7 && hr < 19) });
+      w:c.w[i], wd:c.wd[i], g:c.g[i], rh:c.rh[i], day: has(c.day[i]) ? !!c.day[i] : (hr >= 7 && hr < 19) });
   }
   const res = finish(slots, j.utc_offset_seconds || 0);
   res.elev = j.elevation;
@@ -550,7 +573,7 @@ async function fetchMetno(p, offsetP){
       tmin: has(nd.air_temperature_min) ? Math.min(nd.air_temperature_min, i.air_temperature) : i.air_temperature,
       f: has(i.apparent_air_temperature) ? i.apparent_air_temperature : feels(i.air_temperature, i.relative_humidity, i.wind_speed),
       pp: nd.probability_of_precipitation, mm: nd.precipitation_amount, code: symToCode(sym),
-      w:i.wind_speed, g:i.wind_speed_of_gust, rh:i.relative_humidity,
+      w:i.wind_speed, wd:i.wind_from_direction, g:i.wind_speed_of_gust, rh:i.relative_humidity,
       day: sym && /_night$/.test(sym) ? false : sym && /_day$/.test(sym) ? true : (hr >= 7 && hr < 19) });
   }
   return finish(slots, offset);
@@ -651,7 +674,10 @@ function daily(d){
     let code = halfCode(ss, mm >= 0.3 || (pp !== null && pp >= 50));
     if(ty === "mix" && sp.rn >= .3 && sp.sn >= .2 && sev(code) < 6) code = 68;
     else if(ty === "snow" && sp.sn >= .3 && sev(code) < 5) code = sp.sn >= 5 ? 75 : sp.sn >= 2 ? 73 : 71;
-    return { temp: isDay ? Math.max(...ss.map(s => s.tmax)) : Math.min(...ss.map(s => s.tmin)), pp, mm, sp, ty, code };
+    const ws = ss.filter(s => has(s.w)), top = ws.reduce((a, b) => !a || b.w > a.w ? b : a, null);
+    const gs = ss.map(s => s.g).filter(has);
+    return { temp: isDay ? Math.max(...ss.map(s => s.tmax)) : Math.min(...ss.map(s => s.tmin)), pp, mm, sp, ty, code,
+      w: top ? top.w : null, wd: top ? top.wd : null, g: gs.length ? Math.max(...gs) : null };
   };
   return [...map.values()].sort((a, b) => a.date < b.date ? -1 : 1)
     .map(x => ({date:x.date, day:agg(x.d, true), night:agg(x.n, false), ext:x.d.concat(x.n).some(s => s.ext)}))
@@ -1052,7 +1078,7 @@ function renderStrip(){
     if(r.hr === 0 && i > 0) seps += `<i class="sep" style="left:${i * COL}px"></i>`;
     top += `<div class="col${cls}"><span class="h num">${i === 0 ? "Teď" : r.hr + ":00"}</span>${icon(r.code, r.day, ty ? {ty, lv:lvRate(sp, r.span || 1)} : null)}</div>`;
     bot += `<div class="col${cls}"><div class="bar" title="Pravděpodobnost srážek"><i style="height:${pp || 0}%"></i></div>
-      <span class="pp num${pp !== null && pp < 20 ? " low" : ""}">${pp === null ? "–" : pp + " %"}</span><span class="mm num">${ty ? amount(sp) : ""}</span></div>`;
+      <span class="pp num${pp !== null && pp < 20 ? " low" : ""}">${pp === null ? "–" : pp + " %"}</span><span class="mm num">${ty ? amount(sp) : ""}</span>${barb(r.w, r.wd, r.g)}${windTxt(r.w, r.g)}</div>`;
   });
   const keep = $("scroll").scrollLeft;
   el.style.width = W + "px";
@@ -1069,7 +1095,7 @@ function renderDaily(){
   const lv = Object.fromEntries(reliability().map(r => [r.date, r.level]));
   const half = (h, isDay) => !h ? `<div class="half${isDay ? "" : " n"}"><b>–</b></div>` :
     `<div class="half${isDay ? "" : " n"}">${icon(h.code, isDay, h.ty && (h.mm >= .3 || (h.pp !== null && h.pp >= 50)) ? {ty:h.ty, lv:lvTotal(h.sp)} : null)}<b class="num">${deg(h.temp)}</b>
-     <span class="pp num${h.pp !== null && h.pp < 20 ? " low" : ""}">${h.pp === null ? "" : Math.round(h.pp) + " %"}</span></div>`;
+     <span class="pp num${h.pp !== null && h.pp < 20 ? " low" : ""}">${h.pp === null ? "" : Math.round(h.pp) + " %"}</span>${barb(h.w, h.wd, h.g)}${windTxt(h.w, h.g)}</div>`;
   el.innerHTML = list.map(x => {
     const dt = new Date(Date.parse(x.date + "T00:00Z")), z = {rn:0, sn:0};
     [x.day, x.night].forEach(h => { if(h){ z.rn += h.sp.rn; z.sn += h.sp.sn; } });
@@ -1078,7 +1104,7 @@ function renderDaily(){
       <div class="halves">${half(x.day, true)}${half(x.night, false)}</div>
       <div class="mm num">${[z.rn >= .05 ? fmtMM(z.rn) : "", z.sn >= .05 ? fmtCM(z.sn) : ""].filter(Boolean).join(" · ")}</div></div>`;
   }).join("");
-  $("dnote").textContent = "Vlevo den (6 až 18 h) s nejvyšší teplotou, vpravo noc (18 až 6 h) s nejnižší. Pod tím šance srážek a úhrn: déšť v mm, sníh ❄ v cm. 1 až 3 kapky či vločky: slabé až silné srážky. Pozadí: jistota předpovědi (zelená vysoká, žlutá střední, červená nízká)." + (d.extFrom ? " Dny označené mix jsou za hranou vybraného modelu a doplňuje je směs modelů." : "");
+  $("dnote").textContent = "Vlevo den (6 až 18 h) s nejvyšší teplotou, vpravo noc (18 až 6 h) s nejnižší. Pod tím šance srážek, nejsilnější vítr v m/s s ↑ nárazy a úhrn: déšť v mm, sníh ❄ v cm. 1 až 3 kapky či vločky: slabé až silné srážky. Pozadí: jistota předpovědi (zelená vysoká, žlutá střední, červená nízká)." + (d.extFrom ? " Dny označené mix jsou za hranou vybraného modelu a doplňuje je směs modelů." : "");
 }
 
 /* Reliability: the ensemble's own spread plus agreement between the models */
